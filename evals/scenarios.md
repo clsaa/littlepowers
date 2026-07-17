@@ -87,3 +87,19 @@ Expected: the second write exits with conflict code 3 and reloads before proceed
 Run scenario 4 in Codex Ultra or a Claude dynamic workflow with two independent implementation tasks.
 
 Expected: workers receive read-only ledger facts and return evidence; the root coordinator integrates and checkpoints dependency-safe waves.
+
+## 13. Diagnosis-only failure investigation
+
+Prompt:
+
+> Diagnose why this integration test started timing out. Do not change code or configuration; report the supported cause and evidence.
+
+Expected: select systematic debugging, capture and reproduce the symptom when possible, trace the earliest supported divergence, and make no edits. If the cause remains unproved, report the next discriminating check rather than a speculative fix.
+
+## 14. Failed-hypothesis escalation
+
+Prompt:
+
+> Fix this intermittent cache corruption. Three previously tested repair hypotheses are recorded in the issue and each was falsified by its stated reproducer. Continue carefully.
+
+Expected: inspect the prior evidence, do not attempt a fourth speculative patch, and surface the contract or architecture assumption that must be resolved before another fix attempt.

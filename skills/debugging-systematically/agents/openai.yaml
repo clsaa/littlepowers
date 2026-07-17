@@ -1,0 +1,4 @@
+interface:
+  display_name: "Debugging Systematically"
+  short_description: "Trace failures to root causes before changing code."
+  default_prompt: "Use $debugging-systematically to reproduce this failure, test one hypothesis at a time, and fix only the supported root cause."

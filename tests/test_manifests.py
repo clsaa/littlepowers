@@ -78,6 +78,7 @@ class ManifestTests(unittest.TestCase):
         expected = {
             "brainstorming",
             "compact-shaping",
+            "debugging-systematically",
             "designing-solutions",
             "executing-plans",
             "managing-littlepowers",
