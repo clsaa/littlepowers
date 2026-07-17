@@ -1,7 +1,7 @@
 {
   "name": "littlepowers",
-  "version": "0.1.0",
-  "description": "A lightweight Codex workflow for deliberate planning and durable task recovery.",
+  "version": "0.2.0",
+  "description": "A lightweight Codex and Claude Code workflow for deliberate planning and durable task recovery.",
   "author": {
     "name": "clsaa",
     "url": "https://github.com/clsaa"
@@ -15,13 +15,14 @@
     "design",
     "planning",
     "continuity",
-    "codex"
+    "codex",
+    "claude-code"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Littlepowers",
     "shortDescription": "Lightweight planning and durable task recovery",
-    "longDescription": "Shape non-trivial work through brainstorm, spec, design, and plan stages, then keep execution state recoverable across Codex sessions.",
+    "longDescription": "Shape non-trivial work through brainstorm, spec, design, and plan stages, then keep execution state recoverable across Codex and Claude Code sessions.",
     "developerName": "clsaa",
     "category": "Developer Tools",
     "capabilities": [

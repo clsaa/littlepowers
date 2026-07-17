@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inject unfinished Littlepowers state into a Codex session."""
+"""Inject unfinished Littlepowers state into Codex or Claude Code."""
 
 from __future__ import annotations
 
@@ -9,7 +9,16 @@ import sys
 from pathlib import Path
 
 
-PLUGIN_ROOT = Path(os.environ.get("PLUGIN_ROOT", Path(__file__).resolve().parents[1]))
+def resolve_plugin_root() -> Path:
+    """Resolve native Codex and Claude Code plugin root conventions."""
+    for variable in ("CLAUDE_PLUGIN_ROOT", "PLUGIN_ROOT"):
+        value = os.environ.get(variable)
+        if value:
+            return Path(value)
+    return Path(__file__).resolve().parents[1]
+
+
+PLUGIN_ROOT = resolve_plugin_root()
 sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))
 
 from littlepowers_state import (  # noqa: E402

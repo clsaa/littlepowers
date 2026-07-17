@@ -61,6 +61,13 @@ python3 <plugin-root>/scripts/littlepowers_state.py start \
 
 If the user requests an end-to-end result and no material decision needs them, proceed between phases without artificial approval stops. Pause for a choice only when alternatives change scope, behavior, cost, risk, or external state.
 
-For long work, recommend `/goal` with a measurable outcome. Recommend Queue for follow-up behavior and `/side` or `/btw` for unrelated questions; do not change those settings yourself.
+## Use harness-native controls
+
+Keep the workflow portable. When the current harness is known:
+
+- In Codex, long work may benefit from `/goal`; recommend Queue for follow-up behavior and `/side` or `/btw` for unrelated questions. Do not change those settings yourself.
+- In Claude Code, rely on the native resume, clear, and compaction flow. Durable personal defaults belong in `~/.claude/CLAUDE.md`; project defaults belong in `CLAUDE.md`.
+
+Do not recommend one harness's commands in the other. When the harness is unknown, omit harness-specific advice.
 
 Never commit, branch, push, open a PR, or broaden access merely because this workflow is active. Do those only when the user requests them or they are an ordinary, authorized part of the stated delivery.

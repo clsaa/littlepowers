@@ -2,23 +2,24 @@
 
 ## Purpose
 
-Littlepowers is a lightweight Codex plugin for keeping non-trivial development work on a reviewable path and recovering unfinished work after a session resume, context compaction, or newly opened task in the same workspace.
+Littlepowers is a lightweight Codex and Claude Code workflow for keeping non-trivial development work on a reviewable path and recovering unfinished work after interruption or session boundaries.
 
 ## Goals
 
 - Provide an explicit brainstorm → spec → design → plan → execute → verify workflow.
-- Scale the workflow to the task instead of forcing ceremony onto trivial edits.
+- Scale process to the task instead of forcing ceremony onto trivial edits.
 - Persist the active objective, phase, artifacts, current task, and next action outside conversation history.
-- Restore unfinished state through a Codex plugin SessionStart hook.
-- Fit GPT-5.6/Codex conventions: concise skills, native plan tracking, minimal questions, proportional verification, and no mandatory subagents.
-- Be installable from a GitHub-hosted Codex marketplace repository.
+- Restore unfinished state on startup, resume, clear, and compaction in Codex and Claude Code.
+- Share one behavior implementation across both harnesses while using native installation metadata for each.
+- Remain dependency-free at runtime beyond Python 3.
+- Be installable from the GitHub repository through both native plugin marketplaces.
 
 ## Non-goals
 
-- Supporting Claude Code, Cursor, OpenCode, Pi, or other agent harnesses.
 - Recreating Superpowers' complete TDD, worktree, review-agent, or branch-finishing methodology.
+- Supporting Cursor, OpenCode, Pi, or other agent harnesses in this release.
 - Preventing the user from intentionally steering, pausing, replacing, or cancelling work.
-- Changing Codex app settings on the user's behalf.
+- Changing Codex or Claude Code settings on the user's behalf.
 - Reading unstable transcript formats or storing conversation content.
 - Sending telemetry or making network calls at runtime.
 
@@ -28,9 +29,9 @@ Littlepowers is a lightweight Codex plugin for keeping non-trivial development w
 
 Classify work before editing:
 
-- **Direct:** local, reversible, fully specified, low-risk work may proceed with a short mental plan and verification.
+- **Direct:** local, reversible, fully specified, low-risk work may proceed with a short plan and verification.
 - **Shaped:** ambiguous, architectural, risky, or multi-file work follows all workflow phases.
-- User instructions can explicitly choose or skip phases.
+- Explicit user instructions can choose, skip, or revisit phases.
 
 ### FR2 — Separate phases
 
@@ -56,7 +57,7 @@ Existing repository conventions and explicit user paths override these defaults.
 
 ### FR4 — Durable active state
 
-Store active state at `<workspace-root>/.littlepowers/state.json`. Create `.littlepowers/.gitignore` so scratch state does not appear in commits. State must include:
+Store active state at `<workspace-root>/.littlepowers/state.json`. Create `.littlepowers/.gitignore` so scratch state does not appear in commits. State includes:
 
 - schema version
 - status
@@ -68,21 +69,23 @@ Store active state at `<workspace-root>/.littlepowers/state.json`. Create `.litt
 - completed checkpoints
 - last update time
 
-State commands must support start, checkpoint, pause, complete, cancel, show, and context rendering.
+State commands support start, checkpoint, pause, complete, cancel, show, and context rendering. One worktree has at most one active objective.
 
-### FR5 — Recovery hook
+### FR5 — Cross-harness recovery hook
 
-On Codex `SessionStart` for `startup`, `resume`, `clear`, or `compact`:
+On `SessionStart` for `startup`, `resume`, `clear`, or `compact`:
 
 - locate active state from the session working directory;
-- emit no output when no active state exists;
-- inject concise additional developer context when state is active or paused;
-- reject a state file tracked by Git and treat all state values as untrusted data;
-- never modify project files, inspect transcripts, or access the network.
+- emit no output when no unfinished state exists;
+- inject concise additional context when state is active or paused;
+- reject a state file tracked by Git and treat state values as untrusted data;
+- never modify project files, inspect transcripts, or access the network;
+- complete within five seconds and fail open on malformed input or state;
+- resolve its installed plugin root under both Codex and Claude Code.
 
-### FR6 — Skills
+### FR6 — Shared skills
 
-Ship concise skills for:
+Ship one shared copy of six skills:
 
 - routing and continuity (`using-littlepowers`)
 - brainstorming
@@ -91,30 +94,41 @@ Ship concise skills for:
 - writing plans
 - executing and verifying plans
 
-Each skill must have OpenAI UI metadata and pass the Codex skill validator.
+Every skill has portable Agent Skills frontmatter. Codex UI metadata remains available under `agents/openai.yaml`. Harness-specific interaction advice is conditional and never presented as portable behavior.
 
 ### FR7 — Interruption semantics
 
-When an active state exists, a new message is interpreted as one of:
+When active state exists, a new message is interpreted as one of:
 
-- additive context or correction: update the current objective and continue;
-- status/question: answer briefly, then continue;
+- additive context or correction: update artifacts/state and continue;
+- status or question: answer briefly, then continue;
 - pause: checkpoint and stop safely;
-- explicit replace/cancel: close the old state before starting new work.
+- explicit replace or cancel: close old state before starting new work.
 
 An unrelated message must not silently erase active state.
 
-### FR8 — Distribution and documentation
+### FR8 — Native packaging and documentation
 
-The repository must contain a valid plugin manifest, GitHub marketplace entry, install instructions, an optional `AGENTS.md` guidance snippet, license, and automated tests.
+The repository contains:
+
+- a Codex plugin manifest and marketplace catalog;
+- a Claude Code plugin manifest and marketplace catalog;
+- matching plugin versions and metadata;
+- install, update, uninstall, and explicit invocation instructions for both;
+- optional `AGENTS.md` and `CLAUDE.md` guidance snippets;
+- license and automated tests.
+
+### FR9 — Versioning
+
+The Codex manifest, Claude Code manifest, and Claude marketplace entry use the same semantic version. Every published behavior change bumps that version.
 
 ## Acceptance criteria
 
-- All bundled skills validate.
-- The plugin scaffold validates under the bundled plugin validator, with current Codex hook discovery covered separately.
-- State CLI tests cover lifecycle transitions, root discovery, invalid transitions, and context output.
-- Hook tests prove silence without state, rejection of tracked state, and valid recovery context with local state.
-- Codex can discover the repository marketplace and install the plugin locally.
-- A fresh `codex debug prompt-input` inspection shows all six installed skills.
-- A read-only, ephemeral `codex exec` probe receives the recovery context when unfinished state exists.
-- README clearly explains Queue, `/goal`, `/side`/`/btw`, explicit skill invocation, hook trust, and uninstall behavior.
+- All six skills pass the bundled skill validator.
+- The Codex plugin and marketplace pass their validator and install from the repository.
+- `claude plugin validate --strict .` passes.
+- Claude Code can add the repository marketplace, install `littlepowers@littlepowers`, and discover all six skills.
+- Codex and Claude Code each receive recovery context from an active ledger in a real CLI probe.
+- Unit tests exercise both plugin-root environment conventions and all recovery edge cases.
+- README distinguishes shared behavior from harness-specific controls and documents both installation paths.
+- GitHub Actions passes on the published commit.

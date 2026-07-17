@@ -25,7 +25,14 @@ class SessionStartHookTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary_directory.cleanup()
 
-    def run_hook(self, payload: str | None = None) -> subprocess.CompletedProcess[str]:
+    def run_hook(
+        self,
+        payload: str | None = None,
+        *,
+        root_variable: str | None = "PLUGIN_ROOT",
+        through_launcher: bool = False,
+        extra_environment: dict[str, str] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
         event = payload or json.dumps(
             {
                 "cwd": str(self.workspace),
@@ -34,9 +41,19 @@ class SessionStartHookTests(unittest.TestCase):
             }
         )
         environment = os.environ.copy()
-        environment["PLUGIN_ROOT"] = str(ROOT)
+        environment.pop("PLUGIN_ROOT", None)
+        environment.pop("CLAUDE_PLUGIN_ROOT", None)
+        if root_variable:
+            environment[root_variable] = str(ROOT)
+        if extra_environment:
+            environment.update(extra_environment)
+        command = (
+            ["sh", str(ROOT / "hooks" / "run-hook.cmd")]
+            if through_launcher
+            else [sys.executable, str(self.hook)]
+        )
         return subprocess.run(
-            [sys.executable, str(self.hook)],
+            command,
             input=event,
             capture_output=True,
             text=True,
@@ -72,6 +89,44 @@ class SessionStartHookTests(unittest.TestCase):
         self.assertIn("Finish the interrupted change", context)
         self.assertIn("Run Task 3", context)
         self.assertIn("docs/littlepowers/plans/example.md", context)
+
+    def test_hook_resolves_both_native_plugin_root_variables(self) -> None:
+        self.start_state()
+
+        outputs = []
+        for variable in ("PLUGIN_ROOT", "CLAUDE_PLUGIN_ROOT"):
+            with self.subTest(variable=variable):
+                result = self.run_hook(root_variable=variable)
+                self.assertEqual(result.returncode, 0)
+                outputs.append(json.loads(result.stdout))
+
+        self.assertEqual(outputs[0], outputs[1])
+
+    def test_claude_plugin_root_wins_over_unrelated_generic_variable(self) -> None:
+        self.start_state()
+
+        result = self.run_hook(
+            root_variable="CLAUDE_PLUGIN_ROOT",
+            extra_environment={"PLUGIN_ROOT": "/not/a/littlepowers/plugin"},
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Finish the interrupted change", result.stdout)
+
+    @unittest.skipIf(os.name == "nt", "Unix side of polyglot launcher test")
+    def test_cross_platform_launcher_forwards_hook_input(self) -> None:
+        self.start_state()
+
+        result = self.run_hook(
+            root_variable="CLAUDE_PLUGIN_ROOT", through_launcher=True
+        )
+        output = json.loads(result.stdout)
+
+        self.assertEqual(result.returncode, 0)
+        self.assertIn(
+            "Finish the interrupted change",
+            output["hookSpecificOutput"]["additionalContext"],
+        )
 
     def test_hook_is_silent_for_completed_state(self) -> None:
         self.start_state()
