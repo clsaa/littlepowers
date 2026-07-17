@@ -1,0 +1,40 @@
+{
+  "name": "littlepowers",
+  "version": "0.1.0",
+  "description": "A lightweight Codex workflow for deliberate planning and durable task recovery.",
+  "author": {
+    "name": "clsaa",
+    "url": "https://github.com/clsaa"
+  },
+  "homepage": "https://github.com/clsaa/littlepowers",
+  "repository": "https://github.com/clsaa/littlepowers",
+  "license": "MIT",
+  "keywords": [
+    "brainstorming",
+    "specification",
+    "design",
+    "planning",
+    "continuity",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Littlepowers",
+    "shortDescription": "Lightweight planning and durable task recovery",
+    "longDescription": "Shape non-trivial work through brainstorm, spec, design, and plan stages, then keep execution state recoverable across Codex sessions.",
+    "developerName": "clsaa",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use Littlepowers to shape this idea before implementation.",
+      "Resume the active Littlepowers plan and finish it.",
+      "Turn these requirements into a spec, design, and implementation plan."
+    ],
+    "websiteURL": "https://github.com/clsaa/littlepowers",
+    "brandColor": "#7C3AED"
+  }
+}

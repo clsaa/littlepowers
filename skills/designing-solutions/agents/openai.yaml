@@ -1,0 +1,4 @@
+interface:
+  display_name: "Designing Solutions"
+  short_description: "Design components, interfaces, failures, and tests"
+  default_prompt: "Use $designing-solutions to design an implementation-ready solution."

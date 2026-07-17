@@ -1,0 +1,4 @@
+interface:
+  display_name: "Writing Specs"
+  short_description: "Turn a direction into testable requirements"
+  default_prompt: "Use $writing-specs to write a precise, reviewable specification."

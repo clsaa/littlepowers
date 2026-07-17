@@ -1,0 +1,4 @@
+interface:
+  display_name: "Using Littlepowers"
+  short_description: "Route and resume deliberate development work"
+  default_prompt: "Use $using-littlepowers to shape and carry this task through completion."
