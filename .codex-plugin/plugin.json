@@ -36,11 +36,9 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Use Littlepowers to shape this idea before implementation.",
+      "Use Littlepowers to shape and implement this work at proportional planning depth.",
       "Resume the active Littlepowers plan and finish it.",
-      "Turn these requirements into a spec, design, and implementation plan.",
-      "Diagnose this failure systematically before changing code.",
-      "Review and verify this change at its actual impact scope."
+      "Diagnose, review, and verify this change at its actual impact and rollback scope."
     ],
     "websiteURL": "https://github.com/clsaa/littlepowers",
     "brandColor": "#7C3AED"

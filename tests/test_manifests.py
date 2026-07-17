@@ -30,6 +30,9 @@ class ManifestTests(unittest.TestCase):
         self.assertNotIn("hooks", codex)
         self.assertTrue((ROOT / "hooks" / "hooks.json").is_file())
         self.assertEqual(codex["interface"]["category"], "Developer Tools")
+        prompts = codex["interface"]["defaultPrompt"]
+        self.assertLessEqual(len(prompts), 3)
+        self.assertTrue(any("rollback scope" in prompt for prompt in prompts))
 
     def test_codex_marketplace_points_to_repository_root(self) -> None:
         marketplace = read_json(ROOT / ".agents" / "plugins" / "marketplace.json")
