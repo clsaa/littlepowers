@@ -28,7 +28,7 @@ The disciplines are conditional rather than a second mandatory router: debugging
 
 Littlepowers does not call Superpowers or depend on its runtime. Both can expose namespaced skills, but making both default workflow authorities can still create process-level duplication even though neither creates a model-parameter conflict.
 
-The dated evidence and its limits are recorded in [the v0.3 alpha evaluation report](../evals/results/2026-07-17-v0.3-alpha.1.md). The project requires three runs per configuration before making a reliability claim; this prerelease reports only the narrower outcomes actually observed.
+Historical routing and coordination evidence is recorded in [the v0.3 alpha evaluation report](../evals/results/2026-07-17-v0.3-alpha.1.md). The three v0.4 discipline checks and their limits are recorded separately in [the v0.4 alpha evaluation report](../evals/results/2026-07-17-v0.4-alpha.1.md). The project requires three runs per configuration before making a reliability claim; this prerelease reports only the narrower outcomes actually observed.
 
 ## GPT-5.6
 

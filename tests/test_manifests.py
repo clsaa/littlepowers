@@ -159,6 +159,7 @@ class ManifestTests(unittest.TestCase):
             "docs/inspiration.md",
             "docs/model-compatibility.md",
             "docs/security-model.md",
+            "evals/results/2026-07-17-v0.4-alpha.1.md",
             ".github/pull_request_template.md",
             ".github/ISSUE_TEMPLATE/bug.yml",
             ".github/ISSUE_TEMPLATE/compatibility.yml",
@@ -188,6 +189,9 @@ class ManifestTests(unittest.TestCase):
         )
         evals = (ROOT / "evals" / "README.md").read_text(encoding="utf-8")
         changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        evaluation = (
+            ROOT / "evals" / "results" / "2026-07-17-v0.4-alpha.1.md"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("Release:** 0.4.0-alpha.1", capability)
         self.assertIn("`debugging-systematically`", capability)
@@ -198,6 +202,10 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("original reproducer", evals)
         self.assertIn("separate acceptance/spec and code-quality verdicts", evals)
         self.assertIn("## [0.4.0-alpha.1]", changelog)
+        self.assertIn("49 Python tests passed", evaluation)
+        self.assertIn("17 directly affected", evaluation)
+        self.assertIn("Acceptance/spec compliance:** `pass`", evaluation)
+        self.assertIn("Code quality:** `approve`", evaluation)
 
 
 if __name__ == "__main__":
