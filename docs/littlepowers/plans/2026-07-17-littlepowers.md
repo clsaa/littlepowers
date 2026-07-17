@@ -55,5 +55,5 @@
 ## Task 6 — GitHub delivery
 
 - [x] Initialize `main`, review the diff, and commit the verified implementation.
-- [ ] Create `clsaa/littlepowers` as a private GitHub repository.
-- [ ] Push `main` and verify repository visibility and URL.
+- [x] Create `clsaa/littlepowers` as a private GitHub repository.
+- [x] Push `main` and verify repository visibility and URL.
