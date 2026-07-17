@@ -17,6 +17,10 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 - Plans now name global constraints, affected interfaces, rollback units, and proportional validation rationale.
 - Full-suite testing is reserved for broad shared boundaries or aggregate release verification instead of every small edit.
 
+### Fixed
+
+- Limit Codex `interface.defaultPrompt` to the runtime-supported maximum of three so the prompt set is loaded instead of ignored.
+
 ### Compatibility
 
 - The three disciplines are shared by Codex and Claude Code and do not select models, effort levels, reviewers, or subagent counts.

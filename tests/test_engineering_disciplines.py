@@ -78,6 +78,28 @@ class EngineeringDisciplineTests(unittest.TestCase):
         self.assertIn("coordinator verifies every finding technically", skill)
         self.assertIn("tiny isolated change", skill)
 
+    def test_new_disciplines_are_model_neutral(self) -> None:
+        disciplines = "\n".join(
+            read_skill(name).lower()
+            for name in (
+                "debugging-systematically",
+                "reviewing-changes",
+                "verifying-work",
+            )
+        )
+
+        for model_or_setting in (
+            "gpt-",
+            "fable",
+            "opus",
+            "reasoning.effort",
+            "reasoning_effort",
+            "model_reasoning_effort",
+            "spawn_agent",
+        ):
+            with self.subTest(forbidden=model_or_setting):
+                self.assertNotIn(model_or_setting, disciplines)
+
 
 if __name__ == "__main__":
     unittest.main()
