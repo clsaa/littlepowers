@@ -31,6 +31,9 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 if command -v python3 >/dev/null 2>&1; then
     exec python3 "${SCRIPT_DIR}/session-start.py"
 fi
+if command -v python >/dev/null 2>&1; then
+    exec python "${SCRIPT_DIR}/session-start.py"
+fi
 
 # Missing Python must not prevent the coding session from starting.
 echo "littlepowers recovery hook skipped: Python 3 was not found" >&2

@@ -163,6 +163,9 @@ class RecoveryHookTests(unittest.TestCase):
     @unittest.skipIf(os.name == "nt", "Unix side of polyglot launcher test")
     def test_cross_platform_launcher_forwards_hook_input(self) -> None:
         self.start_state()
+        launcher = (ROOT / "hooks" / "run-hook.cmd").read_text(encoding="utf-8")
+        self.assertIn("command -v python3", launcher)
+        self.assertIn("if command -v python >/dev/null", launcher)
 
         result = self.run_hook(
             self.event("UserPromptSubmit"),
