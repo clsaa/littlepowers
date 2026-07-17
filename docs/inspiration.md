@@ -8,6 +8,8 @@ Littlepowers was designed after reviewing [Superpowers](https://github.com/obra/
 - native packaging for Codex and Claude Code;
 - a SessionStart recovery hook;
 - implementation plans with verification evidence;
+- root-cause-first debugging and completion evidence gates;
+- read-only change review with acceptance and quality assessment;
 - isolated delegated work when the host supports it.
 
 ## Independent implementation
@@ -20,6 +22,7 @@ Littlepowers differs deliberately:
 - a revisioned worktree-local ledger carries recovery state;
 - UserPromptSubmit refreshes state at prompt boundaries;
 - the host, not the plugin, owns subagent orchestration;
+- debugging, verification, and review are proportional skills rather than mandatory ceremony for every edit;
 - no telemetry, transcript parsing, automatic commits, or branch workflow is included;
 - Codex and Claude Code share one state and skill core.
 

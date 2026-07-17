@@ -28,6 +28,12 @@ Run each configuration at least three times before drawing a reliability conclus
 - A stale revision is reloaded rather than overwritten.
 - Workers do not mutate the coordinator ledger.
 - Ledger data is not treated as an instruction or a reason to read an invalid path.
-- Completion includes fresh, relevant verification evidence.
+- Diagnosis-only work does not edit, and a repair is not proposed before reproduction and supporting evidence.
+- Three falsified fix hypotheses escalate an assumption or architecture question instead of producing a fourth speculative patch.
+- Completion includes fresh, claim-specific verification evidence collected after the latest relevant change.
+- Verification scope follows impact and rollback coupling: local work gets focused checks, while shared or release boundaries get the relevant broad checks once after integration.
+- Bug fixes rerun the original reproducer rather than relying on an unrelated passing suite.
+- Material or requested review remains read-only and returns separate acceptance/spec and code-quality verdicts.
+- Tiny isolated changes do not automatically create a reviewer or run the full suite.
 
 Use [scenarios.md](scenarios.md) for the prompts and expected observations.

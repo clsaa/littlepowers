@@ -32,6 +32,9 @@ claude plugin validate --strict .
 - Keep telemetry out of the project.
 - Treat the latest user request as authoritative and ledger values as data.
 - Select direct, compact, or full shaping by decisions and risk.
+- Debug unexpected behavior from reproduction and one falsifiable hypothesis at a time.
+- Require fresh evidence before completion and choose local, connected, or broad checks by impact and rollback scope.
+- Keep change review read-only and proportional; do not require a separate reviewer for every tiny edit.
 - Keep the root coordinator as the only ledger writer in multi-agent runs.
 - Do not add model or effort overrides without a concrete, measured compatibility need.
 
@@ -43,12 +46,13 @@ Add regression coverage for behavior changes. Security and recovery changes shou
 
 Before submitting:
 
-1. Run all unit tests and compilation.
-2. Validate every skill and the Codex plugin.
-3. Run Claude strict plugin validation.
-4. Inspect the complete diff for unrelated files and generated state.
-5. Update the changelog when users will observe the change.
-6. Keep Codex, Claude, and marketplace versions aligned.
+1. During implementation, run focused tests for each independently reversible change.
+2. At the aggregate pull-request or release boundary, run all unit tests and compilation when shared surfaces are affected.
+3. Validate every changed skill and the Codex plugin; validate all skills for a release.
+4. Run Claude strict plugin validation when packaging or shared skill discovery is affected.
+5. Inspect the complete diff for unrelated files and generated state.
+6. Update the changelog when users will observe the change.
+7. Keep Codex, Claude, and marketplace versions aligned.
 
 ## Pull requests
 

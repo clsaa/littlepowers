@@ -2,6 +2,27 @@
 
 All notable changes are recorded here. The project follows [Semantic Versioning](https://semver.org/).
 
+## [0.4.0-alpha.1] - 2026-07-17
+
+### Added
+
+- A systematic debugging skill that preserves diagnosis-only authority, reproduces failures before repairs, tests one falsifiable hypothesis at a time, and escalates after three falsified fix hypotheses.
+- A verification skill that gates completion on fresh claim-specific evidence and classifies checks as local, connected, or broad by impact and rollback scope.
+- A read-only review skill with separate acceptance/spec and code-quality verdicts, actionable findings, and coordinator adjudication.
+- Evaluation scenarios for diagnosis, stale evidence, bug reproducers, proportional test scope, delegated review, and tiny local self-review.
+
+### Changed
+
+- Execution conditionally invokes debugging on unexplained failures, review at material boundaries, and verification before success claims.
+- Plans now name global constraints, affected interfaces, rollback units, and proportional validation rationale.
+- Full-suite testing is reserved for broad shared boundaries or aggregate release verification instead of every small edit.
+
+### Compatibility
+
+- The three disciplines are shared by Codex and Claude Code and do not select models, effort levels, reviewers, or subagent counts.
+- The skills require observable evidence and verdicts, not hidden reasoning or mandatory TDD.
+- Existing hooks, state schema, and recovery behavior are unchanged.
+
 ## [0.3.0-alpha.1] - 2026-07-17
 
 ### Added
@@ -47,6 +68,7 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 - Created the initial Codex plugin and planning workflow.
 
+[0.4.0-alpha.1]: https://github.com/clsaa/littlepowers/releases/tag/v0.4.0-alpha.1
 [0.3.0-alpha.1]: https://github.com/clsaa/littlepowers/releases/tag/v0.3.0-alpha.1
 [0.2.0]: https://github.com/clsaa/littlepowers/commits/main
 [0.1.0]: https://github.com/clsaa/littlepowers/commits/main

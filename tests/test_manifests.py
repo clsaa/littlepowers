@@ -20,10 +20,11 @@ class ManifestTests(unittest.TestCase):
 
         self.assertEqual(codex["name"], "littlepowers")
         self.assertEqual(claude["name"], "littlepowers")
-        self.assertEqual(codex["version"], "0.3.0-alpha.1")
+        self.assertEqual(codex["version"], "0.4.0-alpha.1")
         self.assertEqual(claude["version"], codex["version"])
         self.assertEqual(claude["repository"], codex["repository"])
         self.assertIn("Claude Code", codex["description"])
+        self.assertIn("verification", codex["description"])
 
         self.assertEqual(codex["skills"], "./skills/")
         self.assertNotIn("hooks", codex)
@@ -169,8 +170,31 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("cannot force a model", readme)
         self.assertIn("UserPromptSubmit", readme)
         self.assertIn("coordinator is the only ledger writer", readme)
-        self.assertIn("0.3.0-alpha.1", readme)
+        self.assertIn("0.4.0-alpha.1", readme)
+        self.assertIn("Systematic debugging", readme)
+        self.assertIn("Proportional verification", readme)
+        self.assertIn("Lightweight review", readme)
         self.assertNotIn("Follow-up messages do not silently replace", readme)
+
+    def test_release_docs_cover_engineering_disciplines(self) -> None:
+        capability = (ROOT / "docs" / "capability-matrix.md").read_text(
+            encoding="utf-8"
+        )
+        compatibility = (ROOT / "docs" / "model-compatibility.md").read_text(
+            encoding="utf-8"
+        )
+        evals = (ROOT / "evals" / "README.md").read_text(encoding="utf-8")
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+
+        self.assertIn("Release:** 0.4.0-alpha.1", capability)
+        self.assertIn("`debugging-systematically`", capability)
+        self.assertIn("`verifying-work`", capability)
+        self.assertIn("`reviewing-changes`", capability)
+        self.assertIn("observable summaries", compatibility)
+        self.assertIn("Tiny isolated changes", compatibility)
+        self.assertIn("original reproducer", evals)
+        self.assertIn("separate acceptance/spec and code-quality verdicts", evals)
+        self.assertIn("## [0.4.0-alpha.1]", changelog)
 
 
 if __name__ == "__main__":

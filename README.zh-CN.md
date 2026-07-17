@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-Littlepowers 是一个同时面向 Codex 与 Claude Code 的“按风险规划 + 任务恢复”协议。它解决两类常见问题：重要任务在目标、需求和设计尚未明确时就开始写代码；长任务在新提示、上下文压缩、恢复会话或重新打开任务后失去进度。
+Littlepowers 是一个同时面向 Codex 与 Claude Code 的“按风险规划 + 任务恢复 + 工程纪律”协议。它帮助 Agent 在编码前固定重要决策，在中断后恢复最后一个可靠 checkpoint，并按证据调试、审查重要改动、按实际影响面完成验证。
 
 它受 [Superpowers](https://github.com/obra/superpowers) 启发，但不是 fork、没有运行时依赖，也不隶属于 Superpowers 或 obra。
 
@@ -15,6 +15,14 @@ Littlepowers 根据未解决的决策和失败风险选流程，不根据文件�
 | Direct | 目标和实现方式都明确 | 无；长任务可只创建执行 ledger |
 | Compact | 有少量相关决策需要固定 | 一份 shape brief |
 | Full | 用户明确要求，或仍有实质性的架构、安全、迁移、跨系统、不可逆操作或高回滚成本决策 | brainstorm → spec → design → plan |
+
+另有三个按条件触发的能力：
+
+- **系统化调试**：先复现和定位最早偏差，再一次验证一个假设；仅要求诊断时不修改代码；
+- **按影响面验证**：完成声明必须有最新证据；局部回滚单元只跑 focused checks，共享契约或发布边界才补 broad checks，不因小改动默认跑全量测试；
+- **轻量审查**：在用户要求、集成 worker 结果、共享行为里程碑或高回滚成本时，分别给出需求符合性与代码质量结论；孤立小改动可只做结构化自审。
+
+这些能力不会自动创建 Agent、选择模型、强制 TDD 或要求输出隐藏推理；Codex 与 Claude Code 使用同一份实现。
 
 被追踪的任务会写入当前 worktree 下的 `.littlepowers/state.json`。状态包含 workflow ID 和单调递增 revision；旧 revision 写入会失败，不会覆盖新进度。
 
@@ -46,7 +54,7 @@ Littlepowers 可独立运行。若把它和 Superpowers 同时设为默认 route
 ## 安装到 Codex
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v0.3.0-alpha.1
+codex plugin marketplace add clsaa/littlepowers --ref v0.4.0-alpha.1
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -110,10 +118,12 @@ claude plugin update littlepowers@littlepowers
 
 ## 模型兼容性
 
+Littlepowers 不选择模型或 effort。调试、审查与验证只要求可观察证据和简洁结论，不要求输出 chain-of-thought；它们按条件触发，不会在每个提示里重复整套流程。
+
 - GPT-5.6 Sol xhigh 在一轮预发行评估中通过了场景 1 至 9；这还不是三轮重复运行后的可靠性结论；
-- GPT-5.6 Sol max 完成对抗审查，43 项测试通过，没有遗留 P0/P1；
+- GPT-5.6 Sol max 完成 v0.3 对抗审查，43 项测试通过，没有遗留 P0/P1；
 - Codex Ultra 通过根协调 Agent 加两个只读 worker 的并发场景，但 coordinator-only 仍是协作协议，不是操作系统权限隔离；
-- Claude Fable 5 与 Opus 4.8 没有模型参数冲突，Claude Code 2.1.207 严格插件校验通过；本机未登录 Claude，因此尚未记录认证后的模型端到端运行。
+- Claude Fable 5 与 Opus 4.8 没有模型参数冲突，Claude Code 严格插件校验通过；本机未登录 Claude，因此尚未记录认证后的 v0.4 模型端到端运行。
 
 ## 卸载
 
@@ -131,4 +141,4 @@ claude plugin marketplace remove littlepowers
 
 ## 名称说明
 
-专家评审更推荐长期公开品牌 **Planthread**，因为它更准确表达“让计划跨提示和会话保持连续”，也不会让人误解为 Superpowers 的官方轻量版。本次 v0.3 不擅自改名；在仓库公开前由项目所有者最终决定。
+专家评审更推荐长期公开品牌 **Planthread**，因为它更准确表达“让计划跨提示和会话保持连续”，也不会让人误解为 Superpowers 的官方轻量版。本次 v0.4 不擅自改名；在仓库公开前由项目所有者最终决定。

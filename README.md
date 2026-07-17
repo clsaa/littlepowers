@@ -2,11 +2,11 @@
 
 [![CI](https://github.com/clsaa/littlepowers/actions/workflows/test.yml/badge.svg)](https://github.com/clsaa/littlepowers/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-0.3.0--alpha.1-orange.svg)](CHANGELOG.md)
+[![Release](https://img.shields.io/badge/release-0.4.0--alpha.1-orange.svg)](CHANGELOG.md)
 
 [简体中文](README.zh-CN.md)
 
-Littlepowers is a proportional planning and recovery protocol for Codex and Claude Code. It helps an agent shape consequential work before coding and recover the last durable checkpoint when a prompt, compaction, resume, or new session interrupts it.
+Littlepowers is a proportional planning, recovery, and engineering-discipline protocol for Codex and Claude Code. It helps an agent shape consequential work before coding, recover the last durable checkpoint after an interruption, debug from evidence, review material changes, and verify completion at the actual impact scope.
 
 It is inspired by [Superpowers](https://github.com/obra/superpowers), but it is an independent implementation with no runtime dependency or affiliation.
 
@@ -19,6 +19,14 @@ Littlepowers selects planning depth by unresolved decisions and risk:
 | Direct | The outcome and approach are clear | None; long work may still use an execution ledger |
 | Compact | A few connected decisions need shaping | One shape brief |
 | Full | Explicit request, or material unresolved architecture, security, migration, cross-system, irreversible, or costly-rollback choices | Brainstorm → spec → design → plan |
+
+Three complementary skills apply only when their conditions are present:
+
+- **Systematic debugging** reproduces a failure, traces the earliest supported divergence, tests one hypothesis at a time, and preserves diagnosis-only authority.
+- **Proportional verification** gates completion on fresh evidence. Local rollback units get focused checks; shared contracts and releases add the relevant broad checks after integration. A full suite is not the default after every small edit.
+- **Lightweight review** gives acceptance/spec and code-quality verdicts for requested reviews, delegated integrations, shared milestones, or material rollback risk. Tiny isolated edits may use focused self-review.
+
+These skills do not create agents, choose models, require mandatory TDD, or expose hidden reasoning. Codex and Claude Code discover the same implementation.
 
 All tracked routes use a worktree-local `.littlepowers/state.json` ledger. The ledger records an objective, phase, current task, next action, workflow ID, and monotonic revision. It ignores itself in Git.
 
@@ -52,7 +60,7 @@ See the [capability matrix](docs/capability-matrix.md) for exact boundaries.
 Install the current prerelease by tag:
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v0.3.0-alpha.1
+codex plugin marketplace add clsaa/littlepowers --ref v0.4.0-alpha.1
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -115,6 +123,16 @@ Use Littlepowers compact shaping for this API change, then implement and verify 
 Use the full Littlepowers workflow. Brainstorm alternatives, write the spec, design the solution, write the plan, then implement and verify it.
 ```
 
+The engineering disciplines can also be invoked directly:
+
+```text
+Use Littlepowers to diagnose this failing test without editing. Reproduce it, trace the first divergence, and report the supported cause.
+```
+
+```text
+Review this integrated change read-only, then verify each completion claim at its actual rollback scope.
+```
+
 During tracked work:
 
 - related corrections update the active workflow;
@@ -134,7 +152,7 @@ For a tagged Codex installation, replace the marketplace snapshot with the desir
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v0.3.0-alpha.1
+codex plugin marketplace add clsaa/littlepowers --ref v0.4.0-alpha.1
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -163,12 +181,12 @@ Read the [security model](docs/security-model.md) before broader deployment. Rep
 
 ## Model compatibility
 
-Littlepowers does not select a model or effort level. Its planning depth follows task risk, not reasoning effort.
+Littlepowers does not select a model or effort level. Its planning depth follows task risk, not reasoning effort. Its debugging, review, and verification skills ask for observable evidence and concise verdicts, not private chain-of-thought.
 
 - GPT-5.6 Sol xhigh passed routing scenarios 1 through 9 in one prerelease evaluation campaign.
-- GPT-5.6 Sol max completed an adversarial review with no remaining P0/P1 issue and 43 tests passing.
+- GPT-5.6 Sol max completed the v0.3 adversarial review with no remaining P0/P1 issue and 43 tests passing.
 - Codex Ultra passed a two-worker coordination scenario. Coordinator ownership remains a cooperative protocol, not operating-system authorization. Ultra is a Codex orchestration setting, not an OpenAI API `reasoning.effort` value.
-- Claude Fable 5 and Opus 4.8 have no model-setting conflict. Claude Code 2.1.207 accepted the plugin under strict validation, but an authenticated model flow has not been recorded.
+- Claude Fable 5 and Opus 4.8 have no model-setting conflict. The new disciplines are conditionally selected rather than repeated on every prompt. Claude Code strict validation accepts the plugin, but an authenticated v0.4 model flow has not been recorded.
 
 Compatibility evidence and untested claims are separated in the dated [model compatibility report](docs/model-compatibility.md).
 

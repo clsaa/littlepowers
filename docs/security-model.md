@@ -2,7 +2,7 @@
 
 **Reviewed:** 2026-07-17
 
-**Release:** 0.3.0-alpha.1
+**Release:** 0.4.0-alpha.1
 
 ## Assets and trust boundary
 
@@ -33,6 +33,8 @@ It does not contain transcripts, raw prompts, credentials, file contents, or mod
 The hook reads event metadata and the ledger. It does not inspect transcript paths or prompt text, write state, call the network, run Git mutations, or start agents. It emits nothing when no unfinished workflow exists. Invalid state produces a fixed stderr diagnostic and exit code 0 so the coding session can continue.
 
 The state CLI is the only writer. Skills invoke it during tracked work. Its `read-artifact` command is the only supported way for a skill to load a ledger-referenced artifact.
+
+The v0.4 debugging, verification, and review skills add instructions only. They add no Hook, script, state field, network client, or execution privilege. `reviewing-changes` explicitly remains read-only; implementation and ledger mutation stay with the authorized coordinator.
 
 ## Store validation
 
