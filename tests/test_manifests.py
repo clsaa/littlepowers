@@ -20,7 +20,7 @@ class ManifestTests(unittest.TestCase):
 
         self.assertEqual(codex["name"], "littlepowers")
         self.assertEqual(claude["name"], "littlepowers")
-        self.assertEqual(codex["version"], "0.2.0")
+        self.assertEqual(codex["version"], "0.3.0-alpha.1")
         self.assertEqual(claude["version"], codex["version"])
         self.assertEqual(claude["repository"], codex["repository"])
         self.assertIn("Claude Code", codex["description"])
@@ -50,17 +50,24 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(entry["description"], manifest["description"])
         self.assertEqual(entry["source"], "./")
 
-    def test_hook_manifest_registers_portable_session_start(self) -> None:
+    def test_hook_manifest_registers_recovery_boundaries(self) -> None:
         hooks = read_json(ROOT / "hooks" / "hooks.json")
-        self.assertEqual(set(hooks["hooks"]), {"SessionStart"})
+        self.assertEqual(
+            set(hooks["hooks"]),
+            {"SessionStart", "UserPromptSubmit", "SubagentStart"},
+        )
         registration = hooks["hooks"]["SessionStart"][0]
         self.assertEqual(registration["matcher"], "startup|resume|clear|compact")
+        self.assertNotIn("matcher", hooks["hooks"]["UserPromptSubmit"][0])
 
-        command_hook = registration["hooks"][0]
-        self.assertEqual(command_hook["type"], "command")
-        self.assertEqual(command_hook["timeout"], 5)
-        self.assertIn("${CLAUDE_PLUGIN_ROOT}", command_hook["command"])
-        self.assertIn("run-hook.cmd", command_hook["command"])
+        for event in ("SessionStart", "UserPromptSubmit", "SubagentStart"):
+            with self.subTest(event=event):
+                command_hook = hooks["hooks"][event][0]["hooks"][0]
+                self.assertEqual(command_hook["type"], "command")
+                self.assertEqual(command_hook["timeout"], 5)
+                self.assertEqual(command_hook["shell"], "bash")
+                self.assertIn("${CLAUDE_PLUGIN_ROOT}", command_hook["command"])
+                self.assertIn("run-hook.cmd", command_hook["command"])
 
         launcher = ROOT / "hooks" / "run-hook.cmd"
         self.assertTrue(launcher.is_file())
@@ -70,8 +77,10 @@ class ManifestTests(unittest.TestCase):
     def test_skills_have_clean_frontmatter_and_ui_metadata(self) -> None:
         expected = {
             "brainstorming",
+            "compact-shaping",
             "designing-solutions",
             "executing-plans",
+            "managing-littlepowers",
             "using-littlepowers",
             "writing-plans",
             "writing-specs",
@@ -106,15 +115,59 @@ class ManifestTests(unittest.TestCase):
         for phase in ("brainstorms", "specs", "designs", "plans"):
             with self.subTest(phase=phase):
                 files = list((ROOT / "docs" / "littlepowers" / phase).glob("*.md"))
-                self.assertEqual(len(files), 1)
+                self.assertGreaterEqual(len(files), 2)
 
     def test_both_durable_guidance_snippets_exist(self) -> None:
         agents = (ROOT / "assets" / "agents-snippet.md").read_text(encoding="utf-8")
-        claude = (ROOT / "assets" / "claude-snippet.md").read_text(
-            encoding="utf-8"
-        )
+        claude = (ROOT / "assets" / "claude-snippet.md").read_text(encoding="utf-8")
         self.assertIn("littlepowers:using-littlepowers", agents)
         self.assertIn("littlepowers:using-littlepowers", claude)
+
+    def test_internal_phase_skills_gate_direct_invocation(self) -> None:
+        internal = {
+            "brainstorming",
+            "compact-shaping",
+            "designing-solutions",
+            "writing-plans",
+            "writing-specs",
+        }
+        for name in internal:
+            with self.subTest(skill=name):
+                skill = (ROOT / "skills" / name / "SKILL.md").read_text(
+                    encoding="utf-8"
+                )
+                frontmatter = skill.split("---\n", 2)[1]
+                self.assertIn("using-littlepowers", frontmatter)
+                self.assertIn("active state", frontmatter)
+
+    def test_public_trust_and_contribution_files_exist(self) -> None:
+        required = (
+            "CHANGELOG.md",
+            "CODE_OF_CONDUCT.md",
+            "CONTRIBUTING.md",
+            "README.zh-CN.md",
+            "SECURITY.md",
+            "docs/capability-matrix.md",
+            "docs/expert-review.md",
+            "docs/inspiration.md",
+            "docs/model-compatibility.md",
+            "docs/security-model.md",
+            ".github/pull_request_template.md",
+            ".github/ISSUE_TEMPLATE/bug.yml",
+            ".github/ISSUE_TEMPLATE/compatibility.yml",
+            ".github/ISSUE_TEMPLATE/feature.yml",
+        )
+        for relative_path in required:
+            with self.subTest(path=relative_path):
+                self.assertTrue((ROOT / relative_path).is_file())
+
+    def test_readme_calibrates_recovery_and_model_claims(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("cannot force a model", readme)
+        self.assertIn("UserPromptSubmit", readme)
+        self.assertIn("coordinator is the only ledger writer", readme)
+        self.assertIn("0.3.0-alpha.1", readme)
+        self.assertNotIn("Follow-up messages do not silently replace", readme)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Managing Littlepowers"
+  short_description: "Inspect and manage recovery state"
+  default_prompt: "Use $managing-littlepowers to inspect or manage the active workflow safely."

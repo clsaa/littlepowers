@@ -1,0 +1,57 @@
+name: Bug report
+description: Report reproducible Littlepowers behavior that differs from the documentation.
+title: "[bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: Do not include secrets, private source, transcripts, or unredacted ledger content.
+  - type: input
+    id: version
+    attributes:
+      label: Littlepowers version
+      placeholder: 0.3.0-alpha.1
+    validations:
+      required: true
+  - type: dropdown
+    id: host
+    attributes:
+      label: Host
+      options:
+        - Codex app
+        - Codex CLI
+        - Claude Code
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, host version, Python version, and model if relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Use a disposable repository and redact local paths where needed.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Validation evidence
+      description: Include concise logs or test output without sensitive data.

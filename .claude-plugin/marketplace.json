@@ -8,8 +8,8 @@
     {
       "name": "littlepowers",
       "source": "./",
-      "description": "A lightweight Codex and Claude Code workflow for deliberate planning and durable task recovery.",
-      "version": "0.2.0",
+      "description": "A proportional planning and prompt-boundary recovery protocol for Codex and Claude Code.",
+      "version": "0.3.0-alpha.1",
       "author": {
         "name": "clsaa"
       }

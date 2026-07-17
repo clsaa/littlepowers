@@ -1,0 +1,4 @@
+interface:
+  display_name: "Compact Shaping"
+  short_description: "Combine moderate planning into one brief"
+  default_prompt: "Use $compact-shaping for one concise, executable shape brief."

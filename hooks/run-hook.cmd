@@ -22,6 +22,7 @@ if %ERRORLEVEL% equ 0 (
 )
 
 REM Missing Python must not prevent the coding session from starting.
+>&2 echo littlepowers recovery hook skipped: Python 3 was not found
 exit /b 0
 CMDBLOCK
 
@@ -32,4 +33,5 @@ if command -v python3 >/dev/null 2>&1; then
 fi
 
 # Missing Python must not prevent the coding session from starting.
+echo "littlepowers recovery hook skipped: Python 3 was not found" >&2
 exit 0

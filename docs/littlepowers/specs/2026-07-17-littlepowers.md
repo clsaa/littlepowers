@@ -1,5 +1,7 @@
 # Littlepowers Product Specification
 
+> Historical v0.2 artifact. Superseded by [the v0.3 specification](2026-07-17-v0.3-expert-review.md).
+
 ## Purpose
 
 Littlepowers is a lightweight Codex and Claude Code workflow for keeping non-trivial development work on a reviewable path and recovering unfinished work after interruption or session boundaries.
@@ -25,7 +27,7 @@ Littlepowers is a lightweight Codex and Claude Code workflow for keeping non-tri
 
 ## Functional requirements
 
-### FR1 — Workflow routing
+### FR1: Workflow routing
 
 Classify work before editing:
 
@@ -33,7 +35,7 @@ Classify work before editing:
 - **Shaped:** ambiguous, architectural, risky, or multi-file work follows all workflow phases.
 - Explicit user instructions can choose, skip, or revisit phases.
 
-### FR2 — Separate phases
+### FR2: Separate phases
 
 The shaped workflow has these ordered phases:
 
@@ -44,7 +46,7 @@ The shaped workflow has these ordered phases:
 5. Execute: work task by task and checkpoint state.
 6. Verify: run relevant checks and compare the result with the spec.
 
-### FR3 — Reviewable artifacts
+### FR3: Reviewable artifacts
 
 Default artifact paths are:
 
@@ -55,7 +57,7 @@ Default artifact paths are:
 
 Existing repository conventions and explicit user paths override these defaults.
 
-### FR4 — Durable active state
+### FR4: Durable active state
 
 Store active state at `<workspace-root>/.littlepowers/state.json`. Create `.littlepowers/.gitignore` so scratch state does not appear in commits. State includes:
 
@@ -71,7 +73,7 @@ Store active state at `<workspace-root>/.littlepowers/state.json`. Create `.litt
 
 State commands support start, checkpoint, pause, complete, cancel, show, and context rendering. One worktree has at most one active objective.
 
-### FR5 — Cross-harness recovery hook
+### FR5: Cross-harness recovery hook
 
 On `SessionStart` for `startup`, `resume`, `clear`, or `compact`:
 
@@ -83,7 +85,7 @@ On `SessionStart` for `startup`, `resume`, `clear`, or `compact`:
 - complete within five seconds and fail open on malformed input or state;
 - resolve its installed plugin root under both Codex and Claude Code.
 
-### FR6 — Shared skills
+### FR6: Shared skills
 
 Ship one shared copy of six skills:
 
@@ -96,7 +98,7 @@ Ship one shared copy of six skills:
 
 Every skill has portable Agent Skills frontmatter. Codex UI metadata remains available under `agents/openai.yaml`. Harness-specific interaction advice is conditional and never presented as portable behavior.
 
-### FR7 — Interruption semantics
+### FR7: Interruption semantics
 
 When active state exists, a new message is interpreted as one of:
 
@@ -107,7 +109,7 @@ When active state exists, a new message is interpreted as one of:
 
 An unrelated message must not silently erase active state.
 
-### FR8 — Native packaging and documentation
+### FR8: Native packaging and documentation
 
 The repository contains:
 
@@ -118,7 +120,7 @@ The repository contains:
 - optional `AGENTS.md` and `CLAUDE.md` guidance snippets;
 - license and automated tests.
 
-### FR9 — Versioning
+### FR9: Versioning
 
 The Codex manifest, Claude Code manifest, and Claude marketplace entry use the same semantic version. Every published behavior change bumps that version.
 

@@ -1,5 +1,7 @@
 # Littlepowers Brainstorm
 
+> Historical v0.2 artifact. Superseded by [the v0.3 expert-review brainstorm](2026-07-17-v0.3-expert-review.md).
+
 ## Problem
 
 Two failures need one small workflow:

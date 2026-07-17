@@ -1,7 +1,7 @@
 {
   "name": "littlepowers",
-  "version": "0.2.0",
-  "description": "A lightweight Codex and Claude Code workflow for deliberate planning and durable task recovery.",
+  "version": "0.3.0-alpha.1",
+  "description": "A proportional planning and prompt-boundary recovery protocol for Codex and Claude Code.",
   "author": {
     "name": "clsaa",
     "url": "https://github.com/clsaa"
@@ -15,14 +15,16 @@
     "design",
     "planning",
     "continuity",
+    "task-recovery",
+    "multi-agent",
     "codex",
     "claude-code"
   ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Littlepowers",
-    "shortDescription": "Lightweight planning and durable task recovery",
-    "longDescription": "Shape non-trivial work through brainstorm, spec, design, and plan stages, then keep execution state recoverable across Codex and Claude Code sessions.",
+    "shortDescription": "Proportional planning and task recovery",
+    "longDescription": "Route work through direct, compact, or full planning, then keep a secure revisioned ledger visible across prompt and session boundaries in Codex and Claude Code.",
     "developerName": "clsaa",
     "category": "Developer Tools",
     "capabilities": [
@@ -33,7 +35,8 @@
     "defaultPrompt": [
       "Use Littlepowers to shape this idea before implementation.",
       "Resume the active Littlepowers plan and finish it.",
-      "Turn these requirements into a spec, design, and implementation plan."
+      "Turn these requirements into a spec, design, and implementation plan.",
+      "Check the active Littlepowers workflow and explain its next action."
     ],
     "websiteURL": "https://github.com/clsaa/littlepowers",
     "brandColor": "#7C3AED"

@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose a focused improvement with a concrete workflow need.
+title: "[feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Workflow problem
+      description: What outcome is blocked or unreliable today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe observable behavior, not only an implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Compatibility boundaries
+      options:
+        - label: I considered both Codex and Claude Code.
+          required: true
+        - label: I considered privacy, Hook, state, and multi-agent impact.
+          required: true

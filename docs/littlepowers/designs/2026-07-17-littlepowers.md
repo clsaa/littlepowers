@@ -1,5 +1,7 @@
 # Littlepowers Technical Design
 
+> Historical v0.2 artifact. Superseded by [the v0.3 design](2026-07-17-v0.3-expert-review.md).
+
 ## Architecture
 
 Littlepowers has a shared core and two thin packaging layers:

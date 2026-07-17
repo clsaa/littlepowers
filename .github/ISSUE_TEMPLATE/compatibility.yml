@@ -1,0 +1,41 @@
+name: Compatibility report
+description: Report a tested Codex, Claude Code, model, effort, or operating-system combination.
+title: "[compatibility] "
+labels:
+  - compatibility
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Littlepowers version
+    validations:
+      required: true
+  - type: input
+    id: matrix
+    attributes:
+      label: Host, model, effort, and operating system
+      placeholder: Codex CLI / gpt-5.6-sol / xhigh / macOS 15
+    validations:
+      required: true
+  - type: dropdown
+    id: evidence_level
+    attributes:
+      label: Evidence level
+      options:
+        - Manifest or static skill validation
+        - Hook delivery without model authentication
+        - Model routing evaluation
+        - Authenticated end-to-end implementation and interruption evaluation
+    validations:
+      required: true
+  - type: textarea
+    id: scenarios
+    attributes:
+      label: Scenarios and results
+      description: Include direct, recovery, replacement, and multi-agent scenarios that were tested.
+    validations:
+      required: true
+  - type: textarea
+    id: limitations
+    attributes:
+      label: Limitations or unexpected behavior
