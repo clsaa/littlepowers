@@ -1,0 +1,4 @@
+interface:
+  display_name: "Reviewing Changes"
+  short_description: "Review changes with two evidence-backed verdicts."
+  default_prompt: "Use $reviewing-changes to assess acceptance compliance and code quality without modifying the implementation."

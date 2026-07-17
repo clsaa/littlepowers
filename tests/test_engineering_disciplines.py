@@ -47,6 +47,9 @@ class EngineeringDisciplineTests(unittest.TestCase):
         self.assertIn("impact and rollback scope", skill)
         self.assertIn("a full suite is not the default after every small edit", skill)
         self.assertIn("worker reports are inputs", skill)
+        self.assertIn("reviewing-changes", skill)
+        self.assertIn("tiny isolated changes", skill)
+        self.assertIn("does not create a reviewer or select a model", skill)
 
     def test_plan_contract(self) -> None:
         skill = read_skill("writing-plans").lower()
@@ -56,6 +59,24 @@ class EngineeringDisciplineTests(unittest.TestCase):
         self.assertIn("rollback coupling", skill)
         self.assertIn("local, connected, or broad", skill)
         self.assertIn("broad suite", skill)
+
+    def test_review_contract(self) -> None:
+        skill = read_skill("reviewing-changes").lower()
+
+        self.assertIn("staying read-only", skill)
+        self.assertIn("do not edit code", skill)
+        self.assertIn("do not include a proposed verdict", skill)
+        self.assertIn("acceptance/spec compliance", skill)
+        self.assertIn("pass`, `fail`, or `blocked", skill)
+        self.assertIn("code quality", skill)
+        self.assertIn("approve`, `request changes`, or `blocked", skill)
+        self.assertIn("exact file and line", skill)
+        self.assertIn("concrete consequence", skill)
+        self.assertIn("supporting code or test evidence", skill)
+        self.assertIn("repair direction", skill)
+        self.assertIn("critical and important findings block completion", skill)
+        self.assertIn("coordinator verifies every finding technically", skill)
+        self.assertIn("tiny isolated change", skill)
 
 
 if __name__ == "__main__":

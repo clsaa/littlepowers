@@ -82,6 +82,7 @@ class ManifestTests(unittest.TestCase):
             "designing-solutions",
             "executing-plans",
             "managing-littlepowers",
+            "reviewing-changes",
             "using-littlepowers",
             "verifying-work",
             "writing-plans",

@@ -29,6 +29,8 @@ For each task or dependency-safe wave:
 
 If a check exposes unexpected behavior, use `debugging-systematically` before attempting speculative repairs. Preserve diagnosis-only authority when the latest request does not authorize a fix.
 
+Use `reviewing-changes` when the user requests review, after integrating delegated output, at a shared-behavior milestone, or when impact and rollback cost are material. The review remains read-only and returns separate acceptance and code-quality verdicts. Tiny isolated changes may use focused self-review and verification without a separate reviewer pass; Littlepowers does not create a reviewer or select a model.
+
 Every mutation uses the current ID and revision:
 
 ```bash
@@ -46,7 +48,7 @@ Use the returned revision. On conflict, reload and reconcile; never retry a stal
 
 Checkpoint `phase=verify`, then use `verifying-work` before any claim that work is complete, fixed, passing, ready, or released. Classify evidence by impact and rollback scope rather than edit size: local work gets the original reproducer or focused checks, connected work adds checks for affected boundaries, and broad shared or release work adds the relevant broad suite after integration. A full suite is not the default after every small edit.
 
-Compare fresh results with every acceptance criterion and inspect the full diff for regressions, debug artifacts, and unintended files. Record each command or inspection, scope rationale, exit status or equivalent result, and relevant observed signal. Worker reports are inputs; the coordinator verifies the integrated tree. Record unavailable or partial evidence honestly.
+Compare fresh results with every acceptance criterion and inspect the full diff for regressions, debug artifacts, and unintended files. Record each command or inspection, scope rationale, exit status or equivalent result, and relevant observed signal. Worker reports are inputs; the coordinator verifies the integrated tree. Resolve any blocking review findings and rerun evidence invalidated by repairs. Record unavailable or partial evidence honestly.
 
 Only when fresh evidence shows no required work remains:
 

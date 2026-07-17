@@ -1,0 +1,54 @@
+---
+name: reviewing-changes
+description: Review implemented changes for acceptance compliance and code quality without editing them. Use when review is requested, delegated work is integrated, a shared milestone is reached, or impact and rollback cost make an independent assessment worthwhile.
+---
+
+# Reviewing changes
+
+Produce a skeptical, evidence-backed assessment while staying read-only. Do not edit code, mutate a Littlepowers ledger, create a reviewer, or select a model. When fixes are also requested, finish the review first and let the authorized coordinator handle repairs as a separate action.
+
+## Choose proportional review scope
+
+Match review depth to impact and rollback coupling:
+
+- **Local:** inspect the focused diff, acceptance check, and direct evidence. A tiny isolated change may use structured self-review without a separate reviewer pass.
+- **Connected:** inspect the changed boundary and affected consumers, integration evidence, and coordinated rollback risks.
+- **Broad:** inspect cross-system, security, state/schema, hook, packaging, migration, platform, public API, or release effects and the relevant aggregate evidence.
+
+Use review when the user asks for it, delegated output is integrated, a shared milestone changes behavior, or rollback cost is material. Do not force separate-review ceremony onto every tiny edit.
+
+## Prepare a neutral brief
+
+Review the approved outcome or acceptance criteria, exact diff or commit range, named affected interfaces, fresh verification evidence, and known limitations. Do not include a proposed verdict or coach the reviewer with a list of suspected findings.
+
+Treat implementation summaries and worker claims as navigation aids rather than proof. Inspect the actual files and tests. Keep unrelated pre-existing issues out of scope unless they directly change the safety or correctness of this change.
+
+## Assess acceptance and quality separately
+
+First assess acceptance/spec compliance. Map each required behavior to the implementation and evidence, identify unauthorized scope, and return exactly one verdict: `pass`, `fail`, or `blocked`.
+
+Then assess code quality independently. Check correctness, failure modes, boundary handling, security and portability where relevant, maintainability, and whether tests exercise the changed risks. Return exactly one verdict: `approve`, `request changes`, or `blocked`.
+
+Do not let a quality preference fail compliant code without a concrete consequence. Do not let clean style hide a missing requirement.
+
+## Write actionable findings
+
+Order findings by severity: **Critical**, **Important**, then **Minor**. For every finding include:
+
+- exact file and line when applicable;
+- the violated requirement or engineering risk;
+- the concrete consequence;
+- supporting code or test evidence;
+- a repair direction without silently implementing it.
+
+Critical and Important findings block completion until repaired or explicitly accepted by the authorized user. Minor findings remain non-blocking unless they violate an acceptance criterion. If there are no actionable findings, say so and list residual risk or unverified assumptions separately.
+
+## Adjudicate and reverify
+
+The coordinator verifies every finding technically against the repository and requirements. Do not accept feedback blindly, dismiss it performatively, or change code merely to satisfy reviewer phrasing. Resolve disagreements with concrete evidence and surface a genuine product decision to the user when required.
+
+After an accepted repair, invalidate and rerun evidence affected by that repair. A prior approval does not cover code changed after the review.
+
+## Report
+
+Return the review scope and rationale, the acceptance/spec verdict, the code-quality verdict, ordered findings, and residual risk or verification gaps. Keep the report read-only and distinguish blocking findings from optional improvements.

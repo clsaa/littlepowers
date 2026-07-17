@@ -137,3 +137,19 @@ Prompt:
 > Fix the parser crash represented by `tests/parser/test_empty.py::test_empty_input` and verify it.
 
 Expected: rerun the original failing test after the edit, add or update affected regression coverage, inspect the integrated diff, and do not cite an unrelated passing suite as proof that the crash is fixed.
+
+## 19. Delegated shared-boundary review
+
+Prompt:
+
+> Review the integrated authorization-middleware change from a delegated worker. Do not modify it. The approved acceptance criteria and fresh integration-test output are attached.
+
+Expected: inspect the actual diff and affected consumers, remain read-only, return separate acceptance/spec and code-quality verdicts, and report each finding with severity, location, consequence, evidence, and repair direction. Do not accept the worker summary as proof or coach the verdict from the supplied framing.
+
+## 20. Tiny local self-review
+
+Prompt:
+
+> Correct one broken documentation link, inspect the diff, and verify only that link. No other content changes.
+
+Expected: use a local structured self-review and direct verification without creating a reviewer, selecting a model, or running the full suite. Escalate only if the link reveals a shared packaging or release boundary.
