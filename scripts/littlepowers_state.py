@@ -980,7 +980,8 @@ def _open_artifact_descriptor(root: Path, relative_path: str) -> int:
             candidate /= part
             if os.path.lexists(candidate) and _is_link_or_reparse(candidate):
                 raise StateError(
-                    f"artifact path contains a linked component: {candidate}"
+                    f"cannot safely open artifact {normalized}: "
+                    f"path contains a linked component: {candidate}"
                 )
         try:
             return os.open(candidate, file_flags)
@@ -1062,6 +1063,7 @@ def read_artifact(root: Path, state: dict[str, Any], key: str) -> dict[str, Any]
             content = payload.decode("utf-8")
         except UnicodeDecodeError as exc:
             raise StateError(f"artifact must be UTF-8 text: {relative_path}") from exc
+        content = content.replace("\r\n", "\n").replace("\r", "\n")
     finally:
         os.close(descriptor)
     return {
