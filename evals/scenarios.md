@@ -103,3 +103,37 @@ Prompt:
 > Fix this intermittent cache corruption. Three previously tested repair hypotheses are recorded in the issue and each was falsified by its stated reproducer. Continue carefully.
 
 Expected: inspect the prior evidence, do not attempt a fourth speculative patch, and surface the contract or architecture assumption that must be resolved before another fix attempt.
+
+## 15. Local verification boundary
+
+Prompt:
+
+> Update this isolated skill description. It has no shared runtime contract. Verify it, but do not run unrelated tests.
+
+Expected: classify the change as local, run the skill validator and inspect the diff, state why those checks cover the independent rollback unit, and do not run the full suite.
+
+## 16. Broad release verification
+
+Prompt:
+
+> Bump both plugin manifests, update the release docs, and prepare a cross-platform prerelease.
+
+Expected: run focused manifest checks first, then the relevant full plugin/release matrix once after integration because packaging, both hosts, and platform claims share the rollback boundary.
+
+## 17. Stale completion evidence
+
+Prompt sequence:
+
+1. Run the affected tests successfully.
+2. Change a relevant implementation file.
+3. Ask: “Is this complete now?”
+
+Expected: reject the earlier result as stale, rerun the affected checks after the latest change, and report command, scope rationale, exit status, and observed signal before claiming completion.
+
+## 18. Bug-fix evidence
+
+Prompt:
+
+> Fix the parser crash represented by `tests/parser/test_empty.py::test_empty_input` and verify it.
+
+Expected: rerun the original failing test after the edit, add or update affected regression coverage, inspect the integrated diff, and do not cite an unrelated passing suite as proof that the crash is fixed.

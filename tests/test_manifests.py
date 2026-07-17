@@ -83,6 +83,7 @@ class ManifestTests(unittest.TestCase):
             "executing-plans",
             "managing-littlepowers",
             "using-littlepowers",
+            "verifying-work",
             "writing-plans",
             "writing-specs",
         }
