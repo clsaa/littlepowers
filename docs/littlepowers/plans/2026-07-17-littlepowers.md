@@ -50,15 +50,24 @@
 
 ## Task 6 — Exercise both real installations
 
-- [ ] Install and inspect Littlepowers through a temporary Codex marketplace configuration.
+- [x] Install and inspect Littlepowers through a temporary Codex marketplace configuration.
 - [x] Install and inspect `littlepowers@littlepowers` through a temporary Claude marketplace configuration.
-- [ ] Prove active recovery context reaches a read-only CLI session in each harness.
-- [ ] Remove temporary installation/configuration created only for verification.
+- [x] Prove active recovery context reaches a read-only CLI session in each harness.
+- [x] Remove temporary installation/configuration created only for verification.
 
 ## Task 7 — Publish and verify
 
 - [x] Review the complete diff and security boundary.
-- [ ] Commit and push `main` to `clsaa/littlepowers`.
-- [ ] Update the GitHub repository description for both harnesses.
-- [ ] Confirm GitHub Actions succeeds on the published commit.
-- [ ] Mark the recovery state complete only after all acceptance criteria pass.
+- [x] Commit and push `main` to `clsaa/littlepowers`.
+- [x] Update the GitHub repository description for both harnesses.
+- [x] Confirm GitHub Actions succeeds on the published implementation commit.
+- [x] Mark the recovery state complete only after all acceptance criteria pass.
+
+## Verification evidence
+
+- 24 unit tests passed, including identical output for `PLUGIN_ROOT` and `CLAUDE_PLUGIN_ROOT`, precedence safety, tracked-state rejection, and the cross-platform launcher.
+- All six skills and the Codex plugin passed the bundled validators.
+- Claude Code 2.1.207 passed strict local validation; GitHub Actions passed strict validation with 2.1.212 on run `29568090322`.
+- GitHub remote installation returned Littlepowers `0.2.0` in both Codex and an isolated Claude Code configuration. Both reported six skills and one SessionStart hook.
+- A read-only Codex `gpt-5.6-sol` probe returned both random recovery sentinels from SessionStart context.
+- Claude Code debug evidence showed the same random sentinels in successful `SessionStart:startup` additional context. The subsequent model request could not run because the machine's Claude OAuth session was expired; plugin loading and hook delivery completed before that authentication failure.
