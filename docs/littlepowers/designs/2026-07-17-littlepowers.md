@@ -86,7 +86,7 @@ State schema:
 }
 ```
 
-No state, malformed state, or a non-workspace directory produces no stdout and exit code 0. A malformed file is reported only on stderr so it cannot block Codex startup.
+No state, malformed state, tracked state, or a non-workspace directory produces no recovery stdout and exit code 0. A rejected file is reported only on stderr so it cannot block Codex startup. Recovery fields are serialized as JSON and explicitly labeled untrusted data so content inside a field is not treated as hook instructions.
 
 ## Interruption policy
 
@@ -104,6 +104,7 @@ The design deliberately omits a `Stop` hook. Blocking turn completion can create
 - Standard library only; no runtime dependency installation.
 - No network, telemetry, transcript parsing, or secret collection.
 - State is self-ignored and local to the workspace/worktree.
+- Tracked state files are rejected to keep repository content out of developer-context injection.
 - Hooks are read-only and time-bounded.
 - Automatic commits, branch creation, pushes, and PR creation are outside the workflow unless the user requests them.
 
@@ -113,5 +114,5 @@ The design deliberately omits a `Stop` hook. Blocking turn completion can create
 - JSON parsing checks for plugin and marketplace manifests.
 - Codex skill and plugin validators.
 - Direct hook smoke tests with representative stdin payloads.
-- Local marketplace install and `codex debug prompt-input` inspection when supported by the installed Codex version.
-
+- Local marketplace installation plus `codex debug prompt-input` inspection for skill discovery.
+- A read-only, ephemeral `codex exec` probe for end-to-end SessionStart context injection; `debug prompt-input` does not execute lifecycle hooks in the tested Codex version.

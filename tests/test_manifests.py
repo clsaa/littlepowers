@@ -49,7 +49,9 @@ class ManifestTests(unittest.TestCase):
             "writing-plans",
             "writing-specs",
         }
-        skill_directories = {path.name for path in (ROOT / "skills").iterdir() if path.is_dir()}
+        skill_directories = {
+            path.name for path in (ROOT / "skills").iterdir() if path.is_dir()
+        }
         self.assertEqual(skill_directories, expected)
 
         for name in expected:
@@ -68,9 +70,9 @@ class ManifestTests(unittest.TestCase):
                 self.assertEqual(keys, {"name", "description"})
                 self.assertIn(f"name: {name}", frontmatter)
 
-                metadata = (ROOT / "skills" / name / "agents" / "openai.yaml").read_text(
-                    encoding="utf-8"
-                )
+                metadata = (
+                    ROOT / "skills" / name / "agents" / "openai.yaml"
+                ).read_text(encoding="utf-8")
                 self.assertIn(f"${name}", metadata)
 
     def test_workflow_artifacts_cover_all_preimplementation_phases(self) -> None:

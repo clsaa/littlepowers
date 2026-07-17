@@ -64,4 +64,3 @@ If the user requests an end-to-end result and no material decision needs them, p
 For long work, recommend `/goal` with a measurable outcome. Recommend Queue for follow-up behavior and `/side` or `/btw` for unrelated questions; do not change those settings yourself.
 
 Never commit, branch, push, open a PR, or broaden access merely because this workflow is active. Do those only when the user requests them or they are an ordinary, authorized part of the stated delivery.
-

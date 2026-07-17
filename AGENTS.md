@@ -7,4 +7,3 @@
 - Update the matching brainstorm, spec, design, and plan artifacts when behavior or scope changes.
 - Run `python3 -m unittest discover -s tests -v` after code or manifest changes.
 - Run the official skill validator for every directory under `skills/` and the official plugin validator before release.
-

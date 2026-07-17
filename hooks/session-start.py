@@ -12,7 +12,13 @@ from pathlib import Path
 PLUGIN_ROOT = Path(os.environ.get("PLUGIN_ROOT", Path(__file__).resolve().parents[1]))
 sys.path.insert(0, str(PLUGIN_ROOT / "scripts"))
 
-from littlepowers_state import StateError, discover_root, load_state, render_context  # noqa: E402
+from littlepowers_state import (  # noqa: E402
+    StateError,
+    discover_root,
+    load_state,
+    render_context,
+    state_file_is_tracked,
+)
 
 
 def main() -> int:
@@ -21,6 +27,12 @@ def main() -> int:
         if not isinstance(event, dict):
             raise ValueError("hook input must be an object")
         root = discover_root(start=event.get("cwd") or Path.cwd())
+        if state_file_is_tracked(root):
+            print(
+                "littlepowers SessionStart hook skipped: refusing tracked state file",
+                file=sys.stderr,
+            )
+            return 0
         state = load_state(root, missing_ok=True)
         if not state:
             return 0
@@ -34,11 +46,10 @@ def main() -> int:
             }
         }
         print(json.dumps(output, ensure_ascii=False))
-    except (OSError, ValueError, json.JSONDecodeError, StateError) as exc:
+    except (OSError, TypeError, ValueError, json.JSONDecodeError, StateError) as exc:
         print(f"littlepowers SessionStart hook skipped: {exc}", file=sys.stderr)
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

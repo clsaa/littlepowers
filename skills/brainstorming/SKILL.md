@@ -46,4 +46,3 @@ python3 <plugin-root>/scripts/littlepowers_state.py checkpoint \
 ```
 
 Use `writing-specs` next. Do not skip directly to implementation.
-

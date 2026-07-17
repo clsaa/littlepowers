@@ -44,4 +44,3 @@ The product-level companion practices are:
 - Set **Settings → General → Follow-up behavior** to **Queue**.
 - Use `/side` or `/btw` for questions that should not alter the main task.
 - Invoke the workflow explicitly when the automatic match matters: `$littlepowers:using-littlepowers`.
-

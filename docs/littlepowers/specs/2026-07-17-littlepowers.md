@@ -77,6 +77,7 @@ On Codex `SessionStart` for `startup`, `resume`, `clear`, or `compact`:
 - locate active state from the session working directory;
 - emit no output when no active state exists;
 - inject concise additional developer context when state is active or paused;
+- reject a state file tracked by Git and treat all state values as untrusted data;
 - never modify project files, inspect transcripts, or access the network.
 
 ### FR6 — Skills
@@ -112,8 +113,8 @@ The repository must contain a valid plugin manifest, GitHub marketplace entry, i
 - All bundled skills validate.
 - The plugin scaffold validates under the bundled plugin validator, with current Codex hook discovery covered separately.
 - State CLI tests cover lifecycle transitions, root discovery, invalid transitions, and context output.
-- Hook tests prove silence without state and valid recovery context with state.
+- Hook tests prove silence without state, rejection of tracked state, and valid recovery context with local state.
 - Codex can discover the repository marketplace and install the plugin locally.
-- A fresh prompt-input inspection shows the recovery context when unfinished state exists.
+- A fresh `codex debug prompt-input` inspection shows all six installed skills.
+- A read-only, ephemeral `codex exec` probe receives the recovery context when unfinished state exists.
 - README clearly explains Queue, `/goal`, `/side`/`/btw`, explicit skill invocation, hook trust, and uninstall behavior.
-

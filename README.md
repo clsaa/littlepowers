@@ -34,6 +34,8 @@ Littlepowers classifies work first:
 
 Artifacts default to `docs/littlepowers/<phase>/...`. Active scratch state lives in `.littlepowers/state.json`; the directory ignores itself so it does not pollute commits.
 
+Littlepowers supports one active objective per worktree. Use separate worktrees for parallel tasks that need independent state.
+
 ## Install
 
 After this repository is available on GitHub:
@@ -67,7 +69,8 @@ Lifecycle commands are `start`, `checkpoint`, `pause`, `complete`, and `cancel`.
 ## Privacy and boundaries
 
 - No telemetry or runtime network access.
-- No transcript parsing or conversation storage.
+- No transcript parsing or raw conversation storage; only the workflow metadata shown by `show` is persisted.
+- Tracked `.littlepowers/state.json` files are rejected; recovery values are injected as untrusted JSON data.
 - No automatic commits, branches, pushes, PRs, deployments, or subagents.
 - No Claude Code, Cursor, OpenCode, or Pi compatibility layer.
 - The only executable hook is a time-bounded SessionStart state reader.
@@ -97,4 +100,3 @@ Littlepowers 不会复制 Superpowers 的整套强制流程。它只在中大型
 ## License and inspiration
 
 Littlepowers is released under the MIT License. The workflow was informed by a review of Superpowers v6.1.1, also MIT-licensed; this repository contains an independent, Codex-specific implementation.
-

@@ -49,4 +49,3 @@ python3 <plugin-root>/scripts/littlepowers_state.py checkpoint \
 ```
 
 Use `writing-plans` next.
-

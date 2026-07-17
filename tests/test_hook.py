@@ -67,9 +67,7 @@ class SessionStartHookTests(unittest.TestCase):
         output = json.loads(result.stdout)
 
         self.assertEqual(result.returncode, 0)
-        self.assertEqual(
-            output["hookSpecificOutput"]["hookEventName"], "SessionStart"
-        )
+        self.assertEqual(output["hookSpecificOutput"]["hookEventName"], "SessionStart")
         context = output["hookSpecificOutput"]["additionalContext"]
         self.assertIn("Finish the interrupted change", context)
         self.assertIn("Run Task 3", context)
@@ -77,7 +75,9 @@ class SessionStartHookTests(unittest.TestCase):
 
     def test_hook_is_silent_for_completed_state(self) -> None:
         self.start_state()
-        state_module.command_finish(argparse.Namespace(next_action=None), self.workspace, "complete")
+        state_module.command_finish(
+            argparse.Namespace(next_action=None), self.workspace, "complete"
+        )
 
         result = self.run_hook()
         self.assertEqual(result.returncode, 0)
@@ -97,7 +97,29 @@ class SessionStartHookTests(unittest.TestCase):
         self.assertEqual(bad_state.stdout, "")
         self.assertIn("hook skipped", bad_state.stderr)
 
+    def test_hook_refuses_a_state_file_tracked_by_git(self) -> None:
+        self.start_state()
+        subprocess.run(
+            ["git", "init", "-q", "-b", "main", str(self.workspace)], check=True
+        )
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(self.workspace),
+                "add",
+                "-f",
+                ".littlepowers/state.json",
+            ],
+            check=True,
+        )
+
+        result = self.run_hook()
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("refusing tracked state file", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
-

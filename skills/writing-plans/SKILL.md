@@ -47,4 +47,3 @@ python3 <plugin-root>/scripts/littlepowers_state.py checkpoint \
 ```
 
 Use `executing-plans` next when implementation is authorized.
-

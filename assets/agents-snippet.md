@@ -5,4 +5,3 @@
 - Preserve an unfinished objective across follow-up messages. Treat questions and corrections as part of the active work, then continue from the recorded next action.
 - Pause, cancel, or replace active work only when I clearly ask for it.
 - Keep trivial, fully specified edits lightweight and verify them proportionally.
-

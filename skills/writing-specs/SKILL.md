@@ -50,4 +50,3 @@ python3 <plugin-root>/scripts/littlepowers_state.py checkpoint \
 ```
 
 Use `designing-solutions` next.
-

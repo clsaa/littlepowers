@@ -62,4 +62,3 @@ python3 <plugin-root>/scripts/littlepowers_state.py complete
 ```
 
 Report the outcome, changed surfaces, verification evidence, and any optional next step.
-

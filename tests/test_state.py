@@ -71,7 +71,9 @@ class StateTests(unittest.TestCase):
         replaced = self.start(objective="Different work", replace=True)
         self.assertEqual(replaced["objective"], "Different work")
 
-    def test_checkpoint_updates_artifacts_and_deduplicates_completed_items(self) -> None:
+    def test_checkpoint_updates_artifacts_and_deduplicates_completed_items(
+        self,
+    ) -> None:
         self.start()
         args = namespace(
             phase="spec",
@@ -125,6 +127,19 @@ class StateTests(unittest.TestCase):
         with self.assertRaisesRegex(state_module.StateError, "cannot read"):
             state_module.load_state(self.root)
 
+    def test_overlong_or_empty_state_data_is_rejected(self) -> None:
+        with self.assertRaisesRegex(state_module.StateError, "must not be empty"):
+            self.start(objective="  ")
+        with self.assertRaisesRegex(state_module.StateError, "exceeds"):
+            self.start(objective="x" * (state_module.MAX_TEXT_LENGTH + 1))
+
+    def test_finish_rejects_empty_explicit_next_action(self) -> None:
+        self.start()
+        with self.assertRaisesRegex(state_module.StateError, "must not be empty"):
+            state_module.command_finish(
+                namespace(next_action="  "), self.root, "complete"
+            )
+
     def test_discover_root_honors_explicit_root(self) -> None:
         nested = self.root / "nested"
         nested.mkdir()
@@ -136,4 +151,3 @@ class StateTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
