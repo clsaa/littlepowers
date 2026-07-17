@@ -37,12 +37,13 @@ jobs:
             --phase execute \
             --next-action "Read prompt-boundary state")
           test -n "$start_output"
+          native_root=$(pwd -W)
           hook_output=$(printf '%s' \
-            '{"cwd":"'"$PWD"'","hook_event_name":"UserPromptSubmit"}' \
-            | CLAUDE_PLUGIN_ROOT="$PWD" hooks/run-hook.cmd)
+            '{"cwd":"'"$native_root"'","hook_event_name":"UserPromptSubmit"}' \
+            | CLAUDE_PLUGIN_ROOT="$native_root" hooks/run-hook.cmd)
           case "$hook_output" in
             *UserPromptSubmit*workflow_id*) ;;
-            *) exit 1 ;;
+            *) printf '%s\n' "$hook_output"; exit 1 ;;
           esac
 
   claude-plugin:
