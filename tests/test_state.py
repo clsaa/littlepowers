@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import uuid
 from contextlib import redirect_stdout
 from pathlib import Path
 from unittest import mock
@@ -26,6 +27,7 @@ def namespace(**values: object) -> argparse.Namespace:
         "phase": None,
         "next_action": None,
         "current_task": None,
+        "progress": None,
         "artifact": [],
         "completed": [],
         "replace": False,
@@ -62,12 +64,38 @@ class StateTests(unittest.TestCase):
             **values,
         )
 
+    def init_git_candidate(self) -> Path:
+        subprocess.run(
+            ["git", "init", "-q", "-b", "main", str(self.root)], check=True
+        )
+        tracked = self.root / "tracked.txt"
+        tracked.write_text("base\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(self.root), "add", "tracked.txt"], check=True)
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(self.root),
+                "-c",
+                "user.name=Littlepowers Test",
+                "-c",
+                "user.email=littlepowers@example.invalid",
+                "commit",
+                "-q",
+                "-m",
+                "base",
+            ],
+            check=True,
+        )
+        return tracked
+
     def test_start_creates_valid_self_ignored_schema_2_state(self) -> None:
         created = self.start()
 
         self.assertEqual(created["status"], "active")
         self.assertEqual(created["phase"], "brainstorm")
         self.assertEqual(created["schema_version"], 2)
+        self.assertIsNone(created["progress"])
         self.assertEqual(created["revision"], 0)
         self.assertEqual(created["created_by"], "littlepowers")
         self.assertIn("workflow_id", created)
@@ -122,6 +150,341 @@ class StateTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(state_module.StateConflict, "revision changed"):
             state_module.command_checkpoint(arguments, self.root)
+
+    def test_checkpoint_persists_observable_progress_in_recovery_context(self) -> None:
+        started = self.start(phase="execute")
+
+        updated = state_module.command_checkpoint(
+            self.writer(
+                started,
+                current_task="Wave 1 service boundary",
+                progress="Wave 1: 3/5 acceptance checks pass",
+                next_action="Run the migration gate",
+            ),
+            self.root,
+        )
+
+        self.assertEqual(updated["progress"], "Wave 1: 3/5 acceptance checks pass")
+        context = state_module.render_context(updated)
+        reminder = state_module.render_prompt_reminder(updated)
+        self.assertIn('"progress": "Wave 1: 3/5 acceptance checks pass"', context)
+        self.assertIn('"progress": "Wave 1: 3/5 acceptance checks pass"', reminder)
+
+        cleared = state_module.command_checkpoint(
+            self.writer(updated, progress="   "), self.root
+        )
+        self.assertIsNone(cleared["progress"])
+
+    def test_checkpoint_rejects_oversized_progress_without_mutating_state(self) -> None:
+        started = self.start(phase="execute")
+
+        with self.assertRaisesRegex(state_module.StateError, "progress exceeds"):
+            state_module.command_checkpoint(
+                self.writer(
+                    started,
+                    progress="x" * (state_module.MAX_PROGRESS_LENGTH + 1),
+                ),
+                self.root,
+            )
+
+        persisted = state_module.load_state(self.root)
+        assert persisted is not None
+        self.assertEqual(persisted["revision"], started["revision"])
+        self.assertIsNone(persisted["progress"])
+
+    def test_handoff_cancels_only_source_and_renders_session_start_pointer(self) -> None:
+        source = self.start(phase="execute")
+        target_root = self.root / "target"
+        target_root.mkdir()
+        target = state_module.command_start(
+            namespace(
+                objective="Continue in isolated worktree",
+                phase="execute",
+                next_action="Resume target task",
+            ),
+            target_root,
+        )
+        target_path = target_root / ".littlepowers" / "state.json"
+        target_before = target_path.read_bytes()
+
+        handed_off = state_module.command_handoff(
+            self.writer(
+                source,
+                target_root=str(target_root),
+                target_workflow=target["workflow_id"],
+                target_revision=target["revision"],
+            ),
+            self.root,
+        )
+
+        self.assertEqual(handed_off["status"], "cancelled")
+        self.assertEqual(handed_off["revision"], source["revision"] + 1)
+        self.assertEqual(
+            handed_off["handoff"],
+            {
+                "target_root": str(target_root.resolve()),
+                "target_workflow_id": target["workflow_id"],
+                "validated_revision": target["revision"],
+                "transferred_at": handed_off["updated_at"],
+            },
+        )
+        self.assertEqual(target_path.read_bytes(), target_before)
+        self.assertIn("transferred", state_module.render_context(handed_off))
+        self.assertIn(str(target_root.resolve()), state_module.render_context(handed_off))
+        self.assertEqual(state_module.render_prompt_reminder(handed_off), "")
+        self.assertEqual(state_module.render_worker_context(handed_off), "")
+        with self.assertRaisesRegex(state_module.StateError, "requires status: paused"):
+            state_module.command_resume(self.writer(handed_off), self.root)
+
+    def test_handoff_rejects_unsafe_or_stale_target_without_mutation(self) -> None:
+        source = self.start(phase="execute")
+        source_path = self.root / ".littlepowers" / "state.json"
+        target_root = self.root / "target"
+        target_root.mkdir()
+        target = state_module.command_start(
+            namespace(
+                objective="Continue in isolated worktree",
+                phase="execute",
+                next_action="Resume target task",
+            ),
+            target_root,
+        )
+        target_path = target_root / ".littlepowers" / "state.json"
+        source_before = source_path.read_bytes()
+        target_before = target_path.read_bytes()
+
+        invalid = (
+            {
+                "target_root": str(self.root),
+                "target_workflow": source["workflow_id"],
+                "target_revision": source["revision"],
+            },
+            {
+                "target_root": str(target_root),
+                "target_workflow": str(uuid.uuid4()),
+                "target_revision": target["revision"],
+            },
+            {
+                "target_root": str(target_root),
+                "target_workflow": target["workflow_id"],
+                "target_revision": target["revision"] + 1,
+            },
+        )
+        for values in invalid:
+            with self.subTest(values=values):
+                with self.assertRaises(state_module.StateError):
+                    state_module.command_handoff(
+                        self.writer(source, **values), self.root
+                    )
+                self.assertEqual(source_path.read_bytes(), source_before)
+                self.assertEqual(target_path.read_bytes(), target_before)
+
+        with self.assertRaisesRegex(state_module.StateError, "must be absolute"):
+            state_module.command_handoff(
+                self.writer(
+                    source,
+                    target_root="~/target",
+                    target_workflow=target["workflow_id"],
+                    target_revision=target["revision"],
+                ),
+                self.root,
+            )
+        self.assertEqual(source_path.read_bytes(), source_before)
+        self.assertEqual(target_path.read_bytes(), target_before)
+
+        paused_target = state_module.command_pause(
+            namespace(
+                workflow=target["workflow_id"],
+                expect_revision=target["revision"],
+                next_action=None,
+            ),
+            target_root,
+        )
+        target_before = target_path.read_bytes()
+        with self.assertRaisesRegex(state_module.StateError, "target workflow is 'paused'"):
+            state_module.command_handoff(
+                self.writer(
+                    source,
+                    target_root=str(target_root),
+                    target_workflow=paused_target["workflow_id"],
+                    target_revision=paused_target["revision"],
+                ),
+                self.root,
+            )
+        self.assertEqual(source_path.read_bytes(), source_before)
+        self.assertEqual(target_path.read_bytes(), target_before)
+
+    def test_snapshot_is_stable_and_tracks_candidate_changes(self) -> None:
+        tracked = self.init_git_candidate()
+
+        clean = state_module.create_review_snapshot(self.root)
+        repeated = state_module.create_review_snapshot(self.root)
+        tracked.write_text("changed\n", encoding="utf-8")
+        tracked_change = state_module.create_review_snapshot(self.root)
+        (self.root / "untracked.txt").write_text("new\n", encoding="utf-8")
+        untracked_change = state_module.create_review_snapshot(self.root)
+
+        self.assertEqual(clean, repeated)
+        self.assertNotEqual(clean["token"], tracked_change["token"])
+        self.assertNotEqual(tracked_change["token"], untracked_change["token"])
+        self.assertEqual(tracked_change["changed_paths"], 1)
+        self.assertEqual(untracked_change["changed_paths"], 2)
+        self.assertEqual(untracked_change["untracked_paths"], 1)
+        self.assertFalse((self.root / ".littlepowers").exists())
+
+    def test_snapshot_ignores_ignored_files_and_does_not_follow_symlinks(self) -> None:
+        self.init_git_candidate()
+        (self.root / ".gitignore").write_text("ignored/\n", encoding="utf-8")
+        subprocess.run(["git", "-C", str(self.root), "add", ".gitignore"], check=True)
+        subprocess.run(
+            [
+                "git",
+                "-C",
+                str(self.root),
+                "-c",
+                "user.name=Littlepowers Test",
+                "-c",
+                "user.email=littlepowers@example.invalid",
+                "commit",
+                "-q",
+                "-m",
+                "ignore fixture",
+            ],
+            check=True,
+        )
+        ignored = self.root / "ignored"
+        ignored.mkdir()
+        secret = ignored / "secret.txt"
+        secret.write_text("first secret\n", encoding="utf-8")
+        link = self.root / "candidate-link"
+        try:
+            link.symlink_to(secret)
+        except OSError:
+            self.skipTest("symbolic links are unavailable")
+        index_path = self.root / ".git" / "index"
+        index_before = index_path.read_bytes()
+
+        before = state_module.create_review_snapshot(self.root)
+        secret.write_text("different secret content\n", encoding="utf-8")
+        after = state_module.create_review_snapshot(self.root)
+
+        self.assertEqual(before, after)
+        self.assertEqual(before["changed_paths"], 1)
+        self.assertEqual(before["untracked_paths"], 1)
+        self.assertEqual(index_path.read_bytes(), index_before)
+        with mock.patch.object(
+            state_module.os, "readlink", side_effect=OSError("candidate changed")
+        ):
+            with self.assertRaisesRegex(
+                state_module.StateError, "cannot safely read snapshot symlink"
+            ):
+                state_module._snapshot_readlink(
+                    link, os.lstat(link), "candidate-link"
+                )
+
+    def test_snapshot_rejects_excessive_or_unsupported_candidates(self) -> None:
+        self.init_git_candidate()
+        candidate = self.root / "candidate.txt"
+        candidate.write_text("candidate\n", encoding="utf-8")
+
+        with mock.patch.object(state_module, "MAX_SNAPSHOT_PATHS", 0):
+            with self.assertRaisesRegex(state_module.StateError, "changed paths"):
+                state_module.create_review_snapshot(self.root)
+        with mock.patch.object(state_module, "MAX_SNAPSHOT_BYTES", 2):
+            with self.assertRaisesRegex(state_module.StateError, "candidate bytes"):
+                state_module.create_review_snapshot(self.root)
+
+        if os.name != "nt":
+            candidate.unlink()
+            fifo = self.root / "candidate-fifo"
+            os.mkfifo(fifo)
+            original_snapshot_git = state_module._snapshot_git
+
+            def include_fifo(root: Path, arguments: list[str], label: str) -> bytes:
+                if label == "changed paths":
+                    return b"candidate-fifo\0"
+                if label == "untracked paths":
+                    return b""
+                return original_snapshot_git(root, arguments, label)
+
+            try:
+                with mock.patch.object(
+                    state_module, "_snapshot_git", side_effect=include_fifo
+                ):
+                    with self.assertRaisesRegex(
+                        state_module.StateError, "unsupported changed path type"
+                    ):
+                        state_module.create_review_snapshot(self.root)
+            finally:
+                fifo.unlink()
+
+    def test_snapshot_rejects_candidate_drift_during_hashing(self) -> None:
+        self.init_git_candidate()
+        (self.root / "candidate.txt").write_text("candidate\n", encoding="utf-8")
+        original_snapshot_git = state_module._snapshot_git
+        status_calls = 0
+
+        def drift_status(root: Path, arguments: list[str], label: str) -> bytes:
+            nonlocal status_calls
+            payload = original_snapshot_git(root, arguments, label)
+            if label == "status":
+                status_calls += 1
+                if status_calls == 2:
+                    return payload + b"drift"
+            return payload
+
+        with mock.patch.object(
+            state_module, "_snapshot_git", side_effect=drift_status
+        ):
+            with self.assertRaisesRegex(
+                state_module.StateError, "candidate changed during hashing"
+            ):
+                state_module.create_review_snapshot(self.root)
+
+    def test_full_route_progress_advances_through_every_phase(self) -> None:
+        state = self.start()
+        transitions = (
+            (
+                "spec",
+                "Full shape: brainstorm complete; spec is next",
+                "Write the product specification",
+            ),
+            (
+                "design",
+                "Full shape: specification complete; design is next",
+                "Design the approved specification",
+            ),
+            (
+                "plan",
+                "Full shape: design complete; plan is next",
+                "Write the implementation plan",
+            ),
+            (
+                "execute",
+                "Full shape complete; execution is next",
+                "Execute the first dependency-safe wave",
+            ),
+        )
+
+        for phase, progress, next_action in transitions:
+            state = state_module.command_checkpoint(
+                self.writer(
+                    state,
+                    phase=phase,
+                    progress=progress,
+                    next_action=next_action,
+                ),
+                self.root,
+            )
+            with self.subTest(phase=phase):
+                self.assertEqual(state["phase"], phase)
+                self.assertEqual(state["progress"], progress)
+                self.assertEqual(state["next_action"], next_action)
+
+        context = state_module.render_context(state)
+        self.assertIn('"phase": "execute"', context)
+        self.assertIn('"progress": "Full shape complete; execution is next"', context)
+        self.assertNotIn("spec is next", context)
 
     def test_concurrent_processes_cannot_lose_an_update(self) -> None:
         started = self.start(phase="execute")
@@ -299,6 +662,7 @@ class StateTests(unittest.TestCase):
         assert first is not None and second is not None
         self.assertEqual(first["workflow_id"], second["workflow_id"])
         self.assertEqual(first["schema_version"], 2)
+        self.assertIsNone(first["progress"])
         self.assertIsNone(first["artifacts"]["shape"])
 
         persisted = state_module.command_checkpoint(
@@ -307,6 +671,35 @@ class StateTests(unittest.TestCase):
         self.assertEqual(persisted["revision"], 1)
         on_disk = json.loads((directory / "state.json").read_text(encoding="utf-8"))
         self.assertEqual(on_disk["schema_version"], 2)
+
+    def test_legacy_schema_2_adds_progress_without_a_version_bump(self) -> None:
+        started = self.start(phase="execute")
+        path = self.root / ".littlepowers" / "state.json"
+        legacy = json.loads(path.read_text(encoding="utf-8"))
+        legacy["schema_version"] = 2
+        legacy.pop("progress")
+        path.write_text(json.dumps(legacy), encoding="utf-8")
+
+        loaded = state_module.load_state(self.root)
+        assert loaded is not None
+        self.assertEqual(loaded["schema_version"], 2)
+        self.assertIsNone(loaded["progress"])
+        self.assertEqual(json.loads(path.read_text())["schema_version"], 2)
+        self.assertIsNone(loaded["handoff"])
+
+        persisted = state_module.command_checkpoint(
+            self.writer(
+                loaded,
+                progress="Wave 1: 1/4 acceptance checks pass",
+                next_action="Run check 2",
+            ),
+            self.root,
+        )
+        self.assertEqual(persisted["schema_version"], 2)
+        self.assertEqual(
+            persisted["progress"], "Wave 1: 1/4 acceptance checks pass"
+        )
+        self.assertEqual(json.loads(path.read_text())["schema_version"], 2)
 
     def test_tracked_state_is_rejected_by_shared_reader_and_writer(self) -> None:
         started = self.start()

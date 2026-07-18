@@ -9,7 +9,7 @@ Resolve the few decisions that matter without producing four separate documents.
 
 Read the active ledger and relevant repository evidence. Ask only when a missing answer materially changes behavior, cost, risk, or scope. Do not reopen settled choices.
 
-Use the repository's artifact convention, or default to `docs/littlepowers/shapes/YYYY-MM-DD-<slug>.md`. Include:
+For an existing workflow, keep the artifact root already resolved by `using-littlepowers`. When resolving a new workflow, use a non-default root only when the latest user request or a current repository instruction explicitly names it for new workflow artifacts. Existing directories, backlinks, and historical or tool-branded paths do not qualify by themselves. Otherwise use `docs/littlepowers/shapes/YYYY-MM-DD-<slug>.md`. Include:
 
 - measurable outcome and non-goals;
 - constraints and low-risk assumptions;
@@ -28,6 +28,7 @@ Checkpoint with the current workflow ID and revision:
   --phase execute \
   --artifact shape=<artifact-path> \
   --completed "compact shape" \
+  --progress "Compact shape complete; execution is next" \
   --next-action "Execute the first shape step"
 ```
 

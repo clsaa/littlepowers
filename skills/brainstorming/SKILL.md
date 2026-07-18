@@ -15,7 +15,9 @@ Turn a consequential or unclear request into one chosen direction without implem
 
 Ask for user input when a choice changes product behavior, scope, cost, security, compatibility, or irreversible external state. If the user requested end-to-end delivery and the direction follows from supplied constraints, record it and continue.
 
-Use the repository's artifact convention, or default to `docs/littlepowers/brainstorms/YYYY-MM-DD-<slug>.md`. Include the problem, constraints, options, selected direction, decision rationale, assumptions, and open questions.
+For an existing workflow, keep the artifact root already resolved by `using-littlepowers`. When resolving a new workflow, use a non-default root only when the latest user request or a current repository instruction explicitly names it for new workflow artifacts. Existing directories, backlinks, and historical or tool-branded paths do not qualify by themselves. Otherwise use `docs/littlepowers/brainstorms/YYYY-MM-DD-<slug>.md`. Include the problem, constraints, options, selected direction, decision rationale, assumptions, and open questions.
+
+The checkpointed `brainstorm` artifact must be this shaping record in the resolved brainstorm area. An ADR may be created or updated as a companion record of the selected decision, but an ADR is not a substitute for the brainstorm artifact. Preserve a legacy ADR-backed artifact reference during recovery; apply this rule to new or deliberately reshaped workflows instead of silently rewriting active ledger paths.
 
 Checkpoint with the `<state-cli>`, workflow ID, and revision established by `using-littlepowers`:
 
@@ -25,6 +27,7 @@ Checkpoint with the `<state-cli>`, workflow ID, and revision established by `usi
   --phase spec \
   --artifact brainstorm=<artifact-path> \
   --completed brainstorm \
+  --progress "Full shape: brainstorm complete; spec is next" \
   --next-action "Write the product specification"
 ```
 

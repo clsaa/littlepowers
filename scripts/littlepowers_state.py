@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import stat
@@ -24,8 +25,16 @@ STATUSES = {"active", "paused", "complete", "cancelled"}
 PHASES = {"brainstorm", "spec", "design", "plan", "shape", "execute", "verify"}
 ARTIFACT_KEYS = {"brainstorm", "spec", "design", "plan", "shape"}
 ACTIVE_STATUSES = {"active", "paused"}
+HANDOFF_KEYS = {
+    "target_root",
+    "target_workflow_id",
+    "validated_revision",
+    "transferred_at",
+}
 
 MAX_TEXT_LENGTH = 4_000
+MAX_PROGRESS_LENGTH = 800
+MAX_HANDOFF_ROOT_LENGTH = 2_048
 MAX_ARTIFACT_LENGTH = 512
 MAX_COMPLETED_ITEMS = 100
 MAX_COMPLETED_ITEM_LENGTH = 500
@@ -35,6 +44,11 @@ MAX_CONTEXT_CHARS = 10_000
 LOCK_TIMEOUT_SECONDS = 5.0
 STALE_LEDGER_DAYS = 30
 MAX_FUTURE_CLOCK_SKEW_SECONDS = 300
+SNAPSHOT_VERSION = 1
+MAX_SNAPSHOT_PATHS = 10_000
+MAX_SNAPSHOT_BYTES = 64 * 1024 * 1024
+MAX_SNAPSHOT_GIT_OUTPUT_BYTES = 8 * 1024 * 1024
+SNAPSHOT_GIT_TIMEOUT_SECONDS = 10
 
 
 class StateError(RuntimeError):
@@ -81,6 +95,223 @@ def discover_root(
         if os.path.lexists(candidate / ".littlepowers"):
             return candidate.resolve()
     return base
+
+
+def _snapshot_git(root: Path, arguments: list[str], label: str) -> bytes:
+    environment = os.environ.copy()
+    environment["GIT_OPTIONAL_LOCKS"] = "0"
+    with tempfile.TemporaryFile() as stdout, tempfile.TemporaryFile() as stderr:
+        try:
+            process = subprocess.Popen(
+                ["git", "-C", str(root), *arguments],
+                stdout=stdout,
+                stderr=stderr,
+                env=environment,
+            )
+            try:
+                returncode = process.wait(timeout=SNAPSHOT_GIT_TIMEOUT_SECONDS)
+            except subprocess.TimeoutExpired as exc:
+                process.kill()
+                process.wait()
+                raise StateError(
+                    f"cannot inspect Git {label}: timed out after "
+                    f"{SNAPSHOT_GIT_TIMEOUT_SECONDS} seconds"
+                ) from exc
+        except OSError as exc:
+            raise StateError(f"cannot inspect Git {label}: {exc}") from exc
+
+        stdout.seek(0, os.SEEK_END)
+        if stdout.tell() > MAX_SNAPSHOT_GIT_OUTPUT_BYTES:
+            raise StateError(
+                f"Git {label} exceeds {MAX_SNAPSHOT_GIT_OUTPUT_BYTES} bytes"
+            )
+        stdout.seek(0)
+        payload = stdout.read()
+        if returncode != 0:
+            stderr.seek(0)
+            detail = stderr.read(4_096).decode("utf-8", errors="replace").strip()
+            raise StateError(
+                f"cannot inspect Git {label}: {detail or 'command failed'}"
+            )
+        return payload
+
+
+def _snapshot_paths(payload: bytes, label: str) -> list[bytes]:
+    if not payload:
+        return []
+    if not payload.endswith(b"\0"):
+        raise StateError(f"Git {label} path output is malformed")
+    paths = payload[:-1].split(b"\0")
+    if any(not path for path in paths):
+        raise StateError(f"Git {label} contains an empty path")
+    return paths
+
+
+def _hash_snapshot_field(digest: Any, label: bytes, value: bytes) -> None:
+    digest.update(label)
+    digest.update(len(value).to_bytes(8, "big"))
+    digest.update(value)
+
+
+def _snapshot_readlink(candidate: Path, details: os.stat_result, label: str) -> bytes:
+    try:
+        target = os.readlink(candidate)
+        current = os.lstat(candidate)
+    except OSError as exc:
+        raise StateError(f"cannot safely read snapshot symlink {label}: {exc}") from exc
+    if (
+        current.st_dev,
+        current.st_ino,
+        current.st_mode,
+    ) != (
+        details.st_dev,
+        details.st_ino,
+        details.st_mode,
+    ):
+        raise StateError(f"snapshot symlink changed while reading: {label}")
+    return os.fsencode(target)
+
+
+def create_review_snapshot(root: Path) -> dict[str, Any]:
+    """Hash one bounded uncommitted Git candidate without changing Git or ledger state."""
+
+    root = root.resolve()
+    git_root_raw = _snapshot_git(root, ["rev-parse", "--show-toplevel"], "root")
+    try:
+        git_root = Path(git_root_raw.decode("utf-8").strip()).resolve()
+    except UnicodeDecodeError as exc:
+        raise StateError("Git root must be UTF-8") from exc
+    if git_root != root:
+        raise StateError(f"snapshot root must be the Git worktree root: {git_root}")
+
+    head = _snapshot_git(root, ["rev-parse", "--verify", "HEAD"], "HEAD").strip()
+    status = _snapshot_git(
+        root,
+        ["status", "--porcelain=v2", "-z", "--untracked-files=all"],
+        "status",
+    )
+    tracked = _snapshot_paths(
+        _snapshot_git(
+            root,
+            ["diff", "--name-only", "-z", "--no-ext-diff", "HEAD", "--"],
+            "changed paths",
+        ),
+        "changed paths",
+    )
+    untracked = _snapshot_paths(
+        _snapshot_git(
+            root,
+            ["ls-files", "--others", "--exclude-standard", "-z"],
+            "untracked paths",
+        ),
+        "untracked paths",
+    )
+    paths = sorted(set(tracked) | set(untracked))
+    if len(paths) > MAX_SNAPSHOT_PATHS:
+        raise StateError(
+            f"snapshot changed paths exceed {MAX_SNAPSHOT_PATHS} entries"
+        )
+
+    digest = hashlib.sha256()
+    digest.update(b"littlepowers-review-snapshot-v1\0")
+    _hash_snapshot_field(digest, b"root\0", os.fsencode(str(root)))
+    _hash_snapshot_field(digest, b"head\0", head)
+    _hash_snapshot_field(digest, b"status\0", status)
+    hashed_bytes = 0
+    for raw_path in paths:
+        decoded = os.fsdecode(raw_path)
+        relative = Path(decoded)
+        if relative.is_absolute() or not relative.parts or any(
+            part in {"", ".", ".."} for part in relative.parts
+        ):
+            raise StateError("snapshot contains an unsafe changed path")
+        candidate = root / relative
+        try:
+            details = os.lstat(candidate)
+        except FileNotFoundError:
+            _hash_snapshot_field(digest, b"missing\0", raw_path)
+            continue
+
+        _hash_snapshot_field(digest, b"path\0", raw_path)
+        digest.update(stat.S_IMODE(details.st_mode).to_bytes(4, "big"))
+        if stat.S_ISLNK(details.st_mode):
+            target = _snapshot_readlink(candidate, details, decoded)
+            hashed_bytes += len(target)
+            if hashed_bytes > MAX_SNAPSHOT_BYTES:
+                raise StateError(
+                    f"snapshot candidate bytes exceed {MAX_SNAPSHOT_BYTES}"
+                )
+            _hash_snapshot_field(digest, b"symlink\0", target)
+            continue
+        if not stat.S_ISREG(details.st_mode):
+            raise StateError(f"unsupported changed path type: {decoded}")
+
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        try:
+            descriptor = os.open(candidate, flags)
+        except OSError as exc:
+            raise StateError(f"cannot safely open snapshot path {decoded}: {exc}") from exc
+        try:
+            opened = os.fstat(descriptor)
+            if not stat.S_ISREG(opened.st_mode) or (
+                opened.st_dev,
+                opened.st_ino,
+            ) != (details.st_dev, details.st_ino):
+                raise StateError(f"snapshot path changed while opening: {decoded}")
+            file_digest = hashlib.sha256()
+            while True:
+                chunk = os.read(descriptor, 64 * 1024)
+                if not chunk:
+                    break
+                hashed_bytes += len(chunk)
+                if hashed_bytes > MAX_SNAPSHOT_BYTES:
+                    raise StateError(
+                        f"snapshot candidate bytes exceed {MAX_SNAPSHOT_BYTES}"
+                    )
+                file_digest.update(chunk)
+            after_read = os.fstat(descriptor)
+            if (
+                after_read.st_dev,
+                after_read.st_ino,
+                after_read.st_mode,
+                after_read.st_size,
+                after_read.st_mtime_ns,
+                after_read.st_ctime_ns,
+            ) != (
+                opened.st_dev,
+                opened.st_ino,
+                opened.st_mode,
+                opened.st_size,
+                opened.st_mtime_ns,
+                opened.st_ctime_ns,
+            ):
+                raise StateError(f"snapshot path changed while reading: {decoded}")
+            _hash_snapshot_field(digest, b"file\0", file_digest.digest())
+        finally:
+            os.close(descriptor)
+
+    final_head = _snapshot_git(root, ["rev-parse", "--verify", "HEAD"], "HEAD").strip()
+    final_status = _snapshot_git(
+        root,
+        ["status", "--porcelain=v2", "-z", "--untracked-files=all"],
+        "status",
+    )
+    if final_head != head or final_status != status:
+        raise StateError("snapshot candidate changed during hashing; retry explicitly")
+
+    try:
+        head_text = head.decode("ascii")
+    except UnicodeDecodeError as exc:
+        raise StateError("Git HEAD must be ASCII") from exc
+    return {
+        "snapshot_version": SNAPSHOT_VERSION,
+        "root": str(root),
+        "head": head_text,
+        "token": f"sha256:{digest.hexdigest()}",
+        "changed_paths": len(paths),
+        "untracked_paths": len(set(untracked)),
+        "hashed_bytes": hashed_bytes,
+    }
 
 
 def state_directory(root: Path) -> Path:
@@ -530,6 +761,8 @@ def _migrate_v1(state: dict[str, Any], root: Path) -> dict[str, Any]:
         "revision": 0,
         "created_at": updated_at,
         "artifacts": artifacts,
+        "progress": None,
+        "handoff": None,
     }
 
 
@@ -557,11 +790,58 @@ def validate_state(state: Any, root: Path | None = None) -> dict[str, Any]:
     if state.get("phase") not in PHASES:
         raise StateError(f"invalid phase: {state.get('phase')!r}")
     _validate_text(state.get("current_task"), "current_task", allow_none=True)
+    _validate_text(
+        state.get("progress"),
+        "progress",
+        allow_none=True,
+        maximum=MAX_PROGRESS_LENGTH,
+    )
     _validate_text(state.get("next_action"), "next_action")
     created_at = _validate_timestamp(state.get("created_at"), "created_at")
     updated_at = _validate_timestamp(state.get("updated_at"), "updated_at")
     if updated_at < created_at:
         raise StateError("updated_at must not precede created_at")
+
+    handoff = state.get("handoff")
+    if handoff is not None:
+        if not isinstance(handoff, dict) or set(handoff) != HANDOFF_KEYS:
+            raise StateError("handoff must contain exactly the supported handoff keys")
+        if state["status"] != "cancelled":
+            raise StateError("a handoff source must be cancelled")
+        target_root = handoff.get("target_root")
+        _validate_text(
+            target_root,
+            "handoff.target_root",
+            maximum=MAX_HANDOFF_ROOT_LENGTH,
+        )
+        assert isinstance(target_root, str)
+        target_path = Path(target_root)
+        if not target_path.is_absolute():
+            raise StateError("handoff.target_root must be absolute")
+        if str(target_path.resolve(strict=False)) != target_root:
+            raise StateError("handoff.target_root must be canonical")
+        if root is not None and target_path == root.resolve():
+            raise StateError("handoff target must differ from the source workspace")
+        target_workflow_id = handoff.get("target_workflow_id")
+        _validate_text(target_workflow_id, "handoff.target_workflow_id", maximum=64)
+        try:
+            parsed_target_workflow = uuid.UUID(str(target_workflow_id))
+        except ValueError as exc:
+            raise StateError("handoff.target_workflow_id must be a UUID") from exc
+        if str(parsed_target_workflow) != target_workflow_id:
+            raise StateError("handoff.target_workflow_id must use canonical UUID form")
+        target_revision = handoff.get("validated_revision")
+        if (
+            isinstance(target_revision, bool)
+            or not isinstance(target_revision, int)
+            or target_revision < 0
+        ):
+            raise StateError("handoff.validated_revision must be a non-negative integer")
+        transferred_at = _validate_timestamp(
+            handoff.get("transferred_at"), "handoff.transferred_at"
+        )
+        if transferred_at > updated_at:
+            raise StateError("handoff.transferred_at must not follow updated_at")
 
     artifacts = state.get("artifacts")
     if not isinstance(artifacts, dict) or set(artifacts) != ARTIFACT_KEYS:
@@ -656,8 +936,15 @@ def load_state(
             raw = json.loads(payload)
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise StateError(f"cannot read {path}: {exc}") from exc
-        if isinstance(raw, dict) and raw.get("schema_version") == 1:
-            raw = _migrate_v1(raw, root)
+        if isinstance(raw, dict):
+            if raw.get("schema_version") == 1:
+                raw = _migrate_v1(raw, root)
+            if raw.get("schema_version") == SCHEMA_VERSION:
+                raw = {
+                    **raw,
+                    "progress": raw.get("progress"),
+                    "handoff": raw.get("handoff"),
+                }
         return validate_state(raw, root)
     finally:
         if owned_directory_fd is not None:
@@ -1099,6 +1386,8 @@ def new_state(
         "phase": phase,
         "artifacts": artifact_map,
         "current_task": None,
+        "progress": None,
+        "handoff": None,
         "next_action": next_action,
         "completed": [],
         "created_at": now,
@@ -1186,12 +1475,13 @@ def command_checkpoint(args: argparse.Namespace, root: Path) -> dict[str, Any]:
             ("phase", "phase"),
             ("next_action", "next_action"),
             ("current_task", "current_task"),
+            ("progress", "progress"),
         ):
-            value = getattr(args, argument_name)
+            value = getattr(args, argument_name, None)
             if value is not None:
                 if isinstance(value, str):
                     value = value.strip()
-                    if state_key == "current_task" and not value:
+                    if state_key in {"current_task", "progress"} and not value:
                         value = None
                     elif not value:
                         raise StateError(f"{state_key} must not be empty")
@@ -1245,6 +1535,57 @@ def command_resume(args: argparse.Namespace, root: Path) -> dict[str, Any]:
         return state
 
 
+def command_handoff(args: argparse.Namespace, root: Path) -> dict[str, Any]:
+    root = root.resolve()
+    target_root_text = args.target_root.strip()
+    _validate_text(
+        target_root_text, "target root", maximum=MAX_HANDOFF_ROOT_LENGTH
+    )
+    target_root = Path(target_root_text)
+    if not target_root.is_absolute():
+        raise StateError("target root must be absolute")
+    target_root = target_root.resolve()
+    if target_root == root:
+        raise StateError("handoff target must differ from the source workspace")
+
+    with state_lock(root) as directory_fd:
+        state = _load_for_mutation(
+            args, root, directory_fd, statuses={"active", "paused"}
+        )
+        target = load_state(target_root)
+        assert target is not None
+        if args.target_workflow != target["workflow_id"]:
+            raise StateConflict(
+                "target workflow changed: expected "
+                f"{args.target_workflow}, current {target['workflow_id']}"
+            )
+        if args.target_revision != target["revision"]:
+            raise StateConflict(
+                "target revision changed: expected "
+                f"{args.target_revision}, current {target['revision']}"
+            )
+        if target["status"] != "active":
+            raise StateError(
+                f"target workflow is {target['status']!r}; handoff requires 'active'"
+            )
+
+        state["status"] = "cancelled"
+        state["next_action"] = (
+            "Open a new task rooted at "
+            f"{target_root} and continue workflow {target['workflow_id']} from its "
+            "current ledger state."
+        )
+        _advance_revision(state)
+        state["handoff"] = {
+            "target_root": str(target_root),
+            "target_workflow_id": target["workflow_id"],
+            "validated_revision": target["revision"],
+            "transferred_at": state["updated_at"],
+        }
+        _write_state_unlocked(root, state, directory_fd)
+        return state
+
+
 def command_finish(args: argparse.Namespace, root: Path, status: str) -> dict[str, Any]:
     root = root.resolve()
     allowed = {"active", "paused"} if status == "cancelled" else {"active"}
@@ -1287,6 +1628,7 @@ def _recovery_data(state: dict[str, Any], *, brief: bool) -> dict[str, Any]:
         "status": state["status"],
         "phase": state["phase"],
         "objective": _clip(state["objective"], 600 if brief else 1_500),
+        "progress": _clip(state["progress"], MAX_PROGRESS_LENGTH),
         "next_action": _clip(state["next_action"], 600 if brief else 1_500),
         "updated_at": state["updated_at"],
         "freshness": "stale_by_age" if age_days >= STALE_LEDGER_DAYS else "recent",
@@ -1310,6 +1652,28 @@ def _recovery_data(state: dict[str, Any], *, brief: bool) -> dict[str, Any]:
 
 
 def render_context(state: dict[str, Any]) -> str:
+    if state.get("handoff") is not None:
+        context = "\n".join(
+            [
+                "Littlepowers workflow handoff (local recovery data):",
+                "This source workflow was transferred and must not be resumed here. "
+                "The target pointer may be stale; open a new task rooted at the target "
+                "workspace and reread its ledger before acting.",
+                json.dumps(
+                    {
+                        "source_workflow_id": state["workflow_id"],
+                        "source_revision": state["revision"],
+                        "handoff": state["handoff"],
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                    sort_keys=True,
+                ),
+            ]
+        )
+        if len(context) > MAX_CONTEXT_CHARS:
+            raise StateError(f"rendered context exceeds {MAX_CONTEXT_CHARS} characters")
+        return context
     if state["status"] not in ACTIVE_STATUSES:
         return ""
     context = "\n".join(
@@ -1370,7 +1734,11 @@ def print_state(state: dict[str, Any], *, as_json: bool) -> None:
     print(f"objective: {state['objective']}")
     print(f"phase: {state['phase']}")
     print(f"current task: {state['current_task'] or 'none'}")
+    print(f"progress: {state['progress'] or 'none'}")
     print(f"next action: {state['next_action']}")
+    if state.get("handoff") is not None:
+        print(f"handoff target: {state['handoff']['target_root']}")
+        print(f"handoff workflow: {state['handoff']['target_workflow_id']}")
 
 
 def print_mutation(state: dict[str, Any], root: Path) -> None:
@@ -1491,6 +1859,7 @@ def build_parser() -> argparse.ArgumentParser:
     checkpoint.add_argument("--phase", choices=sorted(PHASES))
     checkpoint.add_argument("--next-action")
     checkpoint.add_argument("--current-task")
+    checkpoint.add_argument("--progress")
     checkpoint.add_argument(
         "--artifact", action="append", default=[], metavar="KEY=PATH"
     )
@@ -1503,6 +1872,14 @@ def build_parser() -> argparse.ArgumentParser:
     resume = subparsers.add_parser("resume", help="Resume a paused workflow")
     _add_writer_arguments(resume)
     resume.add_argument("--next-action")
+
+    handoff = subparsers.add_parser(
+        "handoff", help="Transfer work to an explicit active target workflow"
+    )
+    _add_writer_arguments(handoff)
+    handoff.add_argument("--target-root", required=True)
+    handoff.add_argument("--target-workflow", required=True)
+    handoff.add_argument("--target-revision", required=True, type=int)
 
     complete = subparsers.add_parser(
         "complete", help="Mark the active workflow complete"
@@ -1522,6 +1899,9 @@ def build_parser() -> argparse.ArgumentParser:
     _add_writer_arguments(read)
     read.add_argument("--key", required=True, choices=sorted(ARTIFACT_KEYS))
     subparsers.add_parser("context", help="Render recovery context for unfinished work")
+    subparsers.add_parser(
+        "snapshot", help="Hash one bounded Git review candidate without mutation"
+    )
     subparsers.add_parser("doctor", help="Check ledger safety and validity")
     return parser
 
@@ -1539,6 +1919,8 @@ def main(argv: list[str] | None = None) -> int:
             print_mutation(command_pause(args, root), root)
         elif args.command == "resume":
             print_mutation(command_resume(args, root), root)
+        elif args.command == "handoff":
+            print_mutation(command_handoff(args, root), root)
         elif args.command == "complete":
             print_mutation(command_finish(args, root, "complete"), root)
         elif args.command == "cancel":
@@ -1565,6 +1947,15 @@ def main(argv: list[str] | None = None) -> int:
                 context = render_context(state)
                 if context:
                     print(context)
+        elif args.command == "snapshot":
+            print(
+                json.dumps(
+                    create_review_snapshot(root),
+                    ensure_ascii=False,
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
         elif args.command == "doctor":
             return 0 if command_doctor(root) else 2
         else:  # pragma: no cover - argparse guards this branch

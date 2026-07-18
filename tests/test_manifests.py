@@ -129,6 +129,11 @@ class ManifestTests(unittest.TestCase):
         claude = (ROOT / "assets" / "claude-snippet.md").read_text(encoding="utf-8")
         self.assertIn("littlepowers:using-littlepowers", agents)
         self.assertIn("littlepowers:using-littlepowers", claude)
+        for snippet in (agents, claude):
+            self.assertIn("docs/littlepowers/...", snippet)
+            self.assertIn("latest user request", snippet)
+            self.assertIn("new workflow artifacts", snippet)
+            self.assertIn("legacy directories or backlinks", snippet)
 
     def test_internal_phase_skills_gate_direct_invocation(self) -> None:
         internal = {
@@ -146,6 +151,116 @@ class ManifestTests(unittest.TestCase):
                 frontmatter = skill.split("---\n", 2)[1]
                 self.assertIn("using-littlepowers", frontmatter)
                 self.assertIn("active state", frontmatter)
+
+    def test_artifact_roots_require_an_explicit_current_declaration(self) -> None:
+        defaults = {
+            "brainstorming": "docs/littlepowers/brainstorms/",
+            "compact-shaping": "docs/littlepowers/shapes/",
+            "writing-specs": "docs/littlepowers/specs/",
+            "designing-solutions": "docs/littlepowers/designs/",
+            "writing-plans": "docs/littlepowers/plans/",
+        }
+
+        for name, default_root in defaults.items():
+            with self.subTest(skill=name):
+                skill = (ROOT / "skills" / name / "SKILL.md").read_text(
+                    encoding="utf-8"
+                ).lower()
+                self.assertIn(
+                    "existing workflow, keep the artifact root already resolved",
+                    skill,
+                )
+                self.assertIn(
+                    "latest user request or a current repository instruction "
+                    "explicitly names it for new workflow artifacts",
+                    skill,
+                )
+                self.assertIn(
+                    "existing directories, backlinks, and historical or "
+                    "tool-branded paths",
+                    skill,
+                )
+                self.assertIn(default_root, skill)
+
+        router = (ROOT / "skills" / "using-littlepowers" / "SKILL.md").read_text(
+            encoding="utf-8"
+        ).lower()
+        self.assertIn("resolve artifact placement", router)
+        self.assertIn(
+            "latest user request or a current repository instruction "
+            "explicitly names it for new workflow artifacts",
+            router,
+        )
+        self.assertIn("recorded artifact paths", router)
+
+    def test_runtime_continuity_contracts_cover_observed_failures(self) -> None:
+        router = (ROOT / "skills" / "using-littlepowers" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        brainstorm = (
+            ROOT / "skills" / "brainstorming" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        executing = (
+            ROOT / "skills" / "executing-plans" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        managing = (
+            ROOT / "skills" / "managing-littlepowers" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("codex plugin list --json", router)
+        self.assertIn("claude plugin list --json", router)
+        self.assertIn("Do not continue from remembered instructions", router)
+        self.assertIn("new task boundary", router)
+        self.assertIn("An ADR may be created or updated as a companion", brainstorm)
+        self.assertIn("an ADR is not a substitute", brainstorm)
+        self.assertIn("--progress", executing)
+        self.assertIn("Do not invent a percentage", executing)
+        self.assertIn("before a likely context compaction", executing)
+        self.assertIn("without inventing a percentage", managing)
+        phase_progress = {
+            "brainstorming": "spec is next",
+            "writing-specs": "design is next",
+            "designing-solutions": "plan is next",
+            "writing-plans": "execution is next",
+            "compact-shaping": "execution is next",
+        }
+        for skill_name, expected_progress in phase_progress.items():
+            with self.subTest(progress_skill=skill_name):
+                phase_skill = (ROOT / "skills" / skill_name / "SKILL.md").read_text(
+                    encoding="utf-8"
+                )
+                self.assertIn("--progress", phase_skill)
+                self.assertIn(expected_progress, phase_skill)
+
+    def test_handoff_and_review_evidence_stay_explicit_and_lightweight(self) -> None:
+        router = (ROOT / "skills" / "using-littlepowers" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        managing = (
+            ROOT / "skills" / "managing-littlepowers" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        executing = (
+            ROOT / "skills" / "executing-plans" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        reviewing = (
+            ROOT / "skills" / "reviewing-changes" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        hook = (ROOT / "hooks" / "session-start.py").read_text(encoding="utf-8")
+
+        self.assertIn("new task or session rooted at the target", router)
+        self.assertIn("Never scan sibling worktrees", router)
+        self.assertIn("cannot change the current task root", router)
+        self.assertIn("handoff --workflow", managing)
+        self.assertIn("cancels only the source workflow", managing)
+        self.assertIn("actual workspace transfer", executing)
+        self.assertIn("does not hand off ordinary phase changes", executing)
+        self.assertIn("snapshot", reviewing)
+        self.assertIn("A changed token invalidates the review verdict", reviewing)
+        self.assertIn("trust, state ownership, or rollback boundary", reviewing)
+        self.assertIn("one acceptance owner", reviewing)
+        self.assertIn("does not create reviewers or select models", reviewing)
+        self.assertNotIn("create_review_snapshot", hook)
+        self.assertNotIn("snapshot", hook)
 
     def test_public_trust_and_contribution_files_exist(self) -> None:
         required = (
@@ -201,6 +316,7 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("Tiny isolated changes", compatibility)
         self.assertIn("original reproducer", evals)
         self.assertIn("separate acceptance/spec and code-quality verdicts", evals)
+        self.assertIn("legacy tool-branded artifact root", evals)
         self.assertIn("## [0.4.0-alpha.1]", changelog)
         self.assertIn("49 Python tests passed", evaluation)
         self.assertIn("17 directly affected", evaluation)

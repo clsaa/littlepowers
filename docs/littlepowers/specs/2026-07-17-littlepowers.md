@@ -55,7 +55,7 @@ Default artifact paths are:
 - `docs/littlepowers/designs/YYYY-MM-DD-<slug>.md`
 - `docs/littlepowers/plans/YYYY-MM-DD-<slug>.md`
 
-Existing repository conventions and explicit user paths override these defaults.
+A path explicitly named for new workflow artifacts by the latest user request, or a current repository instruction that names such a root, overrides these defaults. Existing directories, backlinks, historical files, and tool-branded paths do not establish that convention by themselves.
 
 ### FR4: Durable active state
 

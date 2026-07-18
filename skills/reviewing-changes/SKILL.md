@@ -23,6 +23,14 @@ Review the approved outcome or acceptance criteria, exact diff or commit range, 
 
 Treat implementation summaries and worker claims as navigation aids rather than proof. Inspect the actual files and tests. Keep unrelated pre-existing issues out of scope unless they directly change the safety or correctness of this change.
 
+## Bind a changing review candidate
+
+Prefer an immutable commit or exact range when one already exists. For a broad uncommitted candidate, explicitly run `<python> <state-cli> --root <candidate-root> snapshot` before review and again before accepting its verdict. Record the content-free token with the brief. A changed token invalidates the review verdict; inspect the new diff and repeat only the affected review and evidence.
+
+The snapshot command is bounded, read-only, and on demand. Hooks and ordinary routes never invoke it. It does not create reviewers or select models, effort, or tests.
+
+If one material candidate cannot fit a reliable review, report the scope limit and partition by trust, state ownership, or rollback boundary. Give each partition an exact scope, then have one acceptance owner aggregate shared-interface coverage and the final verdict once. Do not duplicate broad test runs per partition.
+
 ## Assess acceptance and quality separately
 
 First assess acceptance/spec compliance. Map each required behavior to the implementation and evidence, identify unauthorized scope, and return exactly one verdict: `pass`, `fail`, or `blocked`.

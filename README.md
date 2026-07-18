@@ -20,6 +20,8 @@ Littlepowers selects planning depth by unresolved decisions and risk:
 | Compact | A few connected decisions need shaping | One shape brief |
 | Full | Explicit request, or material unresolved architecture, security, migration, cross-system, irreversible, or costly-rollback choices | Brainstorm → spec → design → plan |
 
+Durable artifacts default to `docs/littlepowers/...`. A different root is used only when the latest user request or a current repository instruction explicitly names it for new workflow artifacts. Existing directories, backlinks, and historical or tool-branded paths do not silently override the default.
+
 Three complementary skills apply only when their conditions are present:
 
 - **Systematic debugging** reproduces a failure, traces the earliest supported divergence, tests one hypothesis at a time, and preserves diagnosis-only authority.
@@ -28,7 +30,7 @@ Three complementary skills apply only when their conditions are present:
 
 These skills do not create agents, choose models, require mandatory TDD, or expose hidden reasoning. Codex and Claude Code discover the same implementation.
 
-All tracked routes use a worktree-local `.littlepowers/state.json` ledger. The ledger records an objective, phase, current task, next action, workflow ID, and monotonic revision. It ignores itself in Git.
+All tracked routes use a worktree-local `.littlepowers/state.json` ledger. The ledger records an objective, phase, current task, optional evidence-based progress, next action, workflow ID, and monotonic revision. It ignores itself in Git. Progress names a milestone or acceptance-check count; Littlepowers does not infer percentages from time or file count.
 
 Three read-only hook boundaries expose that ledger to the host:
 
@@ -38,9 +40,16 @@ Three read-only hook boundaries expose that ledger to the host:
 
 The root coordinator is the only ledger writer. A stale revision fails instead of overwriting newer state.
 
+Two boundary tools stay dormant until explicitly needed:
+
+- **Workspace handoff** verifies a named active workflow in another root, cancels only the source ledger, and leaves a pointer for a new task or session rooted at the target. It never scans sibling worktrees or changes the current task root.
+- **Review snapshot** hashes a bounded Git candidate and returns a content-free token so a broad uncommitted review can detect stale input. It runs only when explicitly invoked; hooks never scan Git or hash project files.
+
+If a material review is too large for one reliable pass, split it by trust, state ownership, or rollback boundary and use one acceptance owner to aggregate shared-interface coverage once. Littlepowers does not create reviewers, select models or effort, or add test runs. The ordinary route therefore pays no handoff/snapshot or extra-model cost.
+
 ## What it cannot guarantee
 
-Littlepowers records and restores workflow facts; it cannot force a model to obey them, prevent same-turn steering, or override the latest user request. In Codex, use Queue when a follow-up must wait for the current run to finish.
+Littlepowers records and restores workflow facts; it cannot force a model to obey them, prevent same-turn steering, override the latest user request, or make an active task hot-load a replacement plugin. In Codex, use Queue when a follow-up must wait for the current run to finish.
 
 Hooks may be disabled by trust settings or organization policy. Recovery can only return to the last checkpoint that was written. One worktree supports one active top-level workflow; use another worktree for independent concurrent work.
 
@@ -141,11 +150,15 @@ During tracked work:
 - replacement archives the prior ledger;
 - pause and resume are explicit state transitions.
 
+For a real cross-workspace transfer, create the active target workflow first, hand off the source with both explicit workflow IDs and revisions, then continue from a new task or session rooted at the target. Handoff is not used for ordinary phases, status questions, or compaction.
+
 A paused workflow never resumes from an ordinary implementation prompt. A ledger older than 30 days is marked stale by age and is reconciled before it can continue.
 
 The router receives the latest user request and treats it as authoritative. It does not require special cancellation words when the intent is clear.
 
 ## Update and roll back
+
+Do not replace Littlepowers while a tracked Codex task is running. A cachebuster install may remove the cache path captured when that task started. Let the active task checkpoint and finish or pause, install the update, then start a new task. If a path was already replaced, Littlepowers resolves the single enabled installation through the host's JSON plugin listing and rereads the current skills before continuing; it stops when resolution is ambiguous.
 
 For a tagged Codex installation, replace the marketplace snapshot with the desired tag:
 
@@ -174,6 +187,7 @@ Restart Claude Code or run `/reload-plugins`. Claude's repository marketplace fo
 - The shared reader rejects a Git-tracked state file, links and reparse points, unexpected ownership or write permissions, non-regular files, and state over 64 KiB. The writer also checks the serialized size before replacement.
 - POSIX transactions pin both the workspace path and validated state directory before lock, state, and archive I/O, preventing an intermediate or final pathname swap from redirecting writes.
 - Artifact references are normalized Markdown paths. Skills read them through a snapshot-bound, bounded safe-reader command that rejects links and special files and labels content as untrusted project data.
+- The optional review snapshot is read-only, bounded by path/output/byte/time limits, returns hashes and counts rather than file content, and is never called by a hook.
 - Mutations use a cross-process lock, workflow ID, expected revision, atomic replacement, and an archive before replacement.
 - Littlepowers does not request commits, branches, pushes, pull requests, deployments, publication, visibility changes, or subagents by itself. The host may delegate in Ultra or dynamic workflows.
 
@@ -199,6 +213,7 @@ Run the management skill's `doctor` flow first. Common causes:
 - The prompt runs in a different worktree or non-Git directory than the ledger.
 - The ledger is tracked, linked, malformed, oversized, or contains an escaping artifact path.
 - Another coordinator advanced the revision; reload instead of retrying a stale write.
+- A plugin cache was replaced during an active task; resolve the one enabled installation, reread the current skills, and use a new task boundary for future updates.
 - Claude Code still uses an older cached plugin; update and reload it.
 
 The [capability matrix](docs/capability-matrix.md) distinguishes expected limitations from faults.

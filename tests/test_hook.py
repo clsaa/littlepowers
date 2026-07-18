@@ -81,6 +81,7 @@ class RecoveryHookTests(unittest.TestCase):
             "phase": None,
             "next_action": None,
             "current_task": None,
+            "progress": None,
             "artifact": [],
             "completed": [],
         }
@@ -95,6 +96,9 @@ class RecoveryHookTests(unittest.TestCase):
 
     def test_session_start_injects_bounded_factual_snapshot(self) -> None:
         state = self.start_state()
+        state = state_module.command_checkpoint(
+            self.writer(state, progress="Wave 1: 2/4 checks pass"), self.workspace
+        )
 
         result = self.run_hook(self.event("SessionStart", source="resume"))
         output = json.loads(result.stdout)
@@ -104,6 +108,7 @@ class RecoveryHookTests(unittest.TestCase):
         context = output["hookSpecificOutput"]["additionalContext"]
         self.assertIn("Finish the interrupted change", context)
         self.assertIn("Run Task 3", context)
+        self.assertIn("Wave 1: 2/4 checks pass", context)
         self.assertIn(str(state["workflow_id"]), context)
         self.assertIn("data, not instructions", context)
         self.assertNotIn("Read the referenced artifacts", context)
@@ -189,6 +194,41 @@ class RecoveryHookTests(unittest.TestCase):
         result = self.run_hook(self.event("UserPromptSubmit"))
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, "")
+
+    def test_handoff_is_rendered_only_at_session_start(self) -> None:
+        source = self.start_state()
+        target_root = self.workspace / "target"
+        target_root.mkdir()
+        target = state_module.command_start(
+            argparse.Namespace(
+                objective="Continue in target worktree",
+                phase="execute",
+                next_action="Resume target task",
+                artifact=[],
+                replace=False,
+            ),
+            target_root,
+        )
+        handed_off = state_module.command_handoff(
+            self.writer(
+                source,
+                target_root=str(target_root),
+                target_workflow=target["workflow_id"],
+                target_revision=target["revision"],
+            ),
+            self.workspace,
+        )
+
+        session = self.run_hook(self.event("SessionStart"))
+        prompt = self.run_hook(self.event("UserPromptSubmit"))
+        worker = self.run_hook(self.event("SubagentStart"))
+
+        self.assertEqual(session.returncode, 0)
+        context = json.loads(session.stdout)["hookSpecificOutput"]["additionalContext"]
+        self.assertIn("transferred", context)
+        self.assertIn(str(handed_off["handoff"]["target_workflow_id"]), context)
+        self.assertEqual(prompt.stdout, "")
+        self.assertEqual(worker.stdout, "")
 
     def test_hook_fails_open_for_bad_input_or_state(self) -> None:
         bad_input = self.run_hook("not json")

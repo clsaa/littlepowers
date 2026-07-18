@@ -1,6 +1,6 @@
 # Security model
 
-**Reviewed:** 2026-07-17
+**Reviewed:** 2026-07-18
 
 **Release:** 0.4.0-alpha.1
 
@@ -15,9 +15,10 @@ The plugin trusts the installed Littlepowers package and the local Python runtim
 `.littlepowers/state.json` contains:
 
 - workflow ID and revision;
-- status, phase, objective, current task, and next action;
+- status, phase, objective, current task, optional observable progress, and next action;
 - relative artifact paths;
 - bounded completed-checkpoint descriptions;
+- an optional handoff target root, workflow ID, revision, and timestamp on a cancelled source workflow;
 - creation and update timestamps.
 
 It does not contain transcripts, raw prompts, credentials, file contents, or model reasoning. `.littlepowers/.gitignore` ignores the directory contents.
@@ -32,9 +33,11 @@ It does not contain transcripts, raw prompts, credentials, file contents, or mod
 
 The hook reads event metadata and the ledger. It does not inspect transcript paths or prompt text, write state, call the network, run Git mutations, or start agents. It emits nothing when no unfinished workflow exists. Invalid state produces a fixed stderr diagnostic and exit code 0 so the coding session can continue.
 
-The state CLI is the only writer. Skills invoke it during tracked work. Its `read-artifact` command is the only supported way for a skill to load a ledger-referenced artifact.
+The state CLI is the only writer. Skills invoke it during tracked work. Its `read-artifact` command is the only supported way for a skill to load a ledger-referenced artifact. `handoff` reads an explicitly named active target, then writes only the source ledger; it does not search for worktrees or write the target.
 
-The v0.4 debugging, verification, and review skills add instructions only. They add no Hook, script, state field, network client, or execution privilege. `reviewing-changes` explicitly remains read-only; implementation and ledger mutation stay with the authorized coordinator.
+The optional `snapshot` command is a separate read-only review surface. It runs Git with optional locks disabled and bounded output/timeout, hashes a sorted set of tracked changes plus nonignored untracked files, rejects special files, unsafe or oversized candidates, and observable candidate drift during hashing, and returns only the canonical root, HEAD, token, and counts. It does not create a ledger, follow symlinks, print file contents, call the network, start agents, or run from hooks.
+
+The v0.4 debugging, verification, and review skills add instructions only. The Unreleased continuity update adds one bounded state field through the existing CLI but no Hook event, network client, or execution privilege. `reviewing-changes` explicitly remains read-only; implementation and ledger mutation stay with the authorized coordinator.
 
 ## Store validation
 
@@ -48,7 +51,7 @@ The shared read/write boundary:
 6. rejects a Git-tracked state file;
 7. requires the ledger to be ignored in a Git worktree;
 8. accepts only normalized, non-hidden, workspace-relative Markdown artifact paths;
-9. rejects control characters, timestamps beyond a five-minute future-skew allowance, and bounded-field violations.
+9. rejects control characters, timestamps beyond a five-minute future-skew allowance, progress over 800 characters, invalid handoff targets or revisions, and other bounded-field violations.
 
 Hook context is bounded to 10,000 characters and only includes the ten most recent completed entries. It labels records older than 30 days as stale by age and marks paused records as requiring explicit resume.
 
@@ -72,6 +75,8 @@ The parent coordinator is the sole ledger writer. `SubagentStart` supplies worke
 
 - Hooks and skills provide context to probabilistic models; they do not guarantee compliance.
 - A malicious process with the same operating-system account can bypass advisory protocol or change files after validation; normal host sandbox and account isolation remain the stronger boundary.
+- A review snapshot detects candidate drift only when compared again; it does not lock files against concurrent edits.
+- A handoff pointer can become stale after it is recorded, so the destination task must reload and verify the target workflow.
 - Advisory locks require cooperating writers.
 - A valid but misleading objective remains untrusted data. Static router policy gives the latest user request priority.
 - Git Bash is required for the shared Windows hook launcher in this release.

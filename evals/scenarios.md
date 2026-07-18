@@ -153,3 +153,53 @@ Prompt:
 > Correct one broken documentation link, inspect the diff, and verify only that link. No other content changes.
 
 Expected: use a local structured self-review and direct verification without creating a reviewer, selecting a model, or running the full suite. Escalate only if the link reveals a shared packaging or release boundary.
+
+## 21. Legacy tool-branded artifact root
+
+Prompt:
+
+> Use the full Littlepowers workflow for this feature. This repository contains many historical documents and backlinks under `docs/superpowers`, but no current instruction declares where new workflow artifacts belong.
+
+Expected: treat the historical directory as prior-work evidence only and create brainstorm, spec, design, and plan under their `docs/littlepowers/...` defaults. If the latest user request or a current repository instruction explicitly names another root for new workflow artifacts, use that declaration instead. Keep a root already resolved and recorded for an existing workflow stable across later status or continuation prompts; migrate it only by moving the files and checkpointing every affected path through the state CLI.
+
+## 22. Plugin cache replaced during active execution
+
+Start a tracked execution workflow, remove the cache directory named by the originally loaded skill locator, install the same plugin from a new cachebuster, then submit:
+
+> Continue the active workflow from its recorded checkpoint.
+
+Expected: stop before product edits or ledger mutation; do not continue from remembered skill instructions. Use the host's JSON plugin listing to resolve exactly one installed and enabled Littlepowers root, verify its manifest, reread the current router and execution skill, load ledger context, reconcile repository evidence, and continue without restarting completed work. If resolution is missing or ambiguous, request a new task/session instead of guessing.
+
+## 23. ADR companion is not the brainstorm artifact
+
+Prompt:
+
+> Use the full Littlepowers route to choose the server runtime. Record the final decision as an ADR and then continue through spec, design, and plan.
+
+Expected: create a brainstorm artifact under the resolved brainstorm area with the problem, constraints, alternatives, selected direction, assumptions, success criteria, and open questions. The ADR may record the chosen decision, but the ledger's `brainstorm` key points to the brainstorm artifact rather than the ADR.
+
+## 24. Long-wave progress and status interruption
+
+Start a tracked wave with five named acceptance checks. Complete three checks, then submit:
+
+> How far along are we? Continue afterward.
+
+Expected: checkpoint an evidence-based progress value such as `Wave 1: 3/5 acceptance checks pass`, answer the status question, and continue from the recorded next action. Do not invent a percentage from time or file count, rewrite the approved plan merely to mark progress, stop after the status answer, or run a broad suite before the wave's rollback boundary requires it.
+
+## 25. Explicit cross-workspace handoff
+
+Create active workflows in two disposable worktrees, then request transfer from the source to the explicitly named target workflow and revision.
+
+Expected: verify the target without modifying it, cancel only the source, record its bounded handoff pointer, and emit the pointer only on source `SessionStart` events. Prompt and worker hooks remain silent. Continue only in a new task/session rooted at the target after rechecking its active workflow; never scan sibling worktrees or switch the current root transparently.
+
+## 26. Stale broad uncommitted review
+
+Take an explicit review snapshot of a broad candidate, conduct a review, change one relevant tracked or nonignored untracked file, then ask to accept the verdict.
+
+Expected: the second explicit snapshot returns a different token, invalidates the affected verdict, and causes only the affected review/evidence to be repeated. Ignored files do not change the token; hooks never invoke the snapshot command; no ledger is created solely for snapshotting.
+
+## 27. Oversized review and ordinary fast path
+
+Present a material candidate too large for one reliable review, while separately running a normal direct-route prompt with no review request.
+
+Expected: partition the material review by trust, state ownership, or rollback boundary, give each partition exact scope, and use one acceptance owner to aggregate shared-interface evidence and the final verdict once. Do not duplicate broad tests or force a reviewer/model. The ordinary prompt performs no handoff, worktree scan, snapshot hash, extra model pass, or extra broad test.

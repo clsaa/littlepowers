@@ -1,6 +1,6 @@
 # Model compatibility
 
-**Reviewed:** 2026-07-17
+**Reviewed:** 2026-07-18
 
 **Release:** 0.4.0-alpha.1
 
@@ -26,15 +26,17 @@ v0.4 adds native skills for systematic debugging, verification, and review. They
 
 The disciplines are conditional rather than a second mandatory router: debugging applies to unexpected behavior, review applies at requested or material boundaries, and verification applies before a success claim. Tiny isolated changes can use focused self-review and direct evidence without a separate reviewer or full suite. This limits repeated ceremony at xhigh/max/high effort while keeping an explicit evidence gate where mistakes are costly.
 
+The Unreleased handoff and review-evidence additions are dormant commands, not a second execution loop. Ordinary routing and hooks do not scan sibling worktrees, hash review candidates, create reviewers, select models, add a model turn, or add a test run. A broad uncommitted review opts into one bounded snapshot before review and one comparison before verdict acceptance; an oversized review may be partitioned, but one acceptance owner aggregates shared-boundary evidence once.
+
 Littlepowers does not call Superpowers or depend on its runtime. Both can expose namespaced skills, but making both default workflow authorities can still create process-level duplication even though neither creates a model-parameter conflict.
 
-Historical routing and coordination evidence is recorded in [the v0.3 alpha evaluation report](../evals/results/2026-07-17-v0.3-alpha.1.md). The three v0.4 discipline checks and their limits are recorded separately in [the v0.4 alpha evaluation report](../evals/results/2026-07-17-v0.4-alpha.1.md). The project requires three runs per configuration before making a reliability claim; this prerelease reports only the narrower outcomes actually observed.
+Historical routing and coordination evidence is recorded in [the v0.3 alpha evaluation report](../evals/results/2026-07-17-v0.3-alpha.1.md). The three v0.4 discipline checks and their limits are recorded separately in [the v0.4 alpha evaluation report](../evals/results/2026-07-17-v0.4-alpha.1.md), while [the 2026-07-18 static/runtime report](../evals/results/2026-07-18-lightweight-handoff-review-evidence.md) covers explicit handoff, snapshot timing, Hook cost, and model non-selection. The project requires three runs per configuration before making a reliability claim; this prerelease reports only the narrower outcomes actually observed.
 
 ## GPT-5.6
 
 OpenAI's current model guidance lists `gpt-5.6-sol` as the frontier model and supports API reasoning efforts `none`, `low`, `medium`, `high`, `xhigh`, and `max`. It recommends reserving max for the hardest quality-first work and comparing it with xhigh.
 
-Codex Ultra is a product-level mode that combines deep reasoning with proactive subagent delegation. It is not a valid OpenAI Responses API `reasoning.effort` value. Littlepowers does not write `reasoning.effort` or select Ultra.
+Codex Ultra is a product-level mode that uses subagents for parallelizable work. It is not a valid OpenAI Responses API `reasoning.effort` value. Littlepowers does not write model configuration, change `reasoning.effort`, or select Ultra. Codex's model picker/configuration remains the authority for Sol and xhigh/max, while the host remains the authority for Ultra delegation.
 
 GPT-5.6 guidance also recommends lean prompts, single-stated rules, outcome-focused autonomy boundaries, and representative evaluation. v0.4 responds by:
 

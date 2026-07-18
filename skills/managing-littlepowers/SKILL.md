@@ -12,9 +12,13 @@ Resolve `<state-cli>` as follows:
 - Claude Code expands `${CLAUDE_PLUGIN_ROOT}/scripts/littlepowers_state.py`.
 - In Codex, resolve `../../scripts/littlepowers_state.py` from this loaded `SKILL.md` path.
 
+If that path disappeared after a plugin replacement, do not continue from memory. Use the host-native installed-plugin listing described by `using-littlepowers` to resolve exactly one active Littlepowers root, reread this skill there, and then run the state CLI. If resolution is missing or ambiguous, stop and use a new task or session after installation.
+
 Use an available Python 3 launcher. Run `doctor` for trust, ignore, schema, and validity checks; run `show --json` for status. These commands are read-only.
 
-Pause, resume, cancel, checkpoint, and complete require the workflow ID and current revision from `show --json`. Pass both with `--workflow <id> --expect-revision <revision>`. Use the newly returned revision after every mutation.
+Report the ledger's `progress` as written. If it is absent, describe the current task, completed checkpoints, and next action without inventing a percentage.
+
+Pause, resume, handoff, cancel, checkpoint, and complete require the workflow ID and current revision from `show --json`. Pass both with `--workflow <id> --expect-revision <revision>`. Use the newly returned revision after every mutation.
 
 Completion is valid only from `phase=verify`; checkpoint that phase and gather fresh evidence before completing the workflow.
 
@@ -25,6 +29,9 @@ Examples:
 <python> <state-cli> show --json
 <python> <state-cli> pause --workflow <id> --expect-revision <revision>
 <python> <state-cli> resume --workflow <id> --expect-revision <revision>
+<python> <state-cli> handoff --workflow <id> --expect-revision <revision> \
+  --target-root <absolute-path> \
+  --target-workflow <target-id> --target-revision <target-revision>
 <python> <state-cli> cancel --workflow <id> --expect-revision <revision>
 <python> <state-cli> start --replace \
   --workflow <id> --expect-revision <revision> \
@@ -32,6 +39,8 @@ Examples:
   --phase <brainstorm|shape|execute> \
   --next-action "<next observable action>"
 ```
+
+Use `handoff` only for an actual transfer to a different workspace root. The target ledger must already exist and be active. The command verifies that explicit target, then cancels only the source workflow and records a pointer; it never writes the target or changes the current task root. Continue in a new task or session rooted at the target and verify its current state there. Do not scan sibling worktrees to discover a destination.
 
 On a conflict, reload and explain which workflow or revision changed. Do not retry blindly.
 

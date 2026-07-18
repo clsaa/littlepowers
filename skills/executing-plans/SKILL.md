@@ -19,13 +19,19 @@ The root coordinator owns ledger writes. Delegated workers receive bounded tasks
 
 For each task or dependency-safe wave:
 
-1. Checkpoint the current task and next observable action.
+1. Checkpoint the current task, observable progress, and next observable action.
 2. Preserve unrelated changes and established architecture.
 3. Implement the smallest complete outcome.
 4. Add or update tests for changed behavior.
 5. Run focused checks and inspect their output.
 6. Review the diff against the intended outcome.
 7. Checkpoint integrated results and the next wave.
+
+Express `progress` as a named milestone or acceptance-check count such as `Wave 1: 3/5 acceptance checks pass`. Do not invent a percentage from elapsed time, file count, or intuition. Keep the approved plan stable unless behavior or acceptance criteria change; live execution truth belongs in the ledger.
+
+Write a continuity checkpoint before a likely context compaction, host handoff, plugin replacement, or when one long batch has crossed multiple subsystem boundaries. This is a recovery boundary, not a reason to split implementation or rerun broad tests after every small edit. For a status question on recent active work, answer it and return to the recorded action; checkpoint only when observable progress or the next action changed.
+
+For an actual workspace transfer, first create and inspect an active target workflow in the destination root. Then use `handoff` with both explicit roots' workflow IDs and revisions, stop work in the source, and continue only from a new task or session rooted at the target. This does not hand off ordinary phase changes, status questions, context compaction, or same-worktree execution.
 
 If a check exposes unexpected behavior, use `debugging-systematically` before attempting speculative repairs. Preserve diagnosis-only authority when the latest request does not authorize a fix.
 
@@ -38,6 +44,7 @@ Every mutation uses the current ID and revision:
   --workflow <workflow-id> --expect-revision <revision> \
   --phase execute \
   --current-task "<task or wave>" \
+  --progress "<observable milestone or acceptance-check count>" \
   --completed "<integrated result>" \
   --next-action "<next observable action>"
 ```

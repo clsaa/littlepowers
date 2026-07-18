@@ -16,6 +16,8 @@ Littlepowers 根据未解决的决策和失败风险选流程，不根据文件�
 | Compact | 有少量相关决策需要固定 | 一份 shape brief |
 | Full | 用户明确要求，或仍有实质性的架构、安全、迁移、跨系统、不可逆操作或高回滚成本决策 | brainstorm → spec → design → plan |
 
+持久产物默认写入 `docs/littlepowers/...`。只有最新用户请求或当前仓库规则明确指定“新 workflow artifact”的根目录时才使用其他路径；已有目录、反向链接、历史文件或带旧工具品牌的路径不会自动覆盖默认值。
+
 另有三个按条件触发的能力：
 
 - **系统化调试**：先复现和定位最早偏差，再一次验证一个假设；仅要求诊断时不修改代码；
@@ -24,7 +26,7 @@ Littlepowers 根据未解决的决策和失败风险选流程，不根据文件�
 
 这些能力不会自动创建 Agent、选择模型、强制 TDD 或要求输出隐藏推理；Codex 与 Claude Code 使用同一份实现。
 
-被追踪的任务会写入当前 worktree 下的 `.littlepowers/state.json`。状态包含 workflow ID 和单调递增 revision；旧 revision 写入会失败，不会覆盖新进度。
+被追踪的任务会写入当前 worktree 下的 `.littlepowers/state.json`。状态包含 workflow ID、单调递增 revision，以及可选的、基于证据的进度；进度应写成里程碑或验收项计数，不能根据时间和文件数量猜百分比。旧 revision 写入会失败，不会覆盖新进度。
 
 三个只读 Hook 负责提供状态：
 
@@ -32,13 +34,22 @@ Littlepowers 根据未解决的决策和失败风险选流程，不根据文件�
 - `UserPromptSubmit`：每个受支持的新提示前提供更短的提醒；
 - `SubagentStart`：标记父任务由协调 Agent 写入，worker 只读。
 
+另外两个边界工具平时保持休眠：
+
+- **工作区交接**：只校验显式指定的另一根目录和活跃 workflow，取消源 ledger 并留下目标指针；它不会扫描兄弟 worktree，也不能改变当前任务根目录。后续必须在目标目录新建任务或会话并重新核验；
+- **评审快照**：仅在“广泛且未提交”的候选改动需要防止评审对象漂移时显式运行，返回不含文件内容的有界哈希 token。Hook 不扫描 Git、不哈希项目文件。
+
+过大的重要评审可以按信任边界、状态所有权或回滚边界分区，再由一个验收负责人统一汇总共享接口证据一次。Littlepowers 不创建 reviewer、不选择模型或 effort，也不会因此增加测试轮次；普通路径没有交接、快照或额外模型调用成本。
+
 ## 能力边界
 
-Littlepowers 能记录并恢复最后一次 checkpoint，但不能强迫模型遵循提醒、阻止同一轮 steering，也不能覆盖最新用户请求。Codex 中，如果消息必须等当前运行结束再处理，请使用 Queue。
+Littlepowers 能记录并恢复最后一次 checkpoint，但不能强迫模型遵循提醒、阻止同一轮 steering、覆盖最新用户请求，也不能让运行中的任务热加载替换后的插件。Codex 中，如果消息必须等当前运行结束再处理，请使用 Queue。
 
 暂停中的 workflow 不会因为普通实现提示而自动恢复；必须先完成显式 `resume`。超过 30 天未更新的 ledger 会标记为按时间过期，需先与当前代码和最新请求核对，再决定是否继续。
 
 一个 worktree 只支持一个活跃的顶层 workflow。并行的独立目标应使用不同 worktree。Ultra 或 Claude dynamic workflows 中，只有根协调 Agent 写 ledger；worker 返回证据。
+
+真正跨工作区时，应先在目标根目录创建活跃 workflow，再用两端明确的 workflow ID 与 revision 交接源 workflow，随后到目标根目录的新任务或会话继续。普通 phase 变化、状态问题和 compaction 不使用 handoff。
 
 Littlepowers 可独立运行。若把它和 Superpowers 同时设为默认 router，可能产生重复或冲突的规划指令。并排评估时应显式调用其中一个带 namespace 的 router，不要在同一仓库同时加入两套持久规则片段。
 
@@ -95,6 +106,8 @@ claude plugin install littlepowers@littlepowers
 
 ## 更新与回滚
 
+不要在正在执行 tracked workflow 的 Codex 任务中替换 Littlepowers。cachebuster 重装可能删除该任务启动时记录的缓存路径。应先让活跃任务 checkpoint 并完成或暂停，再安装更新并新建任务。若路径已经被替换，Littlepowers 会通过宿主的 JSON 插件列表解析唯一启用的安装，重新读取当前技能后再继续；解析缺失或不唯一时必须停止。
+
 Codex 的 tag 安装需要先删除现有插件和 marketplace，再把 `--ref` 改成目标版本并重新安装。Claude Code 使用：
 
 ```bash
@@ -111,6 +124,7 @@ claude plugin update littlepowers@littlepowers
 - 统一拒绝 Git tracked state、链接/reparse point、异常所有权或写权限、非普通文件，以及读取或序列化后超过 64 KiB 的 state；
 - POSIX 写事务逐级固定 workspace 路径和已验证的 state 目录，再相对该目录执行 lock、state 和 archive I/O；中间路径或最终目录被并发替换也不会把写入导向外部；
 - artifact 只接受规范化的 Markdown 相对路径，并通过绑定 workflow ID/revision 且有大小上限的安全读取命令加载；链接、特殊文件会被拒绝，内容始终标为不可信项目数据；
+- 可选 review snapshot 只读并受路径数、Git 输出、文件字节数和超时限制，只返回哈希与计数，Hook 永远不会调用它；
 - 写入使用跨进程锁、workflow ID、预期 revision、原子替换和替换前归档；
 - Littlepowers 本身不会请求 commit、push、PR、部署、公开仓库或启动 subagent。
 

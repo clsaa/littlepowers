@@ -2,6 +2,30 @@
 
 All notable changes are recorded here. The project follows [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Add optional observable progress to the schema 2 recovery ledger without a version bump, preserving old-reader compatibility while adding bounded Hook/status rendering.
+- Add regression scenarios for active-cache replacement, ADR/brainstorm separation, and long-wave progress across a status interruption.
+- Add an explicit cross-workspace handoff that verifies an existing active target, cancels only the source, and records a bounded recovery pointer.
+- Add an on-demand, content-free Git review snapshot for detecting drift in broad uncommitted candidates without creating a ledger.
+
+### Changed
+
+- Require execution checkpoints to use named milestones or acceptance-check counts instead of invented percentages, with continuity checkpoints before compaction, handoff, plugin replacement, or multi-subsystem batches.
+- Keep approved plans stable while the ledger carries current execution progress.
+- Partition reviews that exceed one reliable pass by trust, state ownership, or rollback boundary, with one acceptance owner aggregating shared-interface evidence once.
+- Keep handoff and snapshot dormant on ordinary routes: no sibling scan, background service, automatic reviewer/model selection, or added test run.
+
+### Fixed
+
+- Require an explicit current declaration before using a non-default workflow artifact root, so historical or tool-branded directories such as `docs/superpowers` are not silently inherited by new Littlepowers work.
+- Preserve recorded artifact paths during recovery and require authorized migrations to move files and update the ledger through the state CLI.
+- Recover a replaced plugin path through the host's single enabled Littlepowers installation before rereading skills and state; never continue from remembered instructions alone.
+- Require a full-route brainstorm artifact to remain distinct from an optional companion ADR while preserving legacy ledger references.
+- Invalidate a broad uncommitted review verdict when its explicit candidate snapshot token changes.
+
 ## [0.4.0-alpha.1] - 2026-07-17
 
 ### Added
