@@ -2,11 +2,11 @@
 
 [![CI](https://github.com/clsaa/littlepowers/actions/workflows/test.yml/badge.svg)](https://github.com/clsaa/littlepowers/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-0.4.0--alpha.1-orange.svg)](CHANGELOG.md)
+[![Release](https://img.shields.io/badge/release-1.0.0-blue.svg)](CHANGELOG.md)
 
 [简体中文](README.zh-CN.md)
 
-Littlepowers is a proportional planning, recovery, and engineering-discipline protocol for Codex and Claude Code. It helps an agent shape consequential work before coding, recover the last durable checkpoint after an interruption, debug from evidence, review material changes, and verify completion at the actual impact scope.
+Littlepowers is a proportional planning, recovery, and engineering-discipline protocol for Codex, Claude Code, Qoder, and OpenCode. It helps an agent shape consequential work before coding, recover the last durable checkpoint after an interruption, debug from evidence, review material changes, and verify completion at the actual impact scope.
 
 It is inspired by [Superpowers](https://github.com/obra/superpowers), but it is an independent implementation with no runtime dependency or affiliation.
 
@@ -22,13 +22,15 @@ Littlepowers selects planning depth by unresolved decisions and risk:
 
 Durable artifacts default to `docs/littlepowers/...`. A different root is used only when the latest user request or a current repository instruction explicitly names it for new workflow artifacts. Existing directories, backlinks, and historical or tool-branded paths do not silently override the default.
 
+Full-route phase artifacts are review gates: the agent presents each brainstorm, specification, design, and plan for approval and waits before starting the next phase, unless you explicitly authorize unattended end-to-end execution. In Codex, the tracked task checklist is also mirrored through the native `update_plan` tool (in OpenCode, through its todo tool) so the plan renders in the host interface; the Markdown plan file remains the durable source of truth.
+
 Three complementary skills apply only when their conditions are present:
 
 - **Systematic debugging** reproduces a failure, traces the earliest supported divergence, tests one hypothesis at a time, and preserves diagnosis-only authority.
 - **Proportional verification** gates completion on fresh evidence. Local rollback units get focused checks; shared contracts and releases add the relevant broad checks after integration. A full suite is not the default after every small edit.
 - **Lightweight review** gives acceptance/spec and code-quality verdicts for requested reviews, delegated integrations, shared milestones, or material rollback risk. Tiny isolated edits may use focused self-review.
 
-These skills do not create agents, choose models, require mandatory TDD, or expose hidden reasoning. Codex and Claude Code discover the same implementation.
+These skills do not create agents, choose models, require mandatory TDD, or expose hidden reasoning. Codex, Claude Code, Qoder, and OpenCode discover the same implementation.
 
 All tracked routes use a worktree-local `.littlepowers/state.json` ledger. The ledger records an objective, phase, current task, optional evidence-based progress, next action, workflow ID, and monotonic revision. It ignores itself in Git. Progress names a milestone or acceptance-check count; Littlepowers does not infer percentages from time or file count.
 
@@ -51,7 +53,7 @@ If a material review is too large for one reliable pass, split it by trust, stat
 
 Littlepowers records and restores workflow facts; it cannot force a model to obey them, prevent same-turn steering, override the latest user request, or make an active task hot-load a replacement plugin. In Codex, use Queue when a follow-up must wait for the current run to finish.
 
-Hooks may be disabled by trust settings or organization policy. Recovery can only return to the last checkpoint that was written. One worktree supports one active top-level workflow; use another worktree for independent concurrent work.
+Hooks may be disabled by trust settings or organization policy. The Qoder IDE currently supports only a subset of hook events, so the SessionStart and SubagentStart boundaries stay silent there while UserPromptSubmit reminders still work. Recovery can only return to the last checkpoint that was written. One worktree supports one active top-level workflow; use another worktree for independent concurrent work.
 
 Littlepowers is standalone. Enabling it and Superpowers as simultaneous default routers can produce duplicate planning instructions. For side-by-side evaluation, invoke one namespaced router explicitly and do not install both durable guidance snippets in the same repository.
 
@@ -59,17 +61,17 @@ See the [capability matrix](docs/capability-matrix.md) for exact boundaries.
 
 ## Requirements
 
-- Codex or Claude Code
+- Codex, Claude Code, Qoder CLI or the Qoder IDE, or OpenCode
 - Python 3.9 or later
 - Git Bash on Windows for the shared plugin hook launcher
 - Git credentials that can read this repository while it remains private
 
 ## Install in Codex
 
-Install the current prerelease by tag:
+Install the current release by tag:
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v0.4.0-alpha.1
+codex plugin marketplace add clsaa/littlepowers --ref v1.0.0
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -115,6 +117,51 @@ Inspect recovery state:
 For repository-wide defaults, copy [the optional CLAUDE.md snippet](assets/claude-snippet.md) into the project's `CLAUDE.md`. Use `~/.claude/CLAUDE.md` only for a personal global default.
 
 Claude Code uses its native resume, clear, and compaction flow. Littlepowers does not recommend Codex-only commands in Claude Code.
+
+## Install in Qoder
+
+Qoder CLI and the Qoder IDE share the same plugin layout.
+
+```bash
+qodercli plugins marketplace add clsaa/littlepowers
+qodercli plugins install littlepowers
+```
+
+For a local checkout, run `qodercli plugins install /path/to/littlepowers` instead. Restart the session or run `/skills reload`, then review the plugin hooks before trusting them. In the Qoder IDE, install through the Marketplace panel or import the local plugin folder.
+
+Invoke the router:
+
+```text
+/using-littlepowers Design and build this feature end to end. Use the full brainstorm, spec, design, and plan path.
+```
+
+Inspect recovery state:
+
+```text
+/managing-littlepowers Run doctor and show the active workflow.
+```
+
+For repository-wide defaults, copy [the optional AGENTS.md snippet](assets/agents-snippet.md) into the project's `AGENTS.md`; Qoder reads it automatically. The Qoder IDE currently fires only a subset of hook events, so SessionStart snapshots and SubagentStart markers do not appear there yet, and it does not document `QODER_PLUGIN_ROOT` injection for plugin hooks, so hook commands may not resolve the plugin root in the IDE until the host provides it.
+
+## Install in OpenCode
+
+Add the plugin to the `plugin` array in `opencode.json` (global or project-level):
+
+```json
+{
+  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git"]
+}
+```
+
+Restart OpenCode. The plugin registers the skills directory with OpenCode's native skill tool and injects the same read-only ledger snapshot produced for the other hosts. Verify the install by asking the model to list its skills — the eleven Littlepowers skills should appear. OpenCode prints the plugin name in its logs only when loading fails, so `opencode run --print-logs "hello" 2>&1 | grep -i littlepowers` serves as a failure check: output means a load error, silence means healthy.
+
+Invoke the router by naming the skill:
+
+```text
+Use the using-littlepowers skill to design and build this feature end to end. Use the full brainstorm, spec, design, and plan path.
+```
+
+For repository-wide defaults, copy [the optional AGENTS.md snippet](assets/agents-snippet.md) into the project's `AGENTS.md`; OpenCode reads it automatically. OpenCode has no SubagentStart equivalent, so the worker read-only marker is not injected there; coordinator-only ledger writes remain the protocol.
 
 ## Use it
 
@@ -165,7 +212,7 @@ For a tagged Codex installation, replace the marketplace snapshot with the desir
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v0.4.0-alpha.1
+codex plugin marketplace add clsaa/littlepowers --ref v1.0.0
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -179,6 +226,15 @@ claude plugin update littlepowers@littlepowers
 ```
 
 Restart Claude Code or run `/reload-plugins`. Claude's repository marketplace follows its configured Git source; consult the [changelog](CHANGELOG.md) before updating.
+
+For Qoder CLI:
+
+```bash
+qodercli plugins marketplace update littlepowers
+qodercli plugins update littlepowers
+```
+
+Restart the session or run `/skills reload`. For OpenCode, refresh the git-backed plugin (clear the package cache or reinstall it) and restart OpenCode; pin a tag in the git URL when you need a fixed version.
 
 ## Privacy and security
 
@@ -199,8 +255,9 @@ Littlepowers does not select a model or effort level. Its planning depth follows
 
 - GPT-5.6 Sol xhigh passed routing scenarios 1 through 9 in one prerelease evaluation campaign.
 - GPT-5.6 Sol max completed the v0.3 adversarial review with no remaining P0/P1 issue and 43 tests passing.
-- Codex Ultra passed a two-worker coordination scenario. Coordinator ownership remains a cooperative protocol, not operating-system authorization. Ultra is a Codex orchestration setting, not an OpenAI API `reasoning.effort` value.
+- Codex Ultra passed a two-worker coordination scenario. Coordinator ownership remains a cooperative protocol, not operating-system authorization. Ultra maps to an OpenAI API `reasoning.effort` value and also switches the host's multi-agent delegation on; Littlepowers does not select it.
 - Claude Fable 5 and Opus 4.8 have no model-setting conflict. The new disciplines are conditionally selected rather than repeated on every prompt. Claude Code strict validation accepts the plugin, but an authenticated v0.4 model flow has not been recorded.
+- Qoder CLI, the Qoder IDE, and OpenCode load the same skills, hooks, and state CLI, but no authenticated end-to-end model run has been recorded for these hosts yet.
 
 Compatibility evidence and untested claims are separated in the dated [model compatibility report](docs/model-compatibility.md).
 
@@ -215,6 +272,8 @@ Run the management skill's `doctor` flow first. Common causes:
 - Another coordinator advanced the revision; reload instead of retrying a stale write.
 - A plugin cache was replaced during an active task; resolve the one enabled installation, reread the current skills, and use a new task boundary for future updates.
 - Claude Code still uses an older cached plugin; update and reload it.
+- In Codex, the plan does not appear in the interface because only the native `update_plan` tool renders there; confirm the plan was mirrored after the artifact was written. The Markdown file alone never shows up in that view.
+- In the Qoder IDE, SessionStart and SubagentStart hooks are not fired by the host; in OpenCode, the plugin entry in `opencode.json` must point at a refreshed install.
 
 The [capability matrix](docs/capability-matrix.md) distinguishes expected limitations from faults.
 
@@ -245,6 +304,10 @@ Claude Code:
 claude plugin uninstall littlepowers@littlepowers
 claude plugin marketplace remove littlepowers
 ```
+
+Qoder CLI: disable the plugin through `enabledPlugins` in `settings.json`, or remove it and the marketplace with `qodercli plugins marketplace remove littlepowers`.
+
+OpenCode: remove the `littlepowers@git+...` entry from the `plugin` array in `opencode.json` and restart.
 
 Also remove any snippet you copied into `AGENTS.md` or `CLAUDE.md`. Uninstalling does not delete `.littlepowers`; keep it for recovery, or remove the exact workspace directory only after its record is no longer needed.
 

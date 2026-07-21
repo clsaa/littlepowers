@@ -32,4 +32,4 @@ Checkpoint with the current workflow ID and revision:
   --next-action "Execute the first shape step"
 ```
 
-Use the returned revision, then invoke `executing-plans`.
+Use the returned revision, then present the shape brief for review and stop: summarize the selected approach and execution steps, name the artifact path, and name `executing-plans` as the next phase. Invoke `executing-plans` only after explicit approval of this artifact, or immediately when the latest user request explicitly authorized unattended end-to-end execution. When the user asks for corrections, revise this artifact, checkpoint again, and present it again instead of advancing.

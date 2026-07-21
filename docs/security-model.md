@@ -2,7 +2,7 @@
 
 **Reviewed:** 2026-07-18
 
-**Release:** 0.4.0-alpha.1
+**Release:** 1.0.0
 
 ## Assets and trust boundary
 
@@ -32,6 +32,8 @@ It does not contain transcripts, raw prompts, credentials, file contents, or mod
 - `SubagentStart`.
 
 The hook reads event metadata and the ledger. It does not inspect transcript paths or prompt text, write state, call the network, run Git mutations, or start agents. It emits nothing when no unfinished workflow exists. Invalid state produces a fixed stderr diagnostic and exit code 0 so the coding session can continue.
+
+The OpenCode plugin `.opencode/plugins/littlepowers.js` is read-only and fails open. It registers the plugin's skills directory through the host's config hook and injects the same `hooks/session-start.py` output into in-memory message parts through the host's experimental message-transform hook. It spawns that Python hook with a four-second timeout and a 256 KiB output bound, never writes state or files, never calls the network, and retains only message identifiers (with a bounded prompt-text fallback key) in process memory for injection deduplication. Any error — missing Python, host API drift, or invalid state — results in no injection.
 
 The state CLI is the only writer. Skills invoke it during tracked work. Its `read-artifact` command is the only supported way for a skill to load a ledger-referenced artifact. `handoff` reads an explicitly named active target, then writes only the source ledger; it does not search for worktrees or write the target.
 

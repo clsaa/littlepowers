@@ -2,7 +2,7 @@
 
 **Reviewed:** 2026-07-18
 
-**Release:** 0.4.0-alpha.1
+**Release:** 1.0.0
 
 Littlepowers is checkpoint-assisted recovery. The table separates host events, durable state, and model behavior.
 
@@ -12,7 +12,7 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 | Resume, clear, or compaction | `SessionStart` | Reintroduce the last durable checkpoint | Work after the last checkpoint is not recoverable |
 | Ordinary next prompt | `UserPromptSubmit` | Inject workflow ID, revision, phase, objective, and next action | This is context, not forced control |
 | Same-turn steering | Host prompt handling plus reminder when the event fires | The router attempts to reconcile the message and continue | Littlepowers cannot prevent steering; use Codex Queue to defer a message |
-| Status or side question | Router guidance | Answer, then return to the recorded action | Model compliance remains probabilistic |
+| Status or side question | Router guidance | Answer, then return to the recorded action; while parked at a review gate, answer and keep waiting for approval | Model compliance remains probabilistic |
 | Long-wave status | Schema-2-compatible `progress` plus checkpoints | Report a named milestone or acceptance-check count, then continue | Littlepowers does not infer percentages or replace project-management systems |
 | Clearly unrelated request | Router guidance | Preserve the ledger and use a side task or separate worktree | One worktree has one active workflow |
 | Process crash | Ledger | Resume from the last successful checkpoint | Uncheckpointed tool work may be missing |
@@ -51,9 +51,23 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 - The same debugging, verification, and review skill files are installed; Littlepowers does not change Claude model, effort, or dynamic-workflow settings.
 - The same explicit-only boundary policy applies; no background watcher or global worktree registry is installed.
 
+### Qoder
+
+- Qoder CLI and the Qoder IDE share the plugin layout; install with `qodercli plugins install` or the IDE Marketplace panel.
+- The hooks manifest resolves `${QODER_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}` so one file serves Claude Code and Qoder.
+- The Qoder IDE currently fires only UserPromptSubmit among the Littlepowers hook events; SessionStart snapshots and SubagentStart markers stay silent there while the state CLI remains available. The IDE does not document `QODER_PLUGIN_ROOT` injection for plugin hooks, so hook commands may not resolve the plugin root there until the host provides it.
+- The same skills, state CLI, and artifact rules are installed; Littlepowers does not change Qoder model or effort settings.
+
+### OpenCode
+
+- Install rides the `plugin` array in `opencode.json` and the repository root `package.json`; no user config file is edited by the plugin.
+- `.opencode/plugins/littlepowers.js` registers the skills directory through the `config` hook and injects the same `hooks/session-start.py` output through `experimental.chat.messages.transform`: the full snapshot on the first user message, the short reminder on later user messages.
+- OpenCode has no SubagentStart equivalent, so the worker read-only marker is not injected; coordinator-only ledger writes remain protocol-level.
+- The plugin is read-only and fails open; missing Python or missing state injects nothing.
+
 ## Unsupported in this prerelease
 
 - Several active top-level workflows in one worktree.
 - Recovery without Python 3 or, on Windows, Git Bash.
-- Cursor, OpenCode, Pi, or another harness compatibility layer.
+- Cursor, Pi, or another harness compatibility layer beyond Codex, Claude Code, Qoder, and OpenCode.
 - A guarantee that every model follows every recovery reminder.

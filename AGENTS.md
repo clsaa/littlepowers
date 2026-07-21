@@ -1,6 +1,6 @@
 # Repository guidance
 
-- Keep Littlepowers first-class on both Codex and Claude Code and dependency-free at runtime beyond Python 3.
+- Keep Littlepowers first-class on Codex, Claude Code, Qoder, and OpenCode, and dependency-free at runtime beyond Python 3.
 - Preserve the proportional workflow: do not force full ceremony on trivial, fully specified edits.
 - Keep hooks read-only, silent when no active state exists, and free of network or transcript access.
 - Keep the root coordinator as the only ledger writer; delegated workers are read-only.

@@ -6,7 +6,7 @@ set "HOOK_SCRIPT=%~dp0session-start.py"
 where py >nul 2>nul
 if %ERRORLEVEL% equ 0 (
     py -3 "%HOOK_SCRIPT%"
-    exit /b %ERRORLEVEL%
+    if %ERRORLEVEL% equ 0 exit /b 0
 )
 
 where python3 >nul 2>nul
@@ -33,6 +33,9 @@ if command -v python3 >/dev/null 2>&1; then
 fi
 if command -v python >/dev/null 2>&1; then
     exec python "${SCRIPT_DIR}/session-start.py"
+fi
+if command -v py >/dev/null 2>&1; then
+    exec py -3 "${SCRIPT_DIR}/session-start.py"
 fi
 
 # Missing Python must not prevent the coding session from starting.

@@ -10,8 +10,8 @@ from pathlib import Path
 
 
 def resolve_plugin_root() -> Path:
-    """Resolve native Codex and Claude Code plugin root conventions."""
-    for variable in ("CLAUDE_PLUGIN_ROOT", "PLUGIN_ROOT"):
+    """Resolve native Codex, Claude Code, and Qoder plugin root conventions."""
+    for variable in ("QODER_PLUGIN_ROOT", "CLAUDE_PLUGIN_ROOT", "PLUGIN_ROOT"):
         value = os.environ.get(variable)
         if value:
             return Path(value)

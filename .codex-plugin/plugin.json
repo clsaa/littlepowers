@@ -1,7 +1,7 @@
 {
   "name": "littlepowers",
-  "version": "0.4.0-alpha.1",
-  "description": "A proportional planning, recovery, debugging, verification, and review protocol for Codex and Claude Code.",
+  "version": "1.0.0",
+  "description": "A proportional planning, recovery, debugging, verification, and review protocol for Codex, Claude Code, Qoder, and OpenCode.",
   "author": {
     "name": "clsaa",
     "url": "https://github.com/clsaa"
@@ -27,7 +27,7 @@
   "interface": {
     "displayName": "Littlepowers",
     "shortDescription": "Proportional planning, recovery, and verification",
-    "longDescription": "Route work through proportional planning, preserve it in a revisioned recovery ledger, debug from evidence, review consequential changes, and verify completion at the actual impact scope in Codex and Claude Code.",
+    "longDescription": "Route work through proportional planning, preserve it in a revisioned recovery ledger, debug from evidence, review consequential changes, and verify completion at the actual impact scope in Codex, Claude Code, Qoder, and OpenCode.",
     "developerName": "clsaa",
     "category": "Developer Tools",
     "capabilities": [

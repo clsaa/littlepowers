@@ -1,13 +1,16 @@
 {
   "name": "littlepowers",
-  "description": "A proportional planning, recovery, debugging, verification, and review protocol for Codex, Claude Code, Qoder, and OpenCode.",
   "version": "1.0.0",
+  "description": "A proportional planning, recovery, debugging, verification, and review protocol for Codex, Claude Code, Qoder, and OpenCode.",
+  "private": true,
+  "type": "module",
+  "main": ".opencode/plugins/littlepowers.js",
+  "license": "MIT",
   "author": {
     "name": "clsaa"
   },
   "homepage": "https://github.com/clsaa/littlepowers",
   "repository": "https://github.com/clsaa/littlepowers",
-  "license": "MIT",
   "keywords": [
     "brainstorming",
     "specification",
@@ -20,6 +23,8 @@
     "task-recovery",
     "multi-agent",
     "codex",
-    "claude-code"
+    "claude-code",
+    "qoder",
+    "opencode"
   ]
 }

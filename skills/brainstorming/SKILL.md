@@ -13,7 +13,7 @@ Turn a consequential or unclear request into one chosen direction without implem
 4. Compare two or three real alternatives when a meaningful choice exists. Lead with the recommendation and tradeoffs.
 5. Define measurable success and identify unresolved decisions.
 
-Ask for user input when a choice changes product behavior, scope, cost, security, compatibility, or irreversible external state. If the user requested end-to-end delivery and the direction follows from supplied constraints, record it and continue.
+Ask for user input when a choice changes product behavior, scope, cost, security, compatibility, or irreversible external state. If the user requested end-to-end delivery and the direction follows from supplied constraints, record it and finish the brainstorm without more questions; the phase-boundary review gate still applies before the next phase.
 
 For an existing workflow, keep the artifact root already resolved by `using-littlepowers`. When resolving a new workflow, use a non-default root only when the latest user request or a current repository instruction explicitly names it for new workflow artifacts. Existing directories, backlinks, and historical or tool-branded paths do not qualify by themselves. Otherwise use `docs/littlepowers/brainstorms/YYYY-MM-DD-<slug>.md`. Include the problem, constraints, options, selected direction, decision rationale, assumptions, and open questions.
 
@@ -31,4 +31,4 @@ Checkpoint with the `<state-cli>`, workflow ID, and revision established by `usi
   --next-action "Write the product specification"
 ```
 
-Use the returned revision, then invoke `writing-specs`.
+Use the returned revision, then present the brainstorm for review and stop: summarize the selected direction, rationale, and open questions, name the artifact path, and name `writing-specs` as the next phase. Invoke `writing-specs` only after explicit approval of this artifact, or immediately when the latest user request explicitly authorized unattended end-to-end execution. When the user asks for corrections, revise this artifact, checkpoint again, and present it again instead of advancing.

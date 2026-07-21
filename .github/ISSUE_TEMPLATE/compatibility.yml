@@ -1,5 +1,5 @@
 name: Compatibility report
-description: Report a tested Codex, Claude Code, model, effort, or operating-system combination.
+description: Report a tested Codex, Claude Code, Qoder, OpenCode, model, effort, or operating-system combination.
 title: "[compatibility] "
 labels:
   - compatibility

@@ -2,12 +2,12 @@
 
 ## Supported versions
 
-Security fixes target the latest tagged prerelease while the project is below 1.0.
+Security fixes target the latest tagged release.
 
 | Version | Supported |
 | --- | --- |
-| 0.3.0-alpha.x | Yes |
-| 0.2.x and earlier | No |
+| 1.0.x | Yes |
+| 0.5.0-alpha.x and earlier | No |
 
 ## Report a vulnerability
 

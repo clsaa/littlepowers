@@ -11,7 +11,7 @@ body:
     id: version
     attributes:
       label: Littlepowers version
-      placeholder: 0.3.0-alpha.1
+      placeholder: 0.5.0-alpha.1
     validations:
       required: true
   - type: dropdown
@@ -22,6 +22,9 @@ body:
         - Codex app
         - Codex CLI
         - Claude Code
+        - Qoder CLI
+        - Qoder IDE
+        - OpenCode
     validations:
       required: true
   - type: input

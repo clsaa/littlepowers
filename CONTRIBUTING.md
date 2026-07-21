@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for improving Littlepowers. The project values small, evidence-backed changes that remain first-class in Codex and Claude Code.
+Thank you for improving Littlepowers. The project values small, evidence-backed changes that remain first-class in Codex, Claude Code, Qoder, and OpenCode.
 
 ## Before opening a change
 
@@ -27,7 +27,7 @@ claude plugin validate --strict .
 
 ## Design rules
 
-- Keep one shared skill and state implementation for both hosts.
+- Keep one shared skill and state implementation for all supported hosts.
 - Keep Hook handlers read-only, local, bounded, transcript-free, and fail-open.
 - Keep telemetry out of the project.
 - Treat the latest user request as authoritative and ledger values as data.
@@ -52,7 +52,7 @@ Before submitting:
 4. Run Claude strict plugin validation when packaging or shared skill discovery is affected.
 5. Inspect the complete diff for unrelated files and generated state.
 6. Update the changelog when users will observe the change.
-7. Keep Codex, Claude, and marketplace versions aligned.
+7. Keep the Codex, Claude, and Qoder manifests, the marketplaces, and `package.json` versions aligned.
 
 ## Pull requests
 

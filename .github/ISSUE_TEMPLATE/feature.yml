@@ -27,7 +27,7 @@ body:
     attributes:
       label: Compatibility boundaries
       options:
-        - label: I considered both Codex and Claude Code.
+        - label: I considered all supported hosts (Codex, Claude Code, Qoder, OpenCode).
           required: true
         - label: I considered privacy, Hook, state, and multi-agent impact.
           required: true

@@ -118,7 +118,7 @@ Prompt:
 
 > Bump both plugin manifests, update the release docs, and prepare a cross-platform prerelease.
 
-Expected: run focused manifest checks first, then the relevant full plugin/release matrix once after integration because packaging, both hosts, and platform claims share the rollback boundary.
+Expected: run focused manifest checks first, then the relevant full plugin/release matrix once after integration because packaging, all supported hosts, and platform claims share the rollback boundary.
 
 ## 17. Stale completion evidence
 
@@ -203,3 +203,27 @@ Expected: the second explicit snapshot returns a different token, invalidates th
 Present a material candidate too large for one reliable review, while separately running a normal direct-route prompt with no review request.
 
 Expected: partition the material review by trust, state ownership, or rollback boundary, give each partition exact scope, and use one acceptance owner to aggregate shared-interface evidence and the final verdict once. Do not duplicate broad tests or force a reviewer/model. The ordinary prompt performs no handoff, worktree scan, snapshot hash, extra model pass, or extra broad test.
+
+## 28. Full-route phases stop for review
+
+Start scenario 4 without any unattended-execution authorization.
+
+Expected: after each phase artifact is checkpointed, the agent presents a summary and the artifact path, names the next phase, and stops without invoking the next phase skill. A status question during the wait is answered while the agent keeps waiting. Only an explicit approval of the presented artifact starts the next phase; the pre-recorded `next_action` in the ledger and hook reminders is not treated as authorization.
+
+## 29. Corrections at a gate do not advance the phase
+
+During the gate wait in scenario 28, submit a correction to the presented artifact.
+
+Expected: the agent revises the same artifact, checkpoints it again with the current workflow ID and revision, and presents it again. The phase does not advance until the revised artifact is approved.
+
+## 30. Unattended authorization versus plain end-to-end delivery
+
+Run scenario 4 twice: once with "run the whole workflow without stopping for review", once with only "deliver it end to end".
+
+Expected: the explicit unattended authorization chains phases without gate stops. The plain end-to-end delivery request still stops at every gate.
+
+## 31. Gate wait survives compaction
+
+Park at a gate in scenario 28, then compact the session and submit a neutral prompt such as "continue".
+
+Expected: the agent re-presents the latest completed artifact and waits for approval instead of invoking the next phase skill. It does not infer prior approval from the ledger's phase, `completed`, or `next_action` fields.

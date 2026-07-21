@@ -1,6 +1,6 @@
 ---
 name: managing-littlepowers
-description: Inspect or manage a Littlepowers recovery ledger. Use when the user asks for workflow status, health checks, pause, resume, cancel, replacement, cleanup, or troubleshooting in Codex or Claude Code. Do not change product code unless separately requested.
+description: Inspect or manage a Littlepowers recovery ledger. Use when the user asks for workflow status, health checks, pause, resume, cancel, replacement, cleanup, or troubleshooting in Codex, Claude Code, Qoder, or OpenCode. Do not change product code unless separately requested.
 ---
 
 # Managing Littlepowers
@@ -10,7 +10,8 @@ Operate the recovery ledger without assuming the user's project contains the Lit
 Resolve `<state-cli>` as follows:
 
 - Claude Code expands `${CLAUDE_PLUGIN_ROOT}/scripts/littlepowers_state.py`.
-- In Codex, resolve `../../scripts/littlepowers_state.py` from this loaded `SKILL.md` path.
+- Qoder CLI expands `${QODER_PLUGIN_ROOT}/scripts/littlepowers_state.py`.
+- In Codex or OpenCode, resolve `../../scripts/littlepowers_state.py` from this loaded `SKILL.md` path.
 
 If that path disappeared after a plugin replacement, do not continue from memory. Use the host-native installed-plugin listing described by `using-littlepowers` to resolve exactly one active Littlepowers root, reread this skill there, and then run the state CLI. If resolution is missing or ambiguous, stop and use a new task or session after installation.
 

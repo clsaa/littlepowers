@@ -2,7 +2,7 @@
 
 **Reviewed:** 2026-07-18
 
-**Release:** 0.4.0-alpha.1
+**Release:** 1.0.0
 
 Littlepowers does not choose a model, reasoning effort, or context window. Planning depth follows task risk and unresolved decisions.
 
@@ -17,6 +17,8 @@ This report covers model and host compatibility, not simultaneous orchestration 
 | Codex, GPT-5.6 Sol, Ultra | Prerelease coordination evaluation passed, with a protocol caveat | A root coordinator and two workers preserved sole-writer ownership; a stale write conflicted instead of overwriting | Worker read-only ownership is a protocol, not OS access control |
 | Claude Code, Fable 5 | Compatible by design; authenticated flow not yet recorded | Official Fable and Claude Code review, Claude Code 2.1.207 strict plugin validation | Fable prefers outcome-focused prompts and may fall back to Opus 4.8 for classified domains |
 | Claude Code, Opus 4.8 | Compatible by design; authenticated flow not yet recorded | Official Opus and Claude Code review, Claude Code 2.1.207 strict plugin validation | High effort is the documented default; xhigh/max can overthink fixed ceremony |
+| Qoder CLI / Qoder IDE, any model | Loads the same skills, hooks, and state CLI; authenticated flow not yet recorded | `qodercli plugins validate` and a local user-scope install discovering all 11 skills | The IDE fires only a subset of hook events and does not document `QODER_PLUGIN_ROOT` injection for plugin hooks |
+| OpenCode, any model | Loads the same skills and state CLI; authenticated flow not yet recorded | Source-level verification of the config and message-transform hooks against OpenCode v1.18.4, plus stubbed plugin behavior tests | Relies on two hooks OpenCode's docs do not document; no live end-to-end run recorded |
 
 “Compatible by design” means the plugin uses supported hooks and skills and does not set conflicting model parameters. It does not mean every scenario has passed an authenticated live-model evaluation.
 
@@ -36,7 +38,7 @@ Historical routing and coordination evidence is recorded in [the v0.3 alpha eval
 
 OpenAI's current model guidance lists `gpt-5.6-sol` as the frontier model and supports API reasoning efforts `none`, `low`, `medium`, `high`, `xhigh`, and `max`. It recommends reserving max for the hardest quality-first work and comparing it with xhigh.
 
-Codex Ultra is a product-level mode that uses subagents for parallelizable work. It is not a valid OpenAI Responses API `reasoning.effort` value. Littlepowers does not write model configuration, change `reasoning.effort`, or select Ultra. Codex's model picker/configuration remains the authority for Sol and xhigh/max, while the host remains the authority for Ultra delegation.
+Codex Ultra is a product-level mode that maps to the API `reasoning.effort` value `ultra` and switches the host's multi-agent mode to proactive delegation for parallelizable work. Littlepowers does not write model configuration, change `reasoning.effort`, or select Ultra. Codex's model picker/configuration remains the authority for Sol and xhigh/max, while the host remains the authority for Ultra delegation.
 
 GPT-5.6 guidance also recommends lean prompts, single-stated rules, outcome-focused autonomy boundaries, and representative evaluation. v0.4 responds by:
 

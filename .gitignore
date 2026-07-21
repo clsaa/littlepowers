@@ -3,3 +3,5 @@ __pycache__/
 .DS_Store
 dist/
 build/
+node_modules/
+.ruff_cache/

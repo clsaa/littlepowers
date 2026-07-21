@@ -24,7 +24,7 @@ Littlepowers differs deliberately:
 - the host, not the plugin, owns subagent orchestration;
 - debugging, verification, and review are proportional skills rather than mandatory ceremony for every edit;
 - no telemetry, transcript parsing, automatic commits, or branch workflow is included;
-- Codex and Claude Code share one state and skill core.
+- Codex, Claude Code, Qoder, and OpenCode share one state and skill core.
 
 Littlepowers is not affiliated with, sponsored by, or endorsed by obra or the Superpowers project. The name indicates historical inspiration, not an official relationship.
 

@@ -19,7 +19,7 @@
     "continuity",
     "task-recovery",
     "multi-agent",
-    "codex",
-    "claude-code"
+    "qoder",
+    "qodercli"
   ]
 }

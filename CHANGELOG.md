@@ -4,15 +4,33 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-21
+
+The first stable release. Multi-host support (Codex, Claude Code, Qoder, OpenCode), full-route phase review gates, and host plan-surface mirroring land as the stable contract, with the expert-review fixes below.
+
+### Fixed
+
+- Close the review-gate loopholes found in expert review: define explicit approval, treat corrections as revise-and-re-present instead of phase advancement, keep the agent parked at a gate across status questions and compaction, and harmonize the gate wording across the router and every phase skill.
+- Align hook plugin-root resolution order between `hooks.json` and `session-start.py` so a Qoder install can no longer mix roots when both variables are set.
+- Fix the OpenCode plugin to spawn the fallback Python interpreter at most once and only when `python3` is missing, wrap every hook body so host API drift fails open, give task-created child sessions the worker read-only context, and retry empty ledger lookups only after a newer message arrives.
+- Fix the Codex post-replacement recovery to resolve git-sourced marketplace entries through `source.url` instead of the never-present `source.path`.
+- Update the supported-versions policy, issue templates, contributor guidance, and bilingual READMEs for all four supported hosts; cover the OpenCode plugin in the security model; mark `package.json` private with aligned keywords.
+
+## [0.5.0-alpha.1] - 2026-07-21
+
 ### Added
 
 - Add optional observable progress to the schema 2 recovery ledger without a version bump, preserving old-reader compatibility while adding bounded Hook/status rendering.
+- Add first-class Qoder CLI and Qoder IDE support through `.qoder-plugin/plugin.json`, a shared hooks manifest that resolves `${QODER_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}`, and `QODER_PLUGIN_ROOT` handling in the recovery hook. The Qoder IDE currently fires only a subset of hook events, so SessionStart and SubagentStart stay silent there.
+- Add first-class OpenCode support through `.opencode/plugins/littlepowers.js`, which registers the skills directory with OpenCode's native skill tool and injects the same read-only ledger snapshot and prompt reminder produced by `hooks/session-start.py`. Install rides OpenCode's `opencode.json` plugin entry from the repository root `package.json`.
+- Mirror the tracked task checklist through the host's native plan surface so plans render in the host interface: Codex `update_plan` after the plan artifact and at each execution checkpoint, OpenCode's todo tool likewise, with re-issue from the ledger after resume or compaction. The Markdown plan file remains the durable source of truth.
 - Add regression scenarios for active-cache replacement, ADR/brainstorm separation, and long-wave progress across a status interruption.
 - Add an explicit cross-workspace handoff that verifies an existing active target, cancels only the source, and records a bounded recovery pointer.
 - Add an on-demand, content-free Git review snapshot for detecting drift in broad uncommitted candidates without creating a ledger.
 
 ### Changed
 
+- Full-route phase artifacts are now review gates: after checkpointing, the agent presents the brainstorm, specification, design, plan, or compact shape for approval and stops, chaining into the next phase only after user approval or an explicit unattended end-to-end authorization. Requesting end-to-end delivery is no longer treated as unattended authorization by itself.
 - Require execution checkpoints to use named milestones or acceptance-check counts instead of invented percentages, with continuity checkpoints before compaction, handoff, plugin replacement, or multi-subsystem batches.
 - Keep approved plans stable while the ledger carries current execution progress.
 - Partition reviews that exceed one reliable pass by trust, state ownership, or rollback boundary, with one acceptance owner aggregating shared-interface evidence once.
@@ -96,6 +114,9 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 - Created the initial Codex plugin and planning workflow.
 
+[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/clsaa/littlepowers/releases/tag/v1.0.0
+[0.5.0-alpha.1]: https://github.com/clsaa/littlepowers/releases/tag/v0.5.0-alpha.1
 [0.4.0-alpha.1]: https://github.com/clsaa/littlepowers/releases/tag/v0.4.0-alpha.1
 [0.3.0-alpha.1]: https://github.com/clsaa/littlepowers/releases/tag/v0.3.0-alpha.1
 [0.2.0]: https://github.com/clsaa/littlepowers/commits/main

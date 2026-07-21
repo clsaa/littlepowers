@@ -44,6 +44,7 @@ class RecoveryHookTests(unittest.TestCase):
         environment = os.environ.copy()
         environment.pop("PLUGIN_ROOT", None)
         environment.pop("CLAUDE_PLUGIN_ROOT", None)
+        environment.pop("QODER_PLUGIN_ROOT", None)
         if root_variable:
             environment[root_variable] = str(ROOT)
         if extra_environment:
@@ -142,17 +143,32 @@ class RecoveryHookTests(unittest.TestCase):
         self.assertIn('"ledger_owner": "parent coordinator"', context)
         self.assertIn('"worker_access": "read-only"', context)
 
-    def test_hook_resolves_both_native_plugin_root_variables(self) -> None:
+    def test_hook_resolves_all_native_plugin_root_variables(self) -> None:
         self.start_state()
 
         outputs = []
-        for variable in ("PLUGIN_ROOT", "CLAUDE_PLUGIN_ROOT"):
+        for variable in ("PLUGIN_ROOT", "CLAUDE_PLUGIN_ROOT", "QODER_PLUGIN_ROOT"):
             with self.subTest(variable=variable):
                 result = self.run_hook(root_variable=variable)
                 self.assertEqual(result.returncode, 0)
                 outputs.append(json.loads(result.stdout))
 
         self.assertEqual(outputs[0], outputs[1])
+        self.assertEqual(outputs[1], outputs[2])
+
+    def test_qoder_plugin_root_wins_over_other_variables(self) -> None:
+        self.start_state()
+
+        result = self.run_hook(
+            root_variable="QODER_PLUGIN_ROOT",
+            extra_environment={
+                "PLUGIN_ROOT": "/not/a/littlepowers/plugin",
+                "CLAUDE_PLUGIN_ROOT": "/also/not/a/plugin",
+            },
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertIn("Finish the interrupted change", result.stdout)
 
     def test_claude_plugin_root_wins_over_unrelated_generic_variable(self) -> None:
         self.start_state()

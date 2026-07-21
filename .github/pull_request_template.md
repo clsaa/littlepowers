@@ -13,7 +13,7 @@
 - [ ] Every changed or added skill passes the official validator.
 - [ ] The Codex plugin passes the official validator.
 - [ ] `claude plugin validate --strict .` passes.
-- [ ] Codex and Claude behavior remain aligned.
+- [ ] Codex, Claude Code, Qoder, and OpenCode behavior remain aligned.
 - [ ] Hooks remain read-only, local, bounded, transcript-free, and fail-open.
 - [ ] Multi-agent work keeps the root coordinator as the only ledger writer.
 - [ ] User-facing changes are recorded in `CHANGELOG.md`.

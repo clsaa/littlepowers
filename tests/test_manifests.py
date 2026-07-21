@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -20,7 +22,7 @@ class ManifestTests(unittest.TestCase):
 
         self.assertEqual(codex["name"], "littlepowers")
         self.assertEqual(claude["name"], "littlepowers")
-        self.assertEqual(codex["version"], "0.4.0-alpha.1")
+        self.assertEqual(codex["version"], "1.0.0")
         self.assertEqual(claude["version"], codex["version"])
         self.assertEqual(claude["repository"], codex["repository"])
         self.assertIn("Claude Code", codex["description"])
@@ -77,6 +79,85 @@ class ManifestTests(unittest.TestCase):
         self.assertTrue(launcher.is_file())
         if os.name != "nt":
             self.assertTrue(os.access(launcher, os.X_OK))
+
+    def test_qoder_manifest_shares_release_identity(self) -> None:
+        codex = read_json(ROOT / ".codex-plugin" / "plugin.json")
+        qoder = read_json(ROOT / ".qoder-plugin" / "plugin.json")
+
+        self.assertEqual(qoder["name"], "littlepowers")
+        self.assertEqual(qoder["version"], codex["version"])
+        self.assertEqual(qoder["repository"], codex["repository"])
+        self.assertIn("Qoder", qoder["description"])
+
+        hooks = read_json(ROOT / "hooks" / "hooks.json")
+        command = hooks["hooks"]["SessionStart"][0]["hooks"][0]["command"]
+        self.assertIn("${QODER_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}", command)
+
+        hook_source = (ROOT / "hooks" / "session-start.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("QODER_PLUGIN_ROOT", hook_source)
+
+    def test_opencode_plugin_registers_skills_and_injects_read_only(self) -> None:
+        package = read_json(ROOT / "package.json")
+        self.assertEqual(package["name"], "littlepowers")
+        self.assertEqual(package["main"], ".opencode/plugins/littlepowers.js")
+        self.assertEqual(package["type"], "module")
+        self.assertNotIn("dependencies", package)
+
+        plugin_path = ROOT / ".opencode" / "plugins" / "littlepowers.js"
+        plugin = plugin_path.read_text(encoding="utf-8")
+        self.assertIn("export const LittlepowersPlugin", plugin)
+        self.assertIn("config.skills.paths", plugin)
+        self.assertIn("experimental.chat.messages.transform", plugin)
+        self.assertIn("session-start.py", plugin)
+        self.assertIn("SessionStart", plugin)
+        self.assertIn("UserPromptSubmit", plugin)
+        self.assertIn("finish(null)", plugin)
+        self.assertIn("error.code === 'ENOENT'", plugin)
+
+        node = shutil.which("node")
+        if node:
+            result = subprocess.run(
+                [node, "--check", str(plugin_path)],
+                capture_output=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr.decode())
+
+    def test_full_route_phases_stop_for_review_by_default(self) -> None:
+        router = (ROOT / "skills" / "using-littlepowers" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("Review phase boundaries", router)
+        self.assertIn("unattended end-to-end", router)
+
+        gated = {
+            "brainstorming": "writing-specs",
+            "writing-specs": "designing-solutions",
+            "designing-solutions": "writing-plans",
+            "writing-plans": "executing-plans",
+            "compact-shaping": "executing-plans",
+        }
+        for name, next_skill in gated.items():
+            with self.subTest(skill=name):
+                skill = (ROOT / "skills" / name / "SKILL.md").read_text(
+                    encoding="utf-8"
+                )
+                self.assertIn("for review and stop", skill)
+                self.assertIn(f"`{next_skill}`", skill)
+                self.assertIn("unattended end-to-end", skill)
+
+    def test_plan_checklist_mirrors_the_host_plan_surface(self) -> None:
+        writing = (ROOT / "skills" / "writing-plans" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        executing = (ROOT / "skills" / "executing-plans" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("update_plan", writing)
+        self.assertIn("durable source of truth", writing)
+        self.assertIn("update_plan", executing)
+        self.assertIn("re-issue", executing)
 
     def test_skills_have_clean_frontmatter_and_ui_metadata(self) -> None:
         expected = {
@@ -289,7 +370,7 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("cannot force a model", readme)
         self.assertIn("UserPromptSubmit", readme)
         self.assertIn("coordinator is the only ledger writer", readme)
-        self.assertIn("0.4.0-alpha.1", readme)
+        self.assertIn("1.0.0", readme)
         self.assertIn("Systematic debugging", readme)
         self.assertIn("Proportional verification", readme)
         self.assertIn("Lightweight review", readme)
@@ -308,7 +389,7 @@ class ManifestTests(unittest.TestCase):
             ROOT / "evals" / "results" / "2026-07-17-v0.4-alpha.1.md"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("Release:** 0.4.0-alpha.1", capability)
+        self.assertIn("Release:** 1.0.0", capability)
         self.assertIn("`debugging-systematically`", capability)
         self.assertIn("`verifying-work`", capability)
         self.assertIn("`reviewing-changes`", capability)

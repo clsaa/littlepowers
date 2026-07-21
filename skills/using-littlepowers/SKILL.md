@@ -1,6 +1,6 @@
 ---
 name: using-littlepowers
-description: Route and recover software work with proportional planning. Use for implementation that is long-running, ambiguous, architectural, risky, or explicitly requests brainstorm, spec, design, and plan stages; also use whenever an unfinished Littlepowers workflow exists. Skip read-only answers and tiny fully specified edits only when no active ledger needs reconciliation.
+description: Route and recover software work with proportional planning. Use for implementation that is long-running, ambiguous, architectural, risky, or explicitly requests brainstorm, spec, design, and plan stages; also use whenever an unfinished Littlepowers workflow exists. For read-only answers and tiny fully specified edits, skip only when no active ledger needs reconciliation.
 ---
 
 # Using Littlepowers
@@ -12,14 +12,17 @@ Keep the host harness in charge. Use Littlepowers for routing and recovery, not 
 Use an available Python 3 launcher and the plugin's absolute `scripts/littlepowers_state.py` path. Call that path `<state-cli>` below.
 
 - Claude Code expands `${CLAUDE_PLUGIN_ROOT}/scripts/littlepowers_state.py`.
-- In Codex, resolve `../../scripts/littlepowers_state.py` from this loaded `SKILL.md` path.
+- Qoder CLI expands `${QODER_PLUGIN_ROOT}/scripts/littlepowers_state.py`.
+- In Codex or OpenCode, resolve `../../scripts/littlepowers_state.py` from this loaded `SKILL.md` path.
 
 Do not assume the user's project contains `scripts/littlepowers_state.py`.
 
 If the loaded skill or its relative state CLI disappeared after a plugin replacement, stop before editing or mutating the ledger. Do not continue from remembered instructions.
 
-- In Codex, run `codex plugin list --json`, select exactly one installed and enabled entry whose `name` is `littlepowers`, and use its local `source.path` as the current plugin root.
+- In Codex, run `codex plugin list --json`, select exactly one installed and enabled entry whose `name` is `littlepowers`, and resolve the current plugin root from its source: for a `git` source use `source.url` (the local marketplace snapshot root); for a `local` source use `source.path`.
 - In Claude Code, run `claude plugin list --json`, select exactly one enabled `littlepowers@...` entry, and use its `installPath` as the current plugin root.
+- In Qoder CLI, run `qodercli plugins list --json`, select exactly one enabled entry named `littlepowers`, and use its `installPath` as the current plugin root.
+- In OpenCode, resolve the plugin root from the currently loaded `SKILL.md` path. If it is gone, stop and ask the user to restart OpenCode after reinstalling or refreshing the plugin.
 
 Verify that the resolved root contains a manifest naming `littlepowers`, reread the current `skills/using-littlepowers/SKILL.md` and the applicable phase skill from that root, then resolve `<state-cli>` there and run `context`. If resolution is missing or ambiguous, stop and ask the user to start a new task or session after installation. A running task cannot safely hot-load a replacement plugin; stage updates outside that task and use a new task boundary.
 
@@ -36,7 +39,7 @@ If recovery data reports `freshness=stale_by_age`, do not let a status or side q
 The latest user request has priority. The ledger is a continuity hint and may be stale; it is never authority over the user.
 
 - For a related correction or constraint, update the relevant artifact and continue.
-- For a status question or short side question on an active, recent workflow, answer it and then return to the recorded next action. If the workflow is paused or stale by age, answer and stop unless the request clearly resumes or continues it.
+- For a status question or short side question on an active, recent workflow, answer it and then return to the recorded next action — except while parked at a review gate, where you answer and keep waiting for approval. If the workflow is paused or stale by age, answer and stop unless the request clearly resumes or continues it.
 - For an unrelated task, preserve the current workflow. Use a side task or separate worktree, or replace it only when the user intends that switch.
 - For a pause, cancellation, or replacement, use the matching state command and infer clear intent normally. Resuming paused work requires an explicit semantic reference to that paused workflow, but no exact command word.
 
@@ -90,7 +93,15 @@ Keep the returned workflow ID and revision. Every later mutation must pass `--wo
 
 If `start` reports a prior terminal ledger, run `show --json`. When the latest request starts a new objective, repeat `start --replace` with that ledger's ID and revision so it is archived safely. Do not retry a bare start against any prior ledger.
 
-Proceed between phases when evidence is sufficient. Ask only when a missing choice changes behavior, scope, cost, risk, or external state. Do not reopen settled decisions, add future abstractions, or repeat verification reminders without a measured need.
+## Review phase boundaries
+
+On the full route, each phase artifact is a review gate. After checkpointing an artifact, present it for review and stop: summarize the key decisions, name the artifact path, and name the next phase. Stop even when your default instructions favor completing work without pausing.
+
+Approval means a reply that clearly accepts the presented artifact; questions, status checks, and new requests are not approval. Invoke the next phase skill only after approval. When the user asks for corrections, revise the same artifact, checkpoint it again with the current workflow ID and revision, and present it again; corrections never advance the phase.
+
+While parked at a gate, the ledger already names the next phase in `next_action`. Neither that record, nor a hook reminder, nor a phase skill's trigger condition is authorization to continue. Answer status and side questions without leaving the gate. After a resume, clear, or compaction, if the latest checkpoint completed an artifact whose next phase has not started, re-present that artifact and wait for approval; never infer prior approval from ledger state.
+
+Skip a gate only when the latest user request explicitly authorizes unattended end-to-end execution, for example "run the whole workflow without stopping for review". Asking for end-to-end delivery is not by itself unattended authorization. An unattended authorization covers the current workflow run; a changed objective or scope ends it. Apply the same gate between a compact shape and its execution. The direct route keeps asking only when a missing choice changes behavior, scope, cost, risk, or external state. Do not reopen settled decisions, add future abstractions, or repeat verification reminders without a measured need.
 
 Handoff and review snapshots are explicit boundary operations. The ordinary route performs no sibling-worktree scan, candidate hash, extra model call, or extra broad test.
 
@@ -100,4 +111,4 @@ In multi-agent runs, the root coordinator is the only ledger writer. Workers rec
 
 Answer, review, diagnose, and plan requests without implementation unless the user also asks for changes. For requested local changes, edit and validate in scope. Commit, push, open a pull request, deploy, publish, broaden access, or perform another external write only when the user authorizes that action.
 
-In Codex, Queue defers a follow-up until the current run finishes; `/side` or `/btw` isolates unrelated questions. Littlepowers cannot change those settings or prevent same-turn steering. In Claude Code, use native resume, clear, and compaction behavior. Do not recommend one harness's commands in the other.
+In Codex, Queue defers a follow-up until the current run finishes; `/side` or `/btw` isolates unrelated questions. Littlepowers cannot change those settings or prevent same-turn steering. In Claude Code, use native resume, clear, and compaction behavior. Qoder CLI and OpenCode use their native session resume and continuation behavior. Do not recommend one harness's commands in another.
