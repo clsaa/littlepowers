@@ -79,7 +79,7 @@ class OpenCodePluginTests(unittest.TestCase):
             event_log = base / "events.log"
 
             env = os.environ.copy()
-            env["LP_PLUGIN"] = str(plugin_dir / "littlepowers.js")
+            env["LP_PLUGIN"] = (plugin_dir / "littlepowers.js").as_uri()
             env["LP_EVENT_LOG"] = str(event_log)
             result = subprocess.run(
                 [self.node, str(driver)],
@@ -128,7 +128,7 @@ class OpenCodePluginTests(unittest.TestCase):
                 encoding="utf-8",
             )
             env = os.environ.copy()
-            env["LP_PLUGIN"] = str(plugin_dir / "littlepowers.js")
+            env["LP_PLUGIN"] = (plugin_dir / "littlepowers.js").as_uri()
             result = subprocess.run(
                 [self.node, str(driver)],
                 cwd=base,

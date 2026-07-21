@@ -230,7 +230,10 @@ class StateTests(unittest.TestCase):
         )
         self.assertEqual(target_path.read_bytes(), target_before)
         self.assertIn("transferred", state_module.render_context(handed_off))
-        self.assertIn(str(target_root.resolve()), state_module.render_context(handed_off))
+        self.assertIn(
+            json.dumps(str(target_root.resolve())),
+            state_module.render_context(handed_off),
+        )
         self.assertEqual(state_module.render_prompt_reminder(handed_off), "")
         self.assertEqual(state_module.render_worker_context(handed_off), "")
         with self.assertRaisesRegex(state_module.StateError, "requires status: paused"):
