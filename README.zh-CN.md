@@ -2,13 +2,19 @@
 
 [![CI](https://github.com/clsaa/littlepowers/actions/workflows/test.yml/badge.svg)](https://github.com/clsaa/littlepowers/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-1.0.0-blue.svg)](CHANGELOG.md)
+[![Release](https://img.shields.io/github/v/release/clsaa/littlepowers)](https://github.com/clsaa/littlepowers/releases)
 
 [English](README.md)
 
 Littlepowers 是一个同时面向 Codex、Claude Code、Qoder 与 OpenCode 的“按风险规划 + 任务恢复 + 工程纪律”协议。它帮助 Agent 在编码前固定重要决策，在中断后恢复最后一个可靠 checkpoint，并按证据调试、审查重要改动、按实际影响面完成验证。
 
 它受 [Superpowers](https://github.com/obra/superpowers) 启发，但不是 fork、没有运行时依赖，也不隶属于 Superpowers 或 obra。
+
+**为什么不选 Superpowers？** Superpowers 对工作普遍施加完整流程礼仪；Littlepowers 按风险伸缩礼仪：一行的修复仍是一行的修复，只有实质性决策才走 brainstorm → spec → design → plan，且每个 full 路径产物都会停下来等你审核再进入下一阶段。30 秒上手：
+
+```text
+使用 Littlepowers 的 compact shaping 处理这个 API 变更，然后实现并验证。
+```
 
 ## 工作深度
 
@@ -22,7 +28,7 @@ Littlepowers 根据未解决的决策和失败风险选流程，不根据文件�
 
 持久产物默认写入 `docs/littlepowers/...`。只有最新用户请求或当前仓库规则明确指定“新 workflow artifact”的根目录时才使用其他路径；已有目录、反向链接、历史文件或带旧工具品牌的路径不会自动覆盖默认值。
 
-Full 路径的每个阶段产物都是审核门禁：Agent 会展示 brainstorm、spec、design、plan 并等待批准后才进入下一阶段，除非你明确授权“端到端无人值守执行”。在 Codex 中，任务清单还会镜像到原生 `update_plan` 工具，让计划显示在宿主界面上；Markdown 计划文件仍是持久事实源。
+Full 路径的每个阶段产物都是审核门禁：Agent 会展示 brainstorm、spec、design、plan 并等待批准后才进入下一阶段，除非你明确授权“端到端无人值守执行”。在 Codex 中，任务清单还会镜像到原生 `update_plan` 工具（在 OpenCode 中镜像到其 todo 工具），让计划显示在宿主界面上；Markdown 计划文件仍是持久事实源。
 
 另有三个按条件触发的能力：
 
@@ -289,7 +295,3 @@ OpenCode：从 `opencode.json` 的 `plugin` 数组中删除 `littlepowers@git+..
 ## 许可与灵感
 
 Littlepowers 以 MIT 许可发布。设计参考了同为 MIT 许可的 Superpowers v6.1.1。Littlepowers 不是 fork，未获得 Superpowers 或 obra 的认可，是一份专注于按风险规划与有界恢复的独立实现。详见[灵感与出处](docs/inspiration.md)。
-
-## 名称说明
-
-专家评审更推荐长期公开品牌 **Planthread**，因为它更准确表达“让计划跨提示和会话保持连续”，也不会让人误解为 Superpowers 的官方轻量版。本次 v0.4 不擅自改名；在仓库公开前由项目所有者最终决定。

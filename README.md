@@ -2,13 +2,19 @@
 
 [![CI](https://github.com/clsaa/littlepowers/actions/workflows/test.yml/badge.svg)](https://github.com/clsaa/littlepowers/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Release](https://img.shields.io/badge/release-1.0.0-blue.svg)](CHANGELOG.md)
+[![Release](https://img.shields.io/github/v/release/clsaa/littlepowers)](https://github.com/clsaa/littlepowers/releases)
 
 [简体中文](README.zh-CN.md)
 
 Littlepowers is a proportional planning, recovery, and engineering-discipline protocol for Codex, Claude Code, Qoder, and OpenCode. It helps an agent shape consequential work before coding, recover the last durable checkpoint after an interruption, debug from evidence, review material changes, and verify completion at the actual impact scope.
 
 It is inspired by [Superpowers](https://github.com/obra/superpowers), but it is an independent implementation with no runtime dependency or affiliation.
+
+**Why not Superpowers?** Superpowers applies its full workflow ceremony broadly; Littlepowers scales the ceremony to the risk. A one-line fix stays a one-line fix, only material decisions get brainstorm → spec → design → plan, and every full-route artifact pauses for your review before the next phase. Try it in 30 seconds:
+
+```text
+Use Littlepowers compact shaping for this API change, then implement and verify it.
+```
 
 ## What it changes
 
@@ -191,7 +197,7 @@ Review this integrated change read-only, then verify each completion claim at it
 During tracked work:
 
 - related corrections update the active workflow;
-- status or side questions on a recent active workflow are answered before returning to the next action;
+- status or side questions on a recent active workflow are answered before returning to the next action — except while parked at a review gate, where the agent answers and keeps waiting for approval;
 - unrelated work preserves the ledger and moves to a side task or separate worktree;
 - replacement archives the prior ledger;
 - pause and resume are explicit state transitions.
@@ -282,6 +288,7 @@ The [capability matrix](docs/capability-matrix.md) distinguishes expected limita
 python3 -m unittest discover -s tests -v
 python3 -m compileall -q scripts hooks tests
 claude plugin validate --strict .
+qodercli plugins validate .
 ```
 
 Release checks also run the bundled Codex skill and plugin validators. GitHub Actions exercises the state and hook suite on Linux, macOS, and Windows and runs pinned Claude Code validation on Linux.

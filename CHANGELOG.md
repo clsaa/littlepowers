@@ -116,7 +116,7 @@ The first stable release. Multi-host support (Codex, Claude Code, Qoder, OpenCod
 
 [Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/clsaa/littlepowers/releases/tag/v1.0.0
-[0.5.0-alpha.1]: https://github.com/clsaa/littlepowers/releases/tag/v0.5.0-alpha.1
+[0.5.0-alpha.1]: https://github.com/clsaa/littlepowers/compare/v0.4.0-alpha.1...v1.0.0
 [0.4.0-alpha.1]: https://github.com/clsaa/littlepowers/releases/tag/v0.4.0-alpha.1
 [0.3.0-alpha.1]: https://github.com/clsaa/littlepowers/releases/tag/v0.3.0-alpha.1
 [0.2.0]: https://github.com/clsaa/littlepowers/commits/main
