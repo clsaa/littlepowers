@@ -11,7 +11,7 @@ Security fixes target the latest tagged release.
 
 ## Report a vulnerability
 
-Use GitHub private vulnerability reporting when it is enabled for this repository. Until then, contact the repository owner privately through their GitHub profile and include “Littlepowers security report” in the subject or first line.
+Report vulnerabilities through GitHub private vulnerability reporting for this repository. If it is unavailable, contact the repository owner privately through their GitHub profile and include “Littlepowers security report” in the subject or first line.
 
 Do not open a public issue for a suspected vulnerability. Do not include real credentials, private source code, harmful payloads, or data from systems you do not own.
 

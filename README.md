@@ -64,7 +64,6 @@ See the [capability matrix](docs/capability-matrix.md) for exact boundaries.
 - Codex, Claude Code, Qoder CLI or the Qoder IDE, or OpenCode
 - Python 3.9 or later
 - Git Bash on Windows for the shared plugin hook launcher
-- Git credentials that can read this repository while it remains private
 
 ## Install in Codex
 

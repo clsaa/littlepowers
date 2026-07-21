@@ -68,7 +68,6 @@ Littlepowers 可独立运行。若把它和 Superpowers 同时设为默认 route
 - Codex、Claude Code、Qoder CLI（或 Qoder IDE）、OpenCode 之一
 - Python 3.9+
 - Windows 上安装 Git Bash
-- 仓库保持私有期间，需要可读取该仓库的 Git 凭据
 
 ## 安装到 Codex
 
