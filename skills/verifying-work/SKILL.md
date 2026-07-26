@@ -48,6 +48,26 @@ Review the final intended diff and status for unintended files, debug statements
 
 ## Gate the report
 
-Use a compact claim-evidence summary when several claims exist. Mark work complete only when every immediate and inherited claim has fresh supporting evidence and no blocking limitation remains. A partial wave or narrower slice cannot complete the approved outcome. For a tracked Littlepowers workflow, stay in `phase=verify` and complete the ledger only after this gate passes.
+Use a compact claim-evidence summary when several claims exist. Mark work complete only when every immediate and inherited claim has fresh supporting evidence and no blocking limitation remains. A passed task or rollback unit cannot complete a narrower slice of the approved outcome.
+
+For a tracked workflow, read
+[`../../references/outcome-lock.md`](../../references/outcome-lock.md), stay in
+`phase=verify`, and create one Verification Record artifact. Include every
+active `OUT-###`, every required `FID-###`, explicit fidelity evidence paths,
+blocking evidence, and independent work-unit compliance, approved-outcome
+fidelity, and code-quality verdicts. A valid `fail` or `blocked` record is
+useful recovery evidence; do not rewrite it as pass.
+
+Record it before completion:
+
+```bash
+<python> <state-cli> --root <project-root> record-verification \
+  --workflow <id> --expect-revision <revision> \
+  --artifact <verification.md>
+```
+
+Use the returned revision. Then run `complete`; its fresh aggregate gate reports
+all remaining contract, coverage, baseline, evidence, verdict, and blocker
+failures without advancing a rejected revision.
 
 Report the selected scope and rationale, exact checks and observed results, diff inspection, and unresolved limitations. Use narrower language when evidence is narrower than the requested outcome.

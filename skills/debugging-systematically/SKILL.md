@@ -13,6 +13,11 @@ Capture the observed symptom, expected behavior, exact environment, available re
 
 Preserve raw error text, exit status, inputs, and timing when they matter. Treat summaries and prior agent reports as leads until repository or runtime evidence confirms them.
 
+For tracked Littlepowers work, inspect the stored contract, coverage, baseline,
+and fidelity summary before reproducing. Treat `reconcile_required`, `drifted`,
+missing Outcome coverage, or stale verification as contract-boundary evidence,
+not as permission to bypass the gate or edit the raw ledger.
+
 ## Reproduce and observe
 
 Run the narrowest reliable reproducer before proposing a repair. Record the command or action and the exact failing signal. If reproduction is unavailable, identify the missing condition and gather the best boundary evidence; do not convert an unconfirmed guess into a cause.

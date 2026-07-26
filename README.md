@@ -31,7 +31,9 @@ Durable artifacts default to `docs/littlepowers/...`. A different root is used o
 
 Lean- and full-route phase artifacts are review gates: the agent presents each artifact for approval and waits before starting the next phase, unless you explicitly authorize unattended end-to-end execution.
 
-All routes bind the latest request and any approved parent PRD, interaction flow, prototype, screenshot set, or contract as the complete outcome. The agent cannot create a smaller product or technical slice on its own. Any `Added / Changed / Deferred / Removed` scope delta is highlighted for explicit approval; otherwise it records `No scope delta`. Tasks and waves are implementation order only and stay under one definition of done. For UI fidelity, implementation-generated screenshots are regression evidence, not substitutes for a user-approved baseline.
+All routes bind the latest request and any approved parent PRD, interaction flow, prototype, screenshot set, or contract as the complete outcome. The agent cannot create a smaller product or technical slice on its own. Any `Added / Changed / Deferred / Removed` scope delta is highlighted for explicit approval; otherwise it records `No scope delta`. Implementation runs as one continuous stream under one definition of done. Tasks, checkpoints, rollback units, and small commits control order and safe recovery; they are not staged deliveries. For UI fidelity, implementation-generated screenshots are regression evidence, not substitutes for a user-approved baseline.
+
+Tracked work uses Outcome Lock protocol 1.2. A reviewed Contract records stable `OUT-###` IDs and explicit parent-source digests; a Plan Map must map every active ID to tasks and evidence before execution; a Verification Record keeps work-unit compliance, approved-outcome fidelity, and code quality independent. Schema 3 then blocks execution on source drift or incomplete coverage and blocks completion until all current gates pass. It cannot infer a requirement that was omitted from the reviewed Contract, so route review still owns semantic completeness.
 
 In Codex, the tracked task checklist is mirrored through the native `update_plan` tool (in OpenCode, through its todo tool) so the plan renders in the host interface; the Markdown plan file remains the durable source of truth.
 
@@ -43,7 +45,7 @@ Three complementary skills apply only when their conditions are present:
 
 These skills do not create agents, choose models, require mandatory TDD, or expose hidden reasoning. Codex, Claude Code, Qoder, and OpenCode discover the same implementation.
 
-All tracked routes use a worktree-local `.littlepowers/state.json` ledger. The ledger records an objective, phase, current task, optional evidence-based progress, next action, workflow ID, and monotonic revision. It ignores itself in Git. Progress names a milestone or acceptance-check count; Littlepowers does not infer percentages from time or file count.
+All tracked routes use a worktree-local `.littlepowers/state.json` ledger. The schema-3 ledger records protocol identity, the Outcome Lock summary, objective, phase, current task, optional evidence-based progress, next action, workflow ID, and monotonic revision. It ignores itself in Git. Progress names a milestone or acceptance-check count; Littlepowers does not infer percentages from time or file count.
 
 Three read-only hook boundaries expose that ledger to the host:
 
@@ -62,7 +64,7 @@ If a material review is too large for one reliable pass, split it by trust, stat
 
 ## What it cannot guarantee
 
-Littlepowers records and restores workflow facts; it cannot force a model to obey them, prevent same-turn steering, override the latest user request, or make an active task hot-load a replacement plugin. In Codex, use Queue when a follow-up must wait for the current run to finish.
+Outcome Lock deterministically rejects drift, missing declared IDs, invalid scope state, incomplete declared fidelity, and false completion transitions. It cannot force a model to extract every meaning from free-form prose, prevent same-turn steering, override the latest user request, or make an active task hot-load a replacement plugin. In Codex, use Queue when a follow-up must wait for the current run to finish.
 
 Hooks may be disabled by trust settings or organization policy. The Qoder IDE currently supports only a subset of hook events, so the SessionStart and SubagentStart boundaries stay silent there while UserPromptSubmit reminders still work. Recovery can only return to the last checkpoint that was written. One worktree supports one active top-level workflow; use another worktree for independent concurrent work.
 
@@ -78,10 +80,10 @@ See the [capability matrix](docs/capability-matrix.md) for exact boundaries.
 
 ## Install in Codex
 
-Install the current release by tag:
+Install the 1.2 candidate by tag after it is published:
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v1.0.0
+codex plugin marketplace add clsaa/littlepowers --ref v1.2.0-alpha.1
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -221,12 +223,19 @@ The router receives the latest user request and treats it as authoritative. It d
 
 Do not replace Littlepowers while a tracked Codex task is running. A cachebuster install may remove the cache path captured when that task started. Let the active task checkpoint and finish or pause, install the update, then start a new task. If a path was already replaced, Littlepowers resolves the single enabled installation through the host's JSON plugin listing and rereads the current skills before continuing; it stops when resolution is ambiguous.
 
+Schema 3 migration is deterministic and creates one
+`.littlepowers/archive/<timestamp>-<workflow>-r<revision>-pre-schema3-v<schema>.json`
+archive before the first successful schema-3 write. A 1.1 runtime cannot read
+a schema-3 current ledger. To roll the runtime back, first pause/finish the
+task, restore that exact pre-schema3 archive as `state.json`, then install the
+older runtime. Never edit or downgrade the live ledger in place.
+
 For a tagged Codex installation, replace the marketplace snapshot with the desired tag:
 
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v1.0.0
+codex plugin marketplace add clsaa/littlepowers --ref v1.2.0-alpha.1
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -256,7 +265,7 @@ Restart the session or run `/skills reload`. For OpenCode, refresh the git-backe
 - Hooks only read the ledger and fail open when state is missing or invalid.
 - The shared reader rejects a Git-tracked state file, links and reparse points, unexpected ownership or write permissions, non-regular files, and state over 64 KiB. The writer also checks the serialized size before replacement.
 - POSIX transactions pin both the workspace path and validated state directory before lock, state, and archive I/O, preventing an intermediate or final pathname swap from redirecting writes.
-- Artifact references are normalized Markdown paths. Skills read them through a snapshot-bound, bounded safe-reader command that rejects links and special files and labels content as untrusted project data.
+- Protocol artifacts are normalized Markdown paths. Explicit parent and evidence files are read only at lifecycle gates through a bounded safe reader that rejects path escapes, links, special files, replacement races, and oversized input. Hooks never open or hash those files.
 - The optional review snapshot is read-only, bounded by path/output/byte/time limits, returns hashes and counts rather than file content, and is never called by a hook.
 - Mutations use a cross-process lock, workflow ID, expected revision, atomic replacement, and an archive before replacement.
 - Littlepowers does not request commits, branches, pushes, pull requests, deployments, publication, visibility changes, or subagents by itself. The host may delegate in Ultra or dynamic workflows.
@@ -266,6 +275,8 @@ Read the [security model](docs/security-model.md) before broader deployment. Rep
 ## Model compatibility
 
 Littlepowers does not select a model or effort level. Its planning depth follows task risk, not reasoning effort. Its debugging, review, and verification skills ask for observable evidence and concise verdicts, not private chain-of-thought.
+
+Outcome Lock adds local JSON validation and SHA-256 work only at bind, transition, resume/readiness, verification, and completion boundaries. It adds no model turn, agent, background scan, automatic test run, or effort override. Runtime work is proportional to explicitly bound files and declared rows, not repository size, so there is no protocol-level conflict with GPT-5.6 Sol xhigh/max/Ultra, Fable 5, or Opus 4.8. High-effort model latency remains a host/model choice, not work introduced by Littlepowers.
 
 - GPT-5.6 Sol xhigh passed routing scenarios 1 through 9 in one prerelease evaluation campaign.
 - GPT-5.6 Sol max completed the v0.3 adversarial review with no remaining P0/P1 issue and 43 tests passing.

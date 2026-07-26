@@ -1,4 +1,41 @@
-# v0.3 expert review
+# Expert reviews
+
+## Outcome Lock 1.2 follow-up
+
+**Review date:** 2026-07-26
+
+The architecture, OpenAI/Codex, Anthropic/Claude Code, daily AI-coding, and
+open-source perspectives rechecked the observed failure: an implementation can
+follow a narrow child plan while silently abandoning an earlier approved PRD or
+interaction baseline.
+
+### Consensus
+
+| Finding | Candidate response | Remaining boundary |
+| --- | --- | --- |
+| Prompt-only parent inheritance cannot prevent a narrower plan | Schema 3 binds explicit parent sources and a reviewed `OUT-###` Contract; execution requires complete Plan Map coverage | A Contract that semantically omitted a free-form requirement can still be wrong; the existing route review gate must catch it |
+| Old open workflows can keep following pre-1.2 plans | Active/paused legacy ledgers become `reconcile_required` before executable progress | An already-open host task cannot hot-load a replaced plugin; update and start a new task/session |
+| “No scope delta” was not machine-checkable | Non-active dispositions contradict `none`; non-empty delta requires a distinct approval audit claim | The claim records coordinator-observed approval; it is not user authentication |
+| UI or host fidelity evidence was unstructured | Required baseline provenance and stable Fidelity rows independently gate approved-outcome fidelity | Missing external tools or evidence stays `blocked`, never silently becomes `not_applicable` |
+| Review wording mixed two and three verdicts | Work-unit compliance, approved-outcome fidelity, and code quality are independently persisted and required at completion | A passing work unit still does not imply product fidelity |
+| “No slices” encouraged oversized batches | Public and skill wording now requires one continuous implementation stream with independently reversible rollback units, checkpoints, and small commits | These boundaries control recovery and review; none is a staged product delivery |
+| More ceremony could slow high-effort models | Gates are standard-library parsing/hashing at explicit lifecycle boundaries only; Hooks render stored summaries | No model call or reasoning conflict is added, but local I/O is not literally zero |
+| Static wording tests were insufficient | Behavioral suites exercise malformed records, migration, drift, incomplete coverage, fidelity, atomicity, and completion aggregation | Model reliability still requires separate authenticated repeated runs |
+
+### Compatibility conclusion
+
+Outcome Lock does not select or override GPT-5.6 Sol xhigh/max/Ultra, Fable 5,
+Opus 4.8, host delegation, or reasoning effort. It adds no second planner,
+review agent, background scan, or automatic test run. The candidate can
+therefore claim model-parameter compatibility by construction, but not that
+any particular model will always form a semantically complete Contract.
+
+Codex, Claude Code, Qoder, and OpenCode consume the same state CLI and skill
+files. Host adapters remain discovery and read-only recovery surfaces. Exact
+candidate validation and any unavailable or unauthenticated host/model run are
+reported separately rather than promoted into a compatibility guarantee.
+
+## v0.3 expert review
 
 **Review date:** 2026-07-17
 

@@ -2,7 +2,7 @@
 
 **Reviewed:** 2026-07-26
 
-**Release:** 1.1.0-alpha.1
+**Release:** 1.2.0-alpha.1
 
 Littlepowers does not choose a model, reasoning effort, or context window. Planning depth follows task risk and unresolved decisions.
 
@@ -28,9 +28,19 @@ v0.4 adds native skills for systematic debugging, verification, and review. They
 
 The disciplines are conditional rather than a second mandatory router: debugging applies to unexpected behavior, review applies at requested or material boundaries, and verification applies before a success claim. Tiny isolated changes can use focused self-review and direct evidence without a separate reviewer or full suite. This limits repeated ceremony at xhigh/max/high effort while keeping an explicit evidence gate where mistakes are costly.
 
-The 1.1 lean route further reduces fixed ceremony: a small bounded change with one meaningful decision goes from brainstorm directly to plan, skipping separate specification and design artifacts. Scope-integrity checks compare existing artifacts and user-approved sources inside the same model turn; they do not add a reviewer, model call, hidden chain-of-thought request, background scan, or automatic test run. Dependency-safe waves remain implementation ordering rather than independently accepted product slices.
+The lean route reduces fixed ceremony: a small bounded change with one meaningful decision goes from brainstorm directly to plan, skipping separate specification and design artifacts. Outcome Lock 1.2 moves declared scope integrity from prompt-only wording into the local state boundary: stable Outcome IDs, explicit source digests, coverage, fidelity rows, and completion invariants are checked without another reviewer, model call, hidden chain-of-thought request, repository scan, or automatic test run. Implementation remains one continuous stream; tasks and rollback units do not become independently accepted product slices.
 
-The Unreleased handoff and review-evidence additions are dormant commands, not a second execution loop. Ordinary routing and hooks do not scan sibling worktrees, hash review candidates, create reviewers, select models, add a model turn, or add a test run. A broad uncommitted review opts into one bounded snapshot before review and one comparison before verdict acceptance; an oversized review may be partitioned, but one acceptance owner aggregates shared-boundary evidence once.
+The additional runtime cost occurs only at explicit lifecycle boundaries.
+Ordinary prompt and Hook paths read the bounded ledger summary and never open
+parent or evidence files. Bind, transition, resume/readiness, verification, and
+completion parse bounded Markdown/JSON and hash only explicitly named files
+(16 MiB per file, 64 MiB total). Cost is independent of repository size.
+Littlepowers neither competes for hidden reasoning nor starts a second planner,
+so it has no protocol-level parameter conflict with GPT-5.6 Sol
+xhigh/max/Ultra, Fable 5, or Opus 4.8. It may add a small local I/O boundary to
+tracked work; it does not add model inference latency.
+
+Handoff and review-evidence additions are dormant commands, not a second execution loop. Ordinary routing and hooks do not scan sibling worktrees, hash review candidates, create reviewers, select models, add a model turn, or add a test run. A broad uncommitted review opts into one bounded snapshot before review and one comparison before verdict acceptance; an oversized review may be partitioned, but one acceptance owner aggregates shared-boundary evidence once.
 
 Littlepowers does not call Superpowers or depend on its runtime. Both can expose namespaced skills, but making both default workflow authorities can still create process-level duplication even though neither creates a model-parameter conflict.
 
@@ -42,7 +52,7 @@ OpenAI's current model guidance lists `gpt-5.6-sol` as the frontier model and su
 
 Codex Ultra is a product-level mode that maps to the API `reasoning.effort` value `ultra` and switches the host's multi-agent mode to proactive delegation for parallelizable work. Littlepowers does not write model configuration, change `reasoning.effort`, or select Ultra. Codex's model picker/configuration remains the authority for Sol and xhigh/max, while the host remains the authority for Ultra delegation.
 
-GPT-5.6 guidance also recommends lean prompts, single-stated rules, outcome-focused autonomy boundaries, and representative evaluation. v0.4 responds by:
+GPT-5.6 guidance also recommends lean prompts, single-stated rules, outcome-focused autonomy boundaries, and representative evaluation. Littlepowers responds by:
 
 - keeping static behavior in the router instead of Hook context;
 - reducing repeated policy in phase skills;
@@ -73,4 +83,9 @@ Release reports should distinguish:
 3. model routing evaluation;
 4. full authenticated implementation and interruption evaluation.
 
-The prerelease does not claim level 4 for Fable 5 or Opus 4.8, and the v0.3 model results are not silently promoted into v0.4 reliability claims. Add dated results rather than turning a model snapshot into a permanent guarantee.
+The prerelease does not claim level 4 for Fable 5 or Opus 4.8, and earlier
+model results are not silently promoted into 1.2 reliability claims. Passing
+schema-3 protocol tests is model-agnostic evidence; it is not proof that a
+model always builds a semantically complete Contract from free-form sources.
+Add dated results rather than turning a model snapshot into a permanent
+guarantee.

@@ -23,7 +23,7 @@ A related recovery failure occurs when a task starts in a parent directory whose
 
 1. **Add more mandatory full-route documents.** Rejected: it worsens the small-change ceremony and does not prevent a bad parent scope from being copied.
 2. **Add a new state-schema route field.** Rejected for now: `phase=plan` plus the presence of a brainstorm and absence of spec/design already recovers the lean route.
-3. **Add skill-level scope integrity and a lean route (selected).** Bind parent acceptance sources, require a highlighted scope delta, distinguish user-approved from implementation-generated baselines, add dual review verdicts, expose the exact workspace root in hook context, and route bounded changes through brainstorm → plan.
+3. **Add skill-level scope integrity and a lean route (selected).** Bind parent acceptance sources, require a highlighted scope delta, distinguish user-approved from implementation-generated baselines, add three independent review verdicts, expose the exact workspace root in hook context, and route bounded changes through brainstorm → plan.
 
 ## Selected direction
 
@@ -31,7 +31,7 @@ A related recovery failure occurs when a task starts in a parent directory whose
 - Lean plan is `brainstorming → writing-plans → executing-plans`.
 - Full shape remains available only for material unresolved decisions or explicit requests.
 - A parent contract is inherited by every lower artifact. `Added / Changed / Deferred / Removed` requires explicit approval; otherwise the artifact states `No scope delta`.
-- Development covers one approved outcome. Dependency-safe waves are implementation order only and cannot redefine completion.
+- Development covers one approved outcome in one continuous implementation stream. Tasks and rollback units cannot redefine completion.
 - Review reports work-unit compliance and approved-outcome fidelity separately.
 - Hook snapshots include the canonical workspace root so an ancestor ledger is visible as such.
 

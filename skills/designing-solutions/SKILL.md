@@ -24,6 +24,11 @@ For an existing workflow, keep the artifact root already resolved by `using-litt
 
 Check that every inherited requirement has a design path and that failure behavior and ownership are explicit. Do not use architecture phases, platform boundaries, or delivery convenience to create product slices or silently defer the approved outcome. If the design cannot cover an inherited requirement, return to the Scope Delta Gate.
 
+Map the solution to every bound `OUT-###` ID from the approved specification.
+Do not delete, renumber, redefine, or replace that set in the design. If the
+approved behavior must change, revise and reapprove the specification, then
+explicitly rebind its contract before continuing.
+
 Checkpoint with the current workflow ID and revision:
 
 ```bash

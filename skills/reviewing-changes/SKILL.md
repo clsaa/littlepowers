@@ -33,9 +33,14 @@ If one material candidate cannot fit a reliable review, report the scope limit a
 
 ## Assess acceptance and quality separately
 
-First assess acceptance/spec compliance as **work-unit compliance**. Map each immediate required behavior to the implementation and evidence, identify unauthorized scope, and return exactly one verdict: `pass`, `fail`, or `blocked`.
+First assess acceptance/spec compliance as **work-unit compliance**. Map each immediate required behavior and bound `OUT-###` ID to the implementation and evidence, identify unauthorized scope, and return exactly one verdict: `pass`, `fail`, or `blocked`.
 
 Then assess **approved-outcome fidelity** independently against the highest-authority parent requirements and approved baseline. Return exactly one verdict: `pass`, `fail`, or `blocked`. A narrower specification, implementation plan, technical slice, or generated fixture cannot erase parent requirements. When the available review inputs omit a known parent source or cover only part of it, report the fidelity verdict as `blocked`, never as product consistency. For visual or interaction fidelity, an implementation-generated screenshot or snapshot is regression evidence only and cannot replace the approved user or design baseline.
+
+Treat stored coverage as a deterministic completeness check, not semantic proof.
+If the Outcome Contract itself omits a known parent behavior, fail or block
+approved-outcome fidelity even when the CLI reports `coverage=100%`. Check every
+required `FID-###` comparison against its approved baseline.
 
 Finally assess code quality independently. Check correctness, failure modes, boundary handling, security and portability where relevant, maintainability, and whether tests exercise the changed risks. Return exactly one verdict: `approve`, `request changes`, or `blocked`.
 

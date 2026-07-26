@@ -31,7 +31,9 @@ Littlepowers 根据未解决的决策和失败风险选流程，不根据文件�
 
 Lean 与 Full 路径的每个阶段产物都是审核门禁：Agent 会展示产物并等待批准后才进入下一阶段，除非你明确授权“端到端无人值守执行”。
 
-所有路径都会把最新请求以及已批准的 PRD、交互稿、原型、截图集或契约绑定为完整结果。Agent 不得自行拆成更小的产品切片或技术切片；任何 `Added / Changed / Deferred / Removed` 范围变化都必须突出展示并单独获得批准，没有变化则明确记录 `No scope delta`。任务和 wave 只表示实现顺序，始终属于同一个完成定义。UI 一致性必须对比用户批准的基线，实现自己生成的截图只能用于防回归。
+所有路径都会把最新请求以及已批准的 PRD、交互稿、原型、截图集或契约绑定为完整结果。Agent 不得自行拆成更小的产品切片或技术切片；任何 `Added / Changed / Deferred / Removed` 范围变化都必须突出展示并单独获得批准，没有变化则明确记录 `No scope delta`。实现过程是同一个完成定义下的连续工作流；任务、checkpoint、回滚单元和小提交只负责顺序与安全恢复，不是分期交付。UI 一致性必须对比用户批准的基线，实现自己生成的截图只能用于防回归。
+
+被追踪的工作使用 Outcome Lock 1.2：经审核的 Contract 记录稳定 `OUT-###` ID 和显式父来源摘要；Plan Map 必须在执行前把每个活跃 ID 映射到任务与证据；Verification Record 分别保存工作单元符合性、批准结果一致性和代码质量。Schema 3 会在来源漂移或覆盖不完整时阻止执行，并在所有当前门禁通过前阻止完成。它无法推断经审核 Contract 本身遗漏的语义，因此阶段审核仍负责契约的语义完整性。
 
 在 Codex 中，任务清单还会镜像到原生 `update_plan` 工具（在 OpenCode 中镜像到其 todo 工具），让计划显示在宿主界面上；Markdown 计划文件仍是持久事实源。
 
@@ -43,7 +45,7 @@ Lean 与 Full 路径的每个阶段产物都是审核门禁：Agent 会展示产
 
 这些能力不会自动创建 Agent、选择模型、强制 TDD 或要求输出隐藏推理；Codex、Claude Code、Qoder 与 OpenCode 使用同一份实现。
 
-被追踪的任务会写入当前 worktree 下的 `.littlepowers/state.json`。状态包含 workflow ID、单调递增 revision，以及可选的、基于证据的进度；进度应写成里程碑或验收项计数，不能根据时间和文件数量猜百分比。旧 revision 写入会失败，不会覆盖新进度。
+被追踪的任务会写入当前 worktree 下的 `.littlepowers/state.json`。Schema 3 状态包含协议版本、Outcome Lock 摘要、workflow ID、单调递增 revision，以及可选的、基于证据的进度；进度应写成里程碑或验收项计数，不能根据时间和文件数量猜百分比。旧 revision 写入会失败，不会覆盖新进度。
 
 三个只读 Hook 负责提供状态：
 
@@ -60,7 +62,7 @@ Lean 与 Full 路径的每个阶段产物都是审核门禁：Agent 会展示产
 
 ## 能力边界
 
-Littlepowers 能记录并恢复最后一次 checkpoint，但不能强迫模型遵循提醒、阻止同一轮 steering、覆盖最新用户请求，也不能让运行中的任务热加载替换后的插件。Codex 中，如果消息必须等当前运行结束再处理，请使用 Queue。
+Outcome Lock 能确定性拒绝来源漂移、已声明 ID 缺失、无效范围状态、不完整 fidelity 和虚假完成转换；但它不能强迫模型从自由文本中提取全部语义、阻止同一轮 steering、覆盖最新用户请求，也不能让运行中的任务热加载替换后的插件。Codex 中，如果消息必须等当前运行结束再处理，请使用 Queue。
 
 暂停中的 workflow 不会因为普通实现提示而自动恢复；必须先完成显式 `resume`。超过 30 天未更新的 ledger 会标记为按时间过期，需先与当前代码和最新请求核对，再决定是否继续。
 
@@ -82,8 +84,10 @@ Littlepowers 可独立运行。若把它和 Superpowers 同时设为默认 route
 
 ## 安装到 Codex
 
+`v1.2.0-alpha.1` 发布后按 tag 安装：
+
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v1.0.0
+codex plugin marketplace add clsaa/littlepowers --ref v1.2.0-alpha.1
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -213,6 +217,11 @@ qodercli plugins install littlepowers
 
 不要在正在执行 tracked workflow 的 Codex 任务中替换 Littlepowers。cachebuster 重装可能删除该任务启动时记录的缓存路径。应先让活跃任务 checkpoint 并完成或暂停，再安装更新并新建任务。若路径已经被替换，Littlepowers 会通过宿主的 JSON 插件列表解析唯一启用的安装，重新读取当前技能后再继续；解析缺失或不唯一时必须停止。
 
+第一次成功写入 schema 3 前，会在 `.littlepowers/archive/` 下创建一个带
+`pre-schema3-v<schema>` 后缀的原始 ledger 归档。1.1 runtime 不能读取
+schema-3 当前 ledger；若要回退 runtime，应先暂停或完成任务，把该精确归档恢复为
+`state.json`，再安装旧版本，不能直接手改或降级活跃 ledger。
+
 Codex 的 tag 安装需要先删除现有插件和 marketplace，再把 `--ref` 改成目标版本并重新安装。Claude Code 使用：
 
 ```bash
@@ -237,7 +246,7 @@ qodercli plugins update littlepowers
 - Hook 只读 ledger，错误时 fail-open；
 - 统一拒绝 Git tracked state、链接/reparse point、异常所有权或写权限、非普通文件，以及读取或序列化后超过 64 KiB 的 state；
 - POSIX 写事务逐级固定 workspace 路径和已验证的 state 目录，再相对该目录执行 lock、state 和 archive I/O；中间路径或最终目录被并发替换也不会把写入导向外部；
-- artifact 只接受规范化的 Markdown 相对路径，并通过绑定 workflow ID/revision 且有大小上限的安全读取命令加载；链接、特殊文件会被拒绝，内容始终标为不可信项目数据；
+- 协议 artifact 只接受规范化的 Markdown 相对路径；显式父来源和证据仅在生命周期门禁通过有上限的安全 reader 加载，路径越界、链接、特殊文件、替换竞态和超限输入都会被拒绝，Hook 不会打开或哈希这些文件；
 - 可选 review snapshot 只读并受路径数、Git 输出、文件字节数和超时限制，只返回哈希与计数，Hook 永远不会调用它；
 - 写入使用跨进程锁、workflow ID、预期 revision、原子替换和替换前归档；
 - Littlepowers 本身不会请求 commit、push、PR、部署、公开仓库或启动 subagent。
@@ -247,6 +256,8 @@ qodercli plugins update littlepowers
 ## 模型兼容性
 
 Littlepowers 不选择模型或 effort。调试、审查与验证只要求可观察证据和简洁结论，不要求输出 chain-of-thought；它们按条件触发，不会在每个提示里重复整套流程。
+
+Outcome Lock 只在 bind、阶段转换、resume/readiness、verification 与 completion 边界增加本地 JSON 校验和 SHA-256；不会增加模型轮次、Agent、后台扫描、自动测试或 effort 覆盖。运行成本与显式绑定文件和声明行数成正比，与仓库大小无关，因此协议层不会与 GPT-5.6 Sol xhigh/max/Ultra、Fable 5 或 Opus 4.8 冲突。高 effort 的耗时仍由宿主和模型决定，不是 Littlepowers 新增的工作。
 
 - GPT-5.6 Sol xhigh 在一轮预发行评估中通过了场景 1 至 9；这还不是三轮重复运行后的可靠性结论；
 - GPT-5.6 Sol max 完成 v0.3 对抗审查，43 项测试通过，没有遗留 P0/P1；

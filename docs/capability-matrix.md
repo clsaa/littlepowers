@@ -2,7 +2,7 @@
 
 **Reviewed:** 2026-07-26
 
-**Release:** 1.1.0-alpha.1
+**Release:** 1.2.0-alpha.1
 
 Littlepowers is checkpoint-assisted recovery. The table separates host events, durable state, and model behavior.
 
@@ -13,11 +13,15 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 | Ordinary next prompt | `UserPromptSubmit` | Inject workflow ID, revision, phase, objective, and next action | This is context, not forced control |
 | Same-turn steering | Host prompt handling plus reminder when the event fires | The router attempts to reconcile the message and continue | Littlepowers cannot prevent steering; use Codex Queue to defer a message |
 | Status or side question | Router guidance | Answer, then return to the recorded action; while parked at a review gate, answer and keep waiting for approval | Model compliance remains probabilistic |
-| Long-wave status | Schema-2-compatible `progress` plus checkpoints | Report a named milestone or acceptance-check count, then continue | Littlepowers does not infer percentages or replace project-management systems |
+| Long-running status | Bounded `progress` plus checkpoints | Report a named milestone or acceptance-check count, then continue | Littlepowers does not infer percentages or replace project-management systems |
 | Small bounded change with one meaningful decision | Lean plan route | Brainstorm, then write the executable plan directly; create no separate spec/design | Escalate to full shaping if material unresolved architecture, security, migration, cross-system, irreversible-state, or costly-rollback choices appear |
-| Approved PRD, prototype, or parent contract | Parent contract inheritance plus Scope Delta Gate | Preserve the complete approved outcome; highlight `Added / Changed / Deferred / Removed`, or state `No scope delta` | Model compliance remains probabilistic; explicit user approval can change scope |
-| Implementation ordering | Tasks and dependency-safe waves | Order work and rollback boundaries while retaining one definition of done | A partial wave is incomplete progress, not a product or technical slice |
-| UI or interaction fidelity | Baseline provenance plus dual review verdicts | Compare approved-outcome fidelity against the user-approved baseline; use generated snapshots only for regression | A missing approved baseline blocks fidelity rather than producing a false pass |
+| Approved PRD, prototype, or parent contract | Schema-3 Contract Bind Gate | Bind explicit sources and stable Outcome IDs; record `No scope delta` or distinctly approved `Added / Changed / Deferred / Removed` | IDs and digests protect the reviewed contract; semantic extraction from free-form sources remains a review responsibility |
+| Parent source changed or missing | Explicit `check-contract` at lifecycle gates | Record `drifted`, reject executable progress, and require reviewed rebind | Checks read only already bound files; ordinary prompts and Hooks do not refresh digests |
+| Plan covers only part of the parent outcome | Outcome Coverage Gate | Reject execution unless every active Outcome ID maps to tasks and named evidence | Coverage proves declared-ID completeness, not that the reviewed Contract captured every free-form requirement |
+| Implementation ordering | One continuous implementation stream | Use tasks, checkpoints, rollback units, and small commits while retaining one definition of done | A passed rollback unit is incomplete progress, not a product or technical slice |
+| UI, interaction, output, or compatibility fidelity | Approved Baseline and Fidelity Matrix gates | Bind approved provenance and verify every required surface × action × state comparison | Implementation-generated evidence cannot become its own approved baseline |
+| Completion claim | Verification Record plus Completion Gate | Freshly require current contract, 100% active coverage, valid scope/baseline/fidelity, three passing verdicts, and zero blockers | The gate reports all current failures and leaves state unchanged when any condition fails |
+| Active schema-1/schema-2 workflow after upgrade | Legacy Reconciliation Gate | Show `reconcile_required`; bind the approved Contract and validate the current Plan Map before executable progress | An already-open task cannot hot-load 1.2; start a new task/session after update |
 | Clearly unrelated request | Router guidance | Preserve the ledger and use a side task or separate worktree | One worktree has one active workflow |
 | Nested repository under a task root with another ledger | Explicit `--root` context plus root-bearing Hook snapshot | Bind recovery to the named nested project and leave the ancestor ledger untouched | The router does not scan siblings or change the host task root |
 | Process crash | Ledger | Resume from the last successful checkpoint | Uncheckpointed tool work may be missing |
@@ -28,7 +32,7 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 | Ledger older than 30 days | Factual freshness marker plus router guard | Reconcile before continuing; side or status prompts do not restart it | Age is a warning, not proof that the objective is obsolete |
 | Ledger artifact read | `read-artifact` with expected workflow ID and revision | Snapshot-bound UTF-8 Markdown returned as untrusted project data | Project content may still be misleading; latest user intent remains authoritative |
 | Invalid local state | Shared validator | Hook fails open; CLI reports a fixed error | No recovery context is injected |
-| Plugin cache replaced during a task | Host JSON plugin listing plus router guard | Resolve one enabled Littlepowers root, reread current skills, and reload context before edits | This is recovery, not hot reload; missing or ambiguous resolution requires a new task/session |
+| Plugin cache replaced during a task | Host JSON plugin listing plus router guard | Resolve one enabled Littlepowers root and stop before edits | Replacement is not hot reload; load the new runtime at a new task/session boundary |
 | Bug, failed test, regression, or unexplained behavior | `debugging-systematically` | Reproduce, trace the earliest supported divergence, test one hypothesis, and repair only when authorized | Skill invocation and model compliance remain probabilistic; diagnosis does not imply edit authority |
 | Claim that work is fixed, complete, passing, ready, or released | `verifying-work` | Match each claim to fresh evidence after the latest relevant change | Evidence cannot cover unavailable credentials, platforms, or services; report the limitation |
 | Requested review, delegated integration, shared milestone, or material rollback cost | `reviewing-changes` | Read-only work-unit compliance, approved-outcome fidelity, and code-quality verdicts with actionable findings | Littlepowers does not create a reviewer or select a model |
@@ -47,6 +51,9 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 - Ultra may delegate automatically. Littlepowers itself does not request delegation.
 - The three engineering-discipline skills use native discovery and do not change Codex model or effort settings.
 - Handoff, review snapshots, and review partitioning are explicit; the ordinary route adds no agent/model call, Git scan, hash, or test run.
+- Outcome Lock runs local parsing and explicit-file hashes only at bind,
+  transition, resume/readiness, verification, and completion boundaries; it
+  does not alter Sol, xhigh, max, or Ultra settings.
 
 ### Claude Code
 
@@ -55,6 +62,8 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 - Organization policy can disable plugin hooks.
 - The same debugging, verification, and review skill files are installed; Littlepowers does not change Claude model, effort, or dynamic-workflow settings.
 - The same explicit-only boundary policy applies; no background watcher or global worktree registry is installed.
+- Outcome Lock uses the shared state CLI and does not alter Fable, Opus, effort,
+  or dynamic-workflow settings.
 
 ### Qoder
 
@@ -76,3 +85,5 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 - Recovery without Python 3 or, on Windows, Git Bash.
 - Cursor, Pi, or another harness compatibility layer beyond Codex, Claude Code, Qoder, and OpenCode.
 - A guarantee that every model follows every recovery reminder.
+- Automatic semantic extraction of a complete Outcome Contract from arbitrary
+  prose.

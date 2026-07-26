@@ -15,7 +15,7 @@ Turn a consequential or unclear request into one chosen direction without implem
 
 Ask for user input when a choice changes product behavior, scope, cost, security, compatibility, or irreversible external state. If the user requested end-to-end delivery and the direction follows from supplied constraints, record it and finish the brainstorm without more questions; the phase-boundary review gate still applies before the next phase.
 
-Every option must preserve the approved outcome. Do not turn an implementation option into a smaller product or technical slice. Record tasks or waves only as implementation order, never as deferred scope.
+Every option must preserve the approved outcome. Do not turn an implementation option into a smaller product or technical slice. Record tasks, checkpoints, and rollback units only as continuous implementation order, never as deferred scope or staged delivery.
 
 For an existing workflow, keep the artifact root already resolved by `using-littlepowers`. When resolving a new workflow, use a non-default root only when the latest user request or a current repository instruction explicitly names it for new workflow artifacts. Existing directories, backlinks, and historical or tool-branded paths do not qualify by themselves. Otherwise use `docs/littlepowers/brainstorms/YYYY-MM-DD-<slug>.md`. Include the problem, constraints, options, selected direction, decision rationale, assumptions, and open questions.
 
@@ -28,6 +28,14 @@ Include a scope anchor with:
 - measurable success for the complete outcome.
 
 Highlight any non-empty scope delta in the review message and wait for explicit approval of that delta. Generic artifact approval is insufficient when the delta was not highlighted. An implementation-generated artifact cannot replace a user-approved baseline.
+
+On the lean route, read the shared
+[`../../references/outcome-lock.md`](../../references/outcome-lock.md) and add
+one Outcome Contract block to this brainstorm. Give every observable outcome a
+stable `OUT-###` ID, declare only explicit file sources, record baseline
+provenance and code-quality review need, and keep the ID set complete. The full
+route defers the protocol block to `writing-specs`; do not create a competing
+contract here.
 
 The checkpointed `brainstorm` artifact must be this shaping record in the resolved brainstorm area. An ADR may be created or updated as a companion record of the selected decision, but an ADR is not a substitute for the brainstorm artifact. Preserve a legacy ADR-backed artifact reference during recovery; apply this rule to new or deliberately reshaped workflows instead of silently rewriting active ledger paths.
 
@@ -45,7 +53,7 @@ When `using-littlepowers` selected the lean route, checkpoint directly to plan:
   --next-action "Write the implementation plan from the approved brainstorm"
 ```
 
-Use the returned revision, then present the brainstorm for review and stop. Name `writing-plans` as the next phase. Invoke `writing-plans` only after explicit approval of the brainstorm and any highlighted scope delta, or immediately when the latest user request explicitly authorized unattended end-to-end execution and there is no unapproved scope delta.
+Use the returned revision, then present the brainstorm for review and stop. Name `writing-plans` as the next phase. After explicit approval of the brainstorm and any highlighted scope delta, bind this artifact with `bind-contract --approval-kind review-gate`, adding `--approve-scope-delta` only for the distinctly approved non-empty delta. For an explicitly authorized unattended run, use `--approval-kind unattended-authorization`; unattended authority never approves an implicit delta. Invoke `writing-plans` only after the bind succeeds and use its returned revision.
 
 ## Full route
 

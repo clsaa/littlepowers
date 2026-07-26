@@ -27,6 +27,14 @@ For an existing workflow, keep the artifact root already resolved by `using-litt
 
 Replace vague qualities with thresholds or observable behavior. Keep implementation choices out unless an external constraint requires them. Resolve placeholders and contradictions before proceeding. The specification may organize behavior, but every inherited item remains in the same complete definition of done.
 
+Read
+[`../../references/outcome-lock.md`](../../references/outcome-lock.md). Make
+this specification the full route's single Outcome Contract owner. Assign a
+stable `OUT-###` ID to every observable requirement, declare only explicit
+parent files, record baseline/FID requirements and code-quality review need,
+and include the exact tagged Contract block. Later design and plan artifacts
+reuse these IDs; they do not create a narrower replacement set.
+
 Checkpoint with the current workflow ID and revision:
 
 ```bash
@@ -39,4 +47,4 @@ Checkpoint with the current workflow ID and revision:
   --next-action "Design the approved specification"
 ```
 
-Use the returned revision, then present the specification for review and stop: summarize the requirements and acceptance criteria, name the artifact path, and name `designing-solutions` as the next phase. Invoke `designing-solutions` only after explicit approval of this artifact, or immediately when the latest user request explicitly authorized unattended end-to-end execution. When the user asks for corrections, revise this artifact, checkpoint again, and present it again instead of advancing.
+Use the returned revision, then present the specification for review and stop: summarize the requirements and acceptance criteria, name the artifact path, and name `designing-solutions` as the next phase. After explicit approval, bind it with `bind-contract --approval-kind review-gate`, adding `--approve-scope-delta` only for a distinctly approved non-empty delta. Use `unattended-authorization` only when the latest request explicitly granted unattended end-to-end execution. Invoke `designing-solutions` only after the bind succeeds and use its returned revision. When the user asks for corrections, revise this artifact, checkpoint again, and present it again instead of advancing.

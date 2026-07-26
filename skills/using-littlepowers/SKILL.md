@@ -44,6 +44,14 @@ If its status is paused, do not edit, execute, or checkpoint that workflow. Resu
 
 If recovery data reports `freshness=stale_by_age`, do not let a status or side question restart the recorded action. Reconcile the ledger with current repository evidence and continue only when the latest request clearly continues that objective.
 
+Inspect the stored `outcome_lock` summary before implementation. If it reports
+`reconcile_required`, do not make execution progress: return to the
+proportional planning route, review the current approved outcome, bind its
+contract, and validate its Plan Map. If it reports `drifted`, inspect with
+`check-contract` and explicitly rebind approved changed content; never adopt a
+new digest implicitly. A task already running an older plugin cannot hot-load
+this gate. Load the current runtime at a new task or session boundary.
+
 ## Reconcile the request with recovery data
 
 The latest user request has priority. The ledger is a continuity hint and may be stale; it is never authority over the user.
@@ -61,11 +69,18 @@ For status requests, `managing-littlepowers` reads the ledger; `using-littlepowe
 
 Before choosing planning depth, identify the highest-authority current sources: the latest user request plus any explicitly approved PRD, specification, interaction flow, prototype, screenshot set, API contract, migration contract, or acceptance list. Record those parent acceptance sources in every planning artifact. Derived artifacts may clarify implementation but cannot silently narrow or override the approved outcome.
 
+For tracked schema-3 work, read
+[`../../references/outcome-lock.md`](../../references/outcome-lock.md) only in
+the phase that creates, binds, maps, reconciles, or verifies the protocol
+record. Lean brainstorms, compact shapes, and full specifications own the
+Outcome Contract. Plans and compact shapes own the Plan Map. Do not duplicate
+the full grammar in every phase.
+
 ### Parent contract inheritance
 
 Carry every applicable parent behavior and acceptance criterion into the current definition of done. A lower-level plan, technical specification, implementation convenience, or test fixture cannot erase a parent requirement. When sources conflict, surface the conflict instead of choosing the narrower source.
 
-Do not split the approved outcome into product slices, technical slices, MVP subsets, “phase 1” subsets, or platform subsets unless the authorized user explicitly changes scope. Tasks and dependency-safe waves are implementation order only: they remain part of one workflow and one definition of done. A partial wave may be demonstrated as incomplete progress, but never approved or reported as the requested product outcome.
+Do not split the approved outcome into product slices, technical slices, MVP subsets, “phase 1” subsets, or platform subsets unless the authorized user explicitly changes scope. Tasks, checkpoints, and rollback units are implementation order only: they remain one continuous workflow and one definition of done. A partial rollback unit may be reported only as incomplete progress, never as the requested product outcome.
 
 ### Scope Delta Gate
 
@@ -90,7 +105,12 @@ Choose by unresolved decisions and risk, not file count, model effort, or the mo
 Act directly when the outcome and approach are clear and no material product, architecture, security, migration, or compatibility decision remains.
 
 - For a tiny task, work without a ledger.
-- For a task likely to span several tool loops or survive interruption, start a ledger at `phase=execute` without planning artifacts.
+- For a task likely to span several tool loops or survive interruption, start a ledger at `phase=execute` with `--direct-lock` and no planning artifacts.
+- Do not use tracked direct mode for work that needs an approved visual,
+  interaction, output, migration, security, or compatibility baseline.
+- The tracked direct objective is its one-outcome Contract. If the requested
+  objective changes, replace the workflow or reconcile through an approved
+  artifact Contract; do not rewrite it with an execution checkpoint.
 
 ### Lean plan
 
@@ -122,9 +142,11 @@ Start tracked work with:
 <python> <state-cli> start \
   --objective "<measurable outcome>" \
   --phase <brainstorm|shape|execute> \
+  [--direct-lock] \
   --next-action "<next observable action>"
 ```
 
+Use `--direct-lock` only with `--phase execute` and no planning artifacts.
 Keep the returned workflow ID and revision. Every later mutation must pass `--workflow <id> --expect-revision <revision>` and then use the newly returned revision. A conflict means another writer advanced or replaced the workflow; reload instead of retrying blindly.
 
 If `start` reports a prior terminal ledger, run `show --json`. When the latest request starts a new objective, repeat `start --replace` with that ledger's ID and revision so it is archived safely. Do not retry a bare start against any prior ledger.
@@ -135,6 +157,13 @@ On the lean and full routes, each phase artifact is a review gate. After checkpo
 
 Approval means a reply that clearly accepts the presented artifact; questions, status checks, and new requests are not approval. Invoke the next phase skill only after approval. When the user asks for corrections, revise the same artifact, checkpoint it again with the current workflow ID and revision, and present it again; corrections never advance the phase.
 
+After approval, use the deterministic command owned by that boundary: bind the
+lean brainstorm, compact shape, or full specification with `bind-contract`;
+validate the approved plan or compact shape with `validate-plan`; and only then
+checkpoint into execution. A non-empty delta requires the separate
+`--approve-scope-delta` claim. Command success records the audit claim but does
+not authenticate who approved it.
+
 While parked at a gate, the ledger already names the next phase in `next_action`. Neither that record, nor a hook reminder, nor a phase skill's trigger condition is authorization to continue. Answer status and side questions without leaving the gate. After a resume, clear, or compaction, if the latest checkpoint completed an artifact whose next phase has not started, re-present that artifact and wait for approval; never infer prior approval from ledger state.
 
 Skip a gate only when the latest user request explicitly authorizes unattended end-to-end execution, for example "run the whole workflow without stopping for review". Asking for end-to-end delivery is not by itself unattended authorization. An unattended authorization covers the current workflow run; a changed objective or scope ends it. It never authorizes an implicit scope delta. Apply the same gate between a compact shape and its execution. The direct route keeps asking only when a missing choice changes behavior, scope, cost, risk, or external state. Do not reopen settled decisions, add future abstractions, or repeat verification reminders without a measured need.
@@ -143,7 +172,7 @@ Handoff and review snapshots are explicit boundary operations. The ordinary rout
 
 ## Preserve ownership and authority
 
-In multi-agent runs, the root coordinator is the only ledger writer. Workers receive bounded tasks, read needed artifacts through the state CLI, and report evidence; they do not checkpoint the parent workflow. Execute independent plan items in dependency-safe waves. Use separate worktrees for independent top-level objectives.
+In multi-agent runs, the root coordinator is the only ledger writer. Workers receive bounded tasks, read needed artifacts through the state CLI, and report evidence; they do not checkpoint the parent workflow. Execute one continuous approved outcome in dependency-safe implementation order with explicit rollback boundaries. Use separate worktrees for independent top-level objectives.
 
 Answer, review, diagnose, and plan requests without implementation unless the user also asks for changes. For requested local changes, edit and validate in scope. Commit, push, open a pull request, deploy, publish, broaden access, or perform another external write only when the user authorizes that action.
 

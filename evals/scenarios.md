@@ -86,7 +86,7 @@ Expected: the second write exits with conflict code 3 and reloads before proceed
 
 Run scenario 4 in Codex Ultra or a Claude dynamic workflow with two independent implementation tasks.
 
-Expected: workers receive read-only ledger facts and return evidence; the root coordinator integrates and checkpoints dependency-safe waves.
+Expected: workers receive read-only ledger facts and return evidence; the root coordinator integrates independent rollback units and checkpoints the one continuous implementation stream.
 
 ## 13. Diagnosis-only failure investigation
 
@@ -178,13 +178,13 @@ Prompt:
 
 Expected: create a brainstorm artifact under the resolved brainstorm area with the problem, constraints, alternatives, selected direction, assumptions, success criteria, and open questions. The ADR may record the chosen decision, but the ledger's `brainstorm` key points to the brainstorm artifact rather than the ADR.
 
-## 24. Long-wave progress and status interruption
+## 24. Long-running progress and status interruption
 
-Start a tracked wave with five named acceptance checks. Complete three checks, then submit:
+Start a tracked implementation milestone with five named acceptance checks. Complete three checks, then submit:
 
 > How far along are we? Continue afterward.
 
-Expected: checkpoint an evidence-based progress value such as `Wave 1: 3/5 acceptance checks pass`, answer the status question, and continue from the recorded next action. Do not invent a percentage from time or file count, rewrite the approved plan merely to mark progress, stop after the status answer, or run a broad suite before the wave's rollback boundary requires it.
+Expected: checkpoint an evidence-based progress value such as `Parser and migration: 3/5 acceptance checks pass`, answer the status question, and continue from the recorded next action. Do not invent a percentage from time or file count, rewrite the approved plan merely to mark progress, stop after the status answer, or run a broad suite before the integrated rollback boundary requires it.
 
 ## 25. Explicit cross-workspace handoff
 
@@ -255,3 +255,74 @@ Expected: work-unit compliance may pass, but approved-outcome fidelity fails or 
 Start a task in a parent directory containing an active ledger for project A, then ask to change nested Git repository B, which has its own ledger.
 
 Expected: resolve B from the explicit request/current files, run the state CLI with `--root` set to B's canonical root, verify that root in recovery context, and leave A's ancestor ledger untouched. Do not resume A, replace its workflow, or scan siblings for another candidate.
+
+## 36. Outcome map omits a parent ID
+
+Bind a reviewed Contract with `OUT-001` through `OUT-005`, then present a Plan
+Map containing only `OUT-001` through `OUT-004` and request transition to
+execution.
+
+Expected: `validate-plan` rejects the map, names `OUT-005` as missing, leaves
+the phase and revision unchanged, and does not allow an otherwise valid local
+task or test to redefine the approved outcome.
+
+## 37. False `No scope delta`
+
+Bind a Contract whose scope status is `none` while one original Outcome is
+marked `deferred`, `removed`, or `changed`.
+
+Expected: binding fails structurally before approval or execution, reports the
+contradiction, and writes no partial state. A generic artifact approval is not
+converted into distinct scope-delta approval.
+
+## 38. Legacy execution requires reconciliation
+
+Copy an active schema-2 ledger in `phase=execute` into a disposable exact-root
+repository, load it with the 1.2 runtime, then try an execution-progress
+checkpoint.
+
+Expected: the read-only view reports `reconcile_required`; execution progress,
+readiness handoff, verification, and completion are rejected. Planning retreat,
+Contract bind, and Plan Map validation can reconcile it. The first successful
+schema-3 write creates one exact pre-schema3 archive; the original live
+repository is untouched.
+
+## 39. Bound source drifts
+
+Bind a valid Contract, validate its complete Plan Map, then change or remove
+one explicitly bound parent source before an executable transition.
+
+Expected: the lifecycle check records `drifted`, reports only an actionable
+source identifier/reason, does not adopt a new digest, and blocks execution.
+Restoring bytes makes the check observable again, but adopting changed content
+still requires reviewed rebind.
+
+## 40. Self-generated baseline cannot satisfy fidelity
+
+Declare a required approved baseline and then attempt to bind an
+implementation-origin source as that baseline, or make a passing Fidelity row
+use an implementation-generated screenshot as its baseline.
+
+Expected: the Contract or Verification Record is rejected. Regression evidence
+may remain implementation-generated, but approved-outcome fidelity stays
+blocked or failed until it compares against the approved provenance.
+
+## 41. One Fidelity comparison is missing
+
+Bind a required baseline with four Fidelity IDs and record passing evidence for
+only three.
+
+Expected: the Verification Record is rejected or remains blocked with the
+missing FID named. Work-unit compliance may pass independently, but
+approved-outcome fidelity and completion do not.
+
+## 42. Completion reports every failing gate
+
+From `phase=verify`, arrange simultaneous contract drift, incomplete coverage,
+a pending or unapproved scope delta, blocked baseline fidelity, a failed
+work-unit verdict, requested code changes, and blocking evidence. Request
+completion.
+
+Expected: `complete` reports every current condition in one result, leaves
+`status=active`, `phase=verify`, and the revision unchanged, and does not
+silently prioritize or overwrite one verdict with another.

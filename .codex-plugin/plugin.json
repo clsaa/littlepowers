@@ -1,6 +1,6 @@
 {
   "name": "littlepowers",
-  "version": "1.1.0-alpha.1",
+  "version": "1.2.0-alpha.1",
   "description": "A proportional planning, scope integrity, recovery, debugging, verification, and review protocol for Codex, Claude Code, Qoder, and OpenCode.",
   "author": {
     "name": "clsaa",

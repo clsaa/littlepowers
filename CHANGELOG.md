@@ -4,6 +4,59 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+## [1.2.0-alpha.1] - 2026-07-26
+
+### Added
+
+- Add state schema 3 and Outcome Lock protocol 1.2 with explicit parent-source
+  binding, semantic Contract digests, source-drift detection, complete
+  Outcome-to-task/evidence coverage, structured baseline fidelity, three
+  independent verdicts, and an aggregate deterministic Completion Gate.
+- Add `bind-contract`, `check-contract`, `validate-plan`, and
+  `record-verification`, plus a minimal one-outcome lock for tracked direct
+  work.
+- Add recoverable schema-1/schema-2 migration with a one-time exact
+  `pre-schema3` archive and `reconcile_required` handling for unfinished legacy
+  work.
+- Add behavioral regression suites for record grammar, migration, contract
+  security, lifecycle gates, completion aggregation, and source-free Hook
+  rendering.
+
+### Changed
+
+- Keep implementation as one continuous stream under one Definition of Done.
+  Tasks, checkpoints, independently reversible rollback units, and small
+  commits provide safe ordering without becoming product slices or staged
+  deliveries.
+- Make active contract drift and incomplete declared coverage executable-state
+  failures instead of prompt-only guidance.
+- Keep direct and lean routes proportional: untracked direct work remains
+  zero-overhead; lean work remains brainstorm → plan without separate
+  specification or design.
+- Align Codex, Claude Code, Qoder, and OpenCode manifests and shared skills on
+  protocol 1.2 and version `1.2.0-alpha.1`.
+
+### Security and performance
+
+- Generalize the explicit workspace reader with exact-root, regular-file,
+  ownership, link/reparse, replacement-race, per-file, and total-byte checks.
+- Keep Hooks ledger-only and read-only; they render stored lock counts and
+  verdicts without opening or hashing contract or evidence sources.
+- Add no model call, agent, model/effort override, repository scan, background
+  process, telemetry, network access, or automatic test run. Gate cost is
+  bounded by explicitly named files and declared rows.
+
+### Compatibility
+
+- Existing active or paused schema-1/schema-2 workflows require reconciliation
+  after a new task/session loads 1.2; terminal legacy workflows stay terminal.
+- A 1.1 runtime cannot read a schema-3 current ledger. Runtime rollback requires
+  restoring the matching pre-schema3 archive before installing the old
+  version.
+- The 1.1.1-compatible wording corrections—three verdicts, legacy
+  reconciliation guidance, and rollback-unit clarity—are included here rather
+  than shipped as a separate release.
+
 ## [1.1.0-alpha.1] - 2026-07-26
 
 ### Added
@@ -16,7 +69,7 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ### Changed
 
-- Treat tasks and dependency-safe waves as implementation order only. Agents may not split an approved outcome into independently accepted product, technical, platform, MVP, or phase slices without an explicitly approved scope delta.
+- Treat tasks and dependency ordering as implementation mechanics only. Agents may not split an approved outcome into independently accepted product, technical, platform, MVP, or phase slices without an explicitly approved scope delta.
 - Require plans, execution, reviews, and completion evidence to retain inherited parent acceptance criteria under one definition of done.
 - Keep the new protections model-neutral and lightweight: no schema migration, extra model call, reviewer, background scan, or automatic test run.
 
@@ -130,7 +183,8 @@ The first stable release. Multi-host support (Codex, Claude Code, Qoder, OpenCod
 
 - Created the initial Codex plugin and planning workflow.
 
-[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.1.0-alpha.1...HEAD
+[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.2.0-alpha.1...HEAD
+[1.2.0-alpha.1]: https://github.com/clsaa/littlepowers/compare/v1.1.0-alpha.1...v1.2.0-alpha.1
 [1.1.0-alpha.1]: https://github.com/clsaa/littlepowers/compare/v1.0.0...v1.1.0-alpha.1
 [1.0.0]: https://github.com/clsaa/littlepowers/releases/tag/v1.0.0
 [0.5.0-alpha.1]: https://github.com/clsaa/littlepowers/compare/v0.4.0-alpha.1...v1.0.0

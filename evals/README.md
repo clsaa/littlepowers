@@ -21,9 +21,14 @@ Run each configuration at least three times before drawing a reliability conclus
 
 - The selected route matches decisions and risk rather than file count or effort.
 - A small bounded change with one meaningful decision uses brainstorm → plan without separate spec/design artifacts.
-- Approved parent requirements remain in one definition of done; tasks and waves do not become product or technical slices.
+- Approved parent requirements remain in one definition of done and one continuous implementation stream; tasks and rollback units do not become product or technical slices or staged deliveries.
+- A reviewed Contract binds only explicit parent sources, exposes stable Outcome IDs, and becomes non-executable when a source drifts.
+- Every active Outcome ID maps to tasks and named evidence before execution; an omitted or unknown ID is rejected atomically.
 - Any `Added / Changed / Deferred / Removed` scope delta is highlighted for explicit approval, or the artifact states `No scope delta`.
-- Visual fidelity uses an approved baseline rather than an implementation-generated snapshot.
+- `No scope delta` cannot coexist with changed, deferred, or removed Outcomes.
+- Visual, interaction, output, and compatibility fidelity use approved provenance rather than an implementation-generated baseline, and every required Fidelity row is verified.
+- Completion independently requires work-unit compliance, approved-outcome fidelity, code quality, zero blockers, and a current Contract, and reports all failures without mutation.
+- Active legacy schema-1/schema-2 work reconciles after the 1.2 runtime is loaded; terminal legacy work stays terminal.
 - The latest user request remains authoritative.
 - Related corrections update the workflow without restarting it.
 - A status question does not end unfinished work.
@@ -42,7 +47,7 @@ Run each configuration at least three times before drawing a reliability conclus
 - A legacy tool-branded artifact root is ignored unless the user or a current repository instruction explicitly declares it for new workflow artifacts.
 - A replaced plugin cache is resolved through exactly one active host installation before the current skills and ledger are reread; execution never continues from remembered instructions alone.
 - A full-route ADR is a companion decision record, not the checkpointed brainstorm artifact.
-- Long-wave progress uses named milestones or acceptance-check counts, survives status interruptions, and does not invent percentages or force premature broad testing.
+- Long-running progress uses named milestones or acceptance-check counts, survives status interruptions, and does not invent percentages or force premature broad testing.
 - Cross-workspace handoff verifies one explicit active target, cancels only the source, and requires a new target-root task/session without scanning sibling worktrees.
 - A broad uncommitted review binds its verdict to explicit before/after snapshot tokens; candidate drift invalidates only affected evidence.
 - An oversized material review partitions by trust, state ownership, or rollback boundary and aggregates shared-interface acceptance once, while ordinary work adds no snapshot, model pass, or broad test.
@@ -53,3 +58,9 @@ Use [scenarios.md](scenarios.md) for the prompts and expected observations.
 Dated static/runtime evidence for the explicit handoff and review snapshot is recorded in [the 2026-07-18 verification report](results/2026-07-18-lightweight-handoff-review-evidence.md).
 
 The scope-integrity, lean-route, root-binding, cross-host validation, and host-context-cost evidence is recorded in [the 2026-07-26 v1.1 verification report](results/2026-07-26-v1.1-scope-integrity.md).
+
+The schema-3 Outcome Lock candidate report records deterministic Contract,
+coverage, fidelity, completion, migration, and four-host validation evidence in
+`results/2026-07-26-v1.2-outcome-lock.md` when the aggregate verification has
+finished. Until that file contains fresh results, candidate behavior is not a
+release claim.

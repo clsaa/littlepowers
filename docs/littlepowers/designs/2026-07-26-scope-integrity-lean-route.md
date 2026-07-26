@@ -22,7 +22,7 @@ No route field is added to schema 2. Recovery distinguishes the lean route throu
 3. no implicit product or technical slices;
 4. approved baseline provenance.
 
-Each phase skill repeats only its local enforcement point. Specs trace inherited requirements, design maps every inherited requirement, plans keep one definition of done, and execution cannot convert a blocker or partial wave into deferred scope.
+Each phase skill repeats only its local enforcement point. Specs trace inherited requirements, design maps every inherited requirement, plans keep one definition of done, and execution cannot convert a blocker or partial rollback unit into deferred scope.
 
 Review uses three independent verdicts:
 

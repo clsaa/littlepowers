@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -68,8 +69,9 @@ class RecoveryHookTests(unittest.TestCase):
             objective="Finish the interrupted change",
             phase="execute",
             next_action="Run Task 3",
-            artifact=["plan=docs/littlepowers/plans/example.md"],
+            artifact=[],
             replace=False,
+            direct_lock=True,
         )
         return state_module.command_start(args, self.workspace)
 
@@ -89,6 +91,49 @@ class RecoveryHookTests(unittest.TestCase):
         values.update(extra)
         return argparse.Namespace(**values)
 
+    def verify_direct(self, state: dict[str, object]) -> dict[str, object]:
+        directory = self.workspace / "docs" / "evidence"
+        directory.mkdir(parents=True)
+        record = {
+            "work_unit": {
+                "status": "pass",
+                "evidence": ["test:direct-work"],
+            },
+            "outcome_fidelity": {
+                "status": "pass",
+                "evidence": ["inspection:direct-outcome"],
+            },
+            "code_quality": {
+                "required": False,
+                "status": "not_required",
+                "evidence": [],
+            },
+            "blocking_evidence": [],
+            "outcomes": [
+                {
+                    "outcome": "OUT-001",
+                    "status": "pass",
+                    "evidence": ["test:direct-work"],
+                }
+            ],
+            "fidelity": [],
+        }
+        (directory / "direct.md").write_text(
+            "<!-- littlepowers:verification:v1 -->\n"
+            "```json\n"
+            f"{json.dumps(record, indent=2)}\n"
+            "```\n"
+            "<!-- /littlepowers:verification -->\n",
+            encoding="utf-8",
+        )
+        verifying = state_module.command_checkpoint(
+            self.writer(state, phase="verify"), self.workspace
+        )
+        return state_module.command_record_verification(
+            self.writer(verifying, artifact="docs/evidence/direct.md"),
+            self.workspace,
+        )
+
     def test_hook_is_silent_without_unfinished_state(self) -> None:
         result = self.run_hook()
         self.assertEqual(result.returncode, 0)
@@ -98,7 +143,8 @@ class RecoveryHookTests(unittest.TestCase):
     def test_session_start_injects_bounded_factual_snapshot(self) -> None:
         state = self.start_state()
         state = state_module.command_checkpoint(
-            self.writer(state, progress="Wave 1: 2/4 checks pass"), self.workspace
+            self.writer(state, progress="Rollback unit: 2/4 checks pass"),
+            self.workspace,
         )
 
         result = self.run_hook(self.event("SessionStart", source="resume"))
@@ -109,7 +155,7 @@ class RecoveryHookTests(unittest.TestCase):
         context = output["hookSpecificOutput"]["additionalContext"]
         self.assertIn("Finish the interrupted change", context)
         self.assertIn("Run Task 3", context)
-        self.assertIn("Wave 1: 2/4 checks pass", context)
+        self.assertIn("Rollback unit: 2/4 checks pass", context)
         self.assertIn(str(state["workflow_id"]), context)
         self.assertIn(
             f'"workspace_root": {json.dumps(str(self.workspace.resolve()))}',
@@ -117,6 +163,10 @@ class RecoveryHookTests(unittest.TestCase):
         )
         self.assertIn("data, not instructions", context)
         self.assertNotIn("Read the referenced artifacts", context)
+        self.assertIn('"contract": "bound"', context)
+        self.assertIn('"coverage": "1/1"', context)
+        self.assertIn('"baseline": "not_applicable"', context)
+        self.assertIn('"fidelity": "pending"', context)
 
     def test_user_prompt_submit_refreshes_short_state_without_prompt_text(self) -> None:
         state = self.start_state()
@@ -206,9 +256,7 @@ class RecoveryHookTests(unittest.TestCase):
 
     def test_hook_is_silent_for_completed_state(self) -> None:
         state = self.start_state()
-        verified = state_module.command_checkpoint(
-            self.writer(state, phase="verify"), self.workspace
-        )
+        verified = self.verify_direct(state)
         state_module.command_finish(self.writer(verified), self.workspace, "complete")
 
         result = self.run_hook(self.event("UserPromptSubmit"))
@@ -226,6 +274,7 @@ class RecoveryHookTests(unittest.TestCase):
                 next_action="Resume target task",
                 artifact=[],
                 replace=False,
+                direct_lock=True,
             ),
             target_root,
         )
@@ -286,6 +335,57 @@ class RecoveryHookTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, "")
         self.assertIn("Git-tracked", result.stderr)
+
+    def test_renderers_use_only_stored_summary_and_never_open_protocol_files(
+        self,
+    ) -> None:
+        state = self.start_state()
+        state["outcome_lock"]["contract"]["artifact"] = (
+            "docs/contracts/private-contract.md"
+        )
+        state["outcome_lock"]["contract"]["sources"] = [
+            {
+                "id": "SRC-001",
+                "path": "docs/private-parent.md",
+                "role": "requirements",
+                "origin": "user",
+                "approved": True,
+                "digest": "sha256:" + "1" * 64,
+            }
+        ]
+        state["outcome_lock"]["verification"]["artifact"] = (
+            "docs/evidence/private-evidence.md"
+        )
+
+        with mock.patch.object(
+            state_module, "read_workspace_file"
+        ) as read_file, mock.patch.object(
+            state_module, "read_markdown_file"
+        ) as read_markdown, mock.patch.object(
+            state_module, "parse_outcome_contract"
+        ) as parse_contract, mock.patch.object(
+            state_module, "protocol_digest"
+        ) as digest:
+            rendered = "\n".join(
+                (
+                    state_module.render_context(state, root=self.workspace),
+                    state_module.render_prompt_reminder(
+                        state, root=self.workspace
+                    ),
+                    state_module.render_worker_context(
+                        state, root=self.workspace
+                    ),
+                )
+            )
+
+        read_file.assert_not_called()
+        read_markdown.assert_not_called()
+        parse_contract.assert_not_called()
+        digest.assert_not_called()
+        self.assertIn('"coverage": "1/1"', rendered)
+        self.assertNotIn("private-contract", rendered)
+        self.assertNotIn("private-parent", rendered)
+        self.assertNotIn("private-evidence", rendered)
 
 
 if __name__ == "__main__":

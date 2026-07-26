@@ -7,6 +7,8 @@ import subprocess
 import unittest
 from pathlib import Path
 
+from scripts.littlepowers_state import parse_outcome_contract
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -22,7 +24,7 @@ class ManifestTests(unittest.TestCase):
 
         self.assertEqual(codex["name"], "littlepowers")
         self.assertEqual(claude["name"], "littlepowers")
-        self.assertEqual(codex["version"], "1.1.0-alpha.1")
+        self.assertEqual(codex["version"], "1.2.0-alpha.1")
         self.assertEqual(claude["version"], codex["version"])
         self.assertEqual(claude["repository"], codex["repository"])
         self.assertIn("Claude Code", codex["description"])
@@ -101,6 +103,7 @@ class ManifestTests(unittest.TestCase):
     def test_opencode_plugin_registers_skills_and_injects_read_only(self) -> None:
         package = read_json(ROOT / "package.json")
         self.assertEqual(package["name"], "littlepowers")
+        self.assertEqual(package["version"], "1.2.0-alpha.1")
         self.assertEqual(package["main"], ".opencode/plugins/littlepowers.js")
         self.assertEqual(package["type"], "module")
         self.assertNotIn("dependencies", package)
@@ -204,7 +207,130 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("lower-level specification", specification)
         self.assertIn("every inherited requirement", design)
         self.assertIn("one definition of done", plan)
-        self.assertIn("partial wave", execution)
+        self.assertIn("passed rollback unit", execution)
+
+    def test_outcome_lock_protocol_is_shared_and_deterministic(self) -> None:
+        reference = (ROOT / "references" / "outcome-lock.md").read_text(
+            encoding="utf-8"
+        )
+        router = (
+            ROOT / "skills" / "using-littlepowers" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        brainstorm = (
+            ROOT / "skills" / "brainstorming" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        compact = (
+            ROOT / "skills" / "compact-shaping" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        specification = (
+            ROOT / "skills" / "writing-specs" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        plan = (
+            ROOT / "skills" / "writing-plans" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        execution = (
+            ROOT / "skills" / "executing-plans" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        verification = (
+            ROOT / "skills" / "verifying-work" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        managing = (
+            ROOT / "skills" / "managing-littlepowers" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+
+        for marker in (
+            "<!-- littlepowers:contract:v1 -->",
+            "<!-- littlepowers:plan-map:v1 -->",
+            "<!-- littlepowers:verification:v1 -->",
+        ):
+            self.assertIn(marker, reference)
+        for command in (
+            "bind-contract",
+            "check-contract",
+            "validate-plan",
+            "record-verification",
+        ):
+            self.assertIn(command, reference)
+            self.assertTrue(
+                any(
+                    command in skill
+                    for skill in (
+                        router,
+                        brainstorm,
+                        compact,
+                        specification,
+                        plan,
+                        execution,
+                        verification,
+                        managing,
+                    )
+                )
+            )
+        self.assertIn("--direct-lock", router)
+        self.assertIn("reconcile_required", router)
+        self.assertIn("../../references/outcome-lock.md", brainstorm)
+        self.assertIn("../../references/outcome-lock.md", compact)
+        self.assertIn("../../references/outcome-lock.md", specification)
+        self.assertIn("../../references/outcome-lock.md", plan)
+        self.assertIn("../../references/outcome-lock.md", verification)
+
+    def test_bootstrap_contract_projects_exactly_all_approved_outcomes(self) -> None:
+        contract_path = (
+            ROOT
+            / "docs"
+            / "littlepowers"
+            / "contracts"
+            / "2026-07-26-outcome-lock.md"
+        )
+        contract = parse_outcome_contract(contract_path.read_text(encoding="utf-8"))
+        expected = {f"OUT-{index:03d}" for index in range(1, 24)}
+
+        self.assertEqual(
+            {outcome["id"] for outcome in contract["outcomes"]},
+            expected,
+        )
+        self.assertTrue(
+            all(
+                outcome["disposition"] == "active"
+                for outcome in contract["outcomes"]
+            )
+        )
+        self.assertEqual(contract["scope_delta"]["status"], "none")
+        self.assertEqual(contract["baseline"]["requirement"], "required")
+        self.assertEqual(len(contract["sources"]), 7)
+        self.assertIn(
+            "docs/littlepowers/specs/"
+            "2026-07-26-scope-integrity-lean-route.md",
+            {source["path"] for source in contract["sources"]},
+        )
+        self.assertIn(
+            "docs/littlepowers/designs/"
+            "2026-07-26-scope-integrity-lean-route.md",
+            {source["path"] for source in contract["sources"]},
+        )
+        self.assertEqual(
+            {row["id"] for row in contract["fidelity"]},
+            {"FID-001", "FID-002", "FID-003", "FID-004"},
+        )
+        self.assertEqual(
+            {row["surface"] for row in contract["fidelity"]},
+            {"Codex", "Claude Code", "Qoder", "OpenCode"},
+        )
+
+    def test_skill_workflow_uses_continuous_tasks_not_wave_slicing(self) -> None:
+        for skill_path in sorted((ROOT / "skills").glob("*/SKILL.md")):
+            with self.subTest(skill=skill_path.parent.name):
+                skill = skill_path.read_text(encoding="utf-8").lower()
+                self.assertNotIn("wave", skill)
+        plan = (
+            ROOT / "skills" / "writing-plans" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        execution = (
+            ROOT / "skills" / "executing-plans" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("one continuous implementation stream", plan)
+        self.assertIn("bounded rollback", plan)
+        self.assertIn("continuous implementation", execution)
 
     def test_visual_baseline_and_dual_acceptance_verdicts_are_bound(self) -> None:
         router = (
@@ -307,6 +433,8 @@ class ManifestTests(unittest.TestCase):
             self.assertIn("Do not create product or technical slices", snippet)
             self.assertIn("No scope delta", snippet)
             self.assertIn("approved-outcome fidelity", snippet)
+            self.assertIn("one continuous implementation stream", snippet)
+            self.assertNotIn("wave", snippet.lower())
 
     def test_internal_phase_skills_gate_direct_invocation(self) -> None:
         internal = {
@@ -462,7 +590,9 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("cannot force a model", readme)
         self.assertIn("UserPromptSubmit", readme)
         self.assertIn("coordinator is the only ledger writer", readme)
-        self.assertIn("1.0.0", readme)
+        self.assertIn("1.2.0-alpha.1", readme)
+        self.assertIn("Outcome Lock protocol 1.2", readme)
+        self.assertIn("one continuous stream", readme)
         self.assertIn("Systematic debugging", readme)
         self.assertIn("Proportional verification", readme)
         self.assertIn("Lightweight review", readme)
@@ -481,7 +611,8 @@ class ManifestTests(unittest.TestCase):
             ROOT / "evals" / "results" / "2026-07-17-v0.4-alpha.1.md"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("Release:** 1.1.0-alpha.1", capability)
+        self.assertIn("Release:** 1.2.0-alpha.1", capability)
+        self.assertIn("Outcome Coverage Gate", capability)
         self.assertIn("`debugging-systematically`", capability)
         self.assertIn("`verifying-work`", capability)
         self.assertIn("`reviewing-changes`", capability)

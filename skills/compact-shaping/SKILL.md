@@ -20,6 +20,13 @@ For an existing workflow, keep the artifact root already resolved by `using-litt
 
 Include the inherited complete outcome and `Added / Changed / Deferred / Removed`, or `No scope delta`. Do not create product or technical slices; ordered steps are implementation order only. Highlight and obtain explicit approval for any non-empty scope delta.
 
+Read
+[`../../references/outcome-lock.md`](../../references/outcome-lock.md). Include
+one Outcome Contract and one Outcome Plan Map in the shape. Give each complete
+observable outcome a stable `OUT-###` ID and map every active ID to a task and
+named evidence. The shape is one artifact, not a reason to add a specification,
+design, or separate plan.
+
 Keep the brief proportional. If shaping exposes material unresolved architecture, security, migration, cross-system, irreversible-state, or costly-rollback choices, switch to the full route before implementation.
 
 Checkpoint with the current workflow ID and revision:
@@ -27,11 +34,11 @@ Checkpoint with the current workflow ID and revision:
 ```bash
 <python> <state-cli> checkpoint \
   --workflow <workflow-id> --expect-revision <revision> \
-  --phase execute \
+  --phase shape \
   --artifact shape=<artifact-path> \
   --completed "compact shape" \
   --progress "Compact shape complete; execution is next" \
-  --next-action "Execute the first shape step"
+  --next-action "Review, bind, and validate the compact shape"
 ```
 
-Use the returned revision, then present the shape brief for review and stop: summarize the selected approach and execution steps, name the artifact path, and name `executing-plans` as the next phase. Invoke `executing-plans` only after explicit approval of this artifact, or immediately when the latest user request explicitly authorized unattended end-to-end execution. When the user asks for corrections, revise this artifact, checkpoint again, and present it again instead of advancing.
+Use the returned revision, then present the shape brief for review and stop: summarize the selected approach and execution steps, name the artifact path, and name `executing-plans` as the next phase. After approval, run `bind-contract --artifact <artifact-path> --approval-kind review-gate` with `--approve-scope-delta` only for a distinctly approved delta, then `validate-plan --artifact <artifact-path>`. For explicit unattended end-to-end authorization use the matching approval kind. After both commands succeed, checkpoint `--phase execute` and invoke `executing-plans`. When the user asks for corrections, revise this artifact, checkpoint again, and present it again instead of advancing.
