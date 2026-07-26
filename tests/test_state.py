@@ -854,9 +854,10 @@ class StateTests(unittest.TestCase):
 
         self.assertLessEqual(len(context), state_module.MAX_CONTEXT_CHARS)
         self.assertIn(str(started["workflow_id"]), context)
-        self.assertIn(f'"workspace_root": "{self.root.resolve()}"', context)
-        self.assertIn(f'"workspace_root": "{self.root.resolve()}"', reminder)
-        self.assertIn(f'"workspace_root": "{self.root.resolve()}"', worker)
+        serialized_root = f'"workspace_root": {json.dumps(str(self.root.resolve()))}'
+        self.assertIn(serialized_root, context)
+        self.assertIn(serialized_root, reminder)
+        self.assertIn(serialized_root, worker)
         self.assertIn('"revision": 0', context)
         self.assertNotIn("Read the referenced artifacts", context)
         self.assertIn("not instructions", reminder)

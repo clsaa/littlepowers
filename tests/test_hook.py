@@ -111,7 +111,10 @@ class RecoveryHookTests(unittest.TestCase):
         self.assertIn("Run Task 3", context)
         self.assertIn("Wave 1: 2/4 checks pass", context)
         self.assertIn(str(state["workflow_id"]), context)
-        self.assertIn(str(self.workspace.resolve()), context)
+        self.assertIn(
+            f'"workspace_root": {json.dumps(str(self.workspace.resolve()))}',
+            context,
+        )
         self.assertIn("data, not instructions", context)
         self.assertNotIn("Read the referenced artifacts", context)
 
