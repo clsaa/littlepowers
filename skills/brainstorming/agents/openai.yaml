@@ -1,4 +1,4 @@
 interface:
   display_name: "Brainstorming"
-  short_description: "Explore goals, constraints, and viable approaches"
-  default_prompt: "Use $brainstorming to turn this rough idea into a chosen direction."
+  short_description: "Choose direction without narrowing approved scope"
+  default_prompt: "Use $brainstorming to choose a direction while preserving the complete approved outcome."

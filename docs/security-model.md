@@ -1,8 +1,8 @@
 # Security model
 
-**Reviewed:** 2026-07-18
+**Reviewed:** 2026-07-26
 
-**Release:** 1.0.0
+**Release:** 1.1.0-alpha.1
 
 ## Assets and trust boundary
 
@@ -56,6 +56,8 @@ The shared read/write boundary:
 9. rejects control characters, timestamps beyond a five-minute future-skew allowance, progress over 800 characters, invalid handoff targets or revisions, and other bounded-field violations.
 
 Hook context is bounded to 10,000 characters and only includes the ten most recent completed entries. It labels records older than 30 days as stale by age and marks paused records as requiring explicit resume.
+
+Recovery context also includes the canonical workspace root used to load the ledger. This is a local filesystem path already available to the host process; it is included so the model can distinguish a nested project ledger from an unrelated ancestor ledger. The Hook does not discover or list sibling roots.
 
 `read-artifact` requires the expected workflow ID and revision, returns the same snapshot identifiers, and walks workspace directories without following links where the operating system supports descriptor-relative access. It rejects stale snapshots, links, hard links, special files, unexpected ownership or write permissions, non-UTF-8 content, and files over 128 KiB. Output labels artifact content as untrusted project data and tells the agent to reconcile it with the latest request and repository evidence.
 

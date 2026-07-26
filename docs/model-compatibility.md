@@ -1,8 +1,8 @@
 # Model compatibility
 
-**Reviewed:** 2026-07-18
+**Reviewed:** 2026-07-26
 
-**Release:** 1.0.0
+**Release:** 1.1.0-alpha.1
 
 Littlepowers does not choose a model, reasoning effort, or context window. Planning depth follows task risk and unresolved decisions.
 
@@ -28,6 +28,8 @@ v0.4 adds native skills for systematic debugging, verification, and review. They
 
 The disciplines are conditional rather than a second mandatory router: debugging applies to unexpected behavior, review applies at requested or material boundaries, and verification applies before a success claim. Tiny isolated changes can use focused self-review and direct evidence without a separate reviewer or full suite. This limits repeated ceremony at xhigh/max/high effort while keeping an explicit evidence gate where mistakes are costly.
 
+The 1.1 lean route further reduces fixed ceremony: a small bounded change with one meaningful decision goes from brainstorm directly to plan, skipping separate specification and design artifacts. Scope-integrity checks compare existing artifacts and user-approved sources inside the same model turn; they do not add a reviewer, model call, hidden chain-of-thought request, background scan, or automatic test run. Dependency-safe waves remain implementation ordering rather than independently accepted product slices.
+
 The Unreleased handoff and review-evidence additions are dormant commands, not a second execution loop. Ordinary routing and hooks do not scan sibling worktrees, hash review candidates, create reviewers, select models, add a model turn, or add a test run. A broad uncommitted review opts into one bounded snapshot before review and one comparison before verdict acceptance; an oversized review may be partitioned, but one acceptance owner aggregates shared-boundary evidence once.
 
 Littlepowers does not call Superpowers or depend on its runtime. Both can expose namespaced skills, but making both default workflow authorities can still create process-level duplication even though neither creates a model-parameter conflict.
@@ -44,7 +46,7 @@ GPT-5.6 guidance also recommends lean prompts, single-stated rules, outcome-focu
 
 - keeping static behavior in the router instead of Hook context;
 - reducing repeated policy in phase skills;
-- routing direct, compact, or full work by risk;
+- routing direct, lean-plan, compact, or full work by risk;
 - keeping the host in charge of delegation;
 - using factual bounded recovery snapshots;
 - selecting debugging and review only at applicable boundaries;

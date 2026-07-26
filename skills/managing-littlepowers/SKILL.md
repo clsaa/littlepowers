@@ -1,6 +1,6 @@
 ---
 name: managing-littlepowers
-description: Inspect or manage a Littlepowers recovery ledger. Use when the user asks for workflow status, health checks, pause, resume, cancel, replacement, cleanup, or troubleshooting in Codex, Claude Code, Qoder, or OpenCode. Do not change product code unless separately requested.
+description: Inspect or manage Littlepowers ledger status, health, pause, resume, cancel, replacement, cleanup, or troubleshooting. Do not edit product code.
 ---
 
 # Managing Littlepowers

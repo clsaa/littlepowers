@@ -1,13 +1,13 @@
 ---
 name: compact-shaping
-description: Create one concise Littlepowers shape brief for moderate software work. Use only when using-littlepowers selected the compact route or active state says phase=shape. Use the full phase skills for material unresolved architecture, security, migration, cross-system, irreversible, or costly choices, or when explicitly requested.
+description: Create one concise shape brief. Use only when routed by using-littlepowers or active state phase=shape.
 ---
 
 # Compact shaping
 
-Resolve the few decisions that matter without producing four separate documents.
+Resolve the few decisions that matter without producing four separate documents or narrowing the approved outcome.
 
-Read the active ledger and relevant repository evidence. Ask only when a missing answer materially changes behavior, cost, risk, or scope. Do not reopen settled choices.
+Read the active ledger, highest-authority parent acceptance sources, approved baselines, and relevant repository evidence. Ask only when a missing answer materially changes behavior, cost, risk, or scope. Do not reopen settled choices.
 
 For an existing workflow, keep the artifact root already resolved by `using-littlepowers`. When resolving a new workflow, use a non-default root only when the latest user request or a current repository instruction explicitly names it for new workflow artifacts. Existing directories, backlinks, and historical or tool-branded paths do not qualify by themselves. Otherwise use `docs/littlepowers/shapes/YYYY-MM-DD-<slug>.md`. Include:
 
@@ -17,6 +17,8 @@ For an existing workflow, keep the artifact root already resolved by `using-litt
 - selected approach and decision rationale;
 - affected files or components;
 - ordered execution steps and validation commands.
+
+Include the inherited complete outcome and `Added / Changed / Deferred / Removed`, or `No scope delta`. Do not create product or technical slices; ordered steps are implementation order only. Highlight and obtain explicit approval for any non-empty scope delta.
 
 Keep the brief proportional. If shaping exposes material unresolved architecture, security, migration, cross-system, irreversible-state, or costly-rollback choices, switch to the full route before implementation.
 

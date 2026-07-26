@@ -1,6 +1,6 @@
 ---
 name: verifying-work
-description: Verify changed work before claiming it is complete, fixed, passing, ready, or released. Use after implementation, bug fixes, delegated integration, or release preparation to require fresh evidence at the appropriate impact and rollback scope.
+description: Verify changed work with fresh evidence before completion or readiness claims. Use after implementation, fixes, integration, or release preparation.
 ---
 
 # Verifying work
@@ -9,7 +9,7 @@ Match every success claim to fresh observable evidence. Test count alone is not 
 
 ## Define the claims
 
-List the acceptance claims that the final report must support. Include the original symptom for a bug, affected contracts for connected work, and package or platform claims for a release. Do not claim more than the available environment can verify.
+List the immediate and inherited acceptance claims that the final report must support. Include the approved outcome, original symptom for a bug, affected contracts for connected work, approved baseline for fidelity work, and package or platform claims for a release. Do not claim more than the available environment can verify.
 
 Inspect the changes since the last evidence was collected. A check becomes stale after any relevant code, configuration, dependency, generated artifact, or environment change. Rerun it when ordering is uncertain.
 
@@ -38,6 +38,8 @@ For a bug fix, rerun the original reproducer after the latest edit and run regre
 
 Treat delegated worker reports as inputs, not final proof. The coordinator inspects the integrated tree and reruns the checks needed to support its own completion claim.
 
+For visual, interaction, output-format, or compatibility claims, compare against the approved baseline named by the user or parent contract. An implementation-generated screenshot, fixture, or snapshot may detect regression but cannot prove fidelity. Passing a narrower work-unit check does not satisfy omitted parent acceptance criteria.
+
 If a required tool, credential, platform, service, or deterministic environment is unavailable, state the exact limitation. Do not turn a skipped, flaky, partial, or unexecuted check into success.
 
 ## Inspect the integrated diff
@@ -46,6 +48,6 @@ Review the final intended diff and status for unintended files, debug statements
 
 ## Gate the report
 
-Use a compact claim-evidence summary when several claims exist. Mark work complete only when every required claim has fresh supporting evidence and no blocking limitation remains. For a tracked Littlepowers workflow, stay in `phase=verify` and complete the ledger only after this gate passes.
+Use a compact claim-evidence summary when several claims exist. Mark work complete only when every immediate and inherited claim has fresh supporting evidence and no blocking limitation remains. A partial wave or narrower slice cannot complete the approved outcome. For a tracked Littlepowers workflow, stay in `phase=verify` and complete the ledger only after this gate passes.
 
 Report the selected scope and rationale, exact checks and observed results, diff inspection, and unresolved limitations. Use narrower language when evidence is narrower than the requested outcome.

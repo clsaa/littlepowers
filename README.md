@@ -10,10 +10,10 @@ Littlepowers is a proportional planning, recovery, and engineering-discipline pr
 
 It is inspired by [Superpowers](https://github.com/obra/superpowers), but it is an independent implementation with no runtime dependency or affiliation.
 
-**Why not Superpowers?** Superpowers applies its full workflow ceremony broadly; Littlepowers scales the ceremony to the risk. A one-line fix stays a one-line fix, only material decisions get brainstorm → spec → design → plan, and every full-route artifact pauses for your review before the next phase. Try it in 30 seconds:
+**Why not Superpowers?** Superpowers applies its full workflow ceremony broadly; Littlepowers scales the ceremony to the risk. A one-line fix stays a one-line fix, a bounded change can go brainstorm → plan, and only material unresolved decisions need brainstorm → spec → design → plan. Each planned-route artifact pauses for your review before the next phase. Try it in 30 seconds:
 
 ```text
-Use Littlepowers compact shaping for this API change, then implement and verify it.
+Use Littlepowers to brainstorm this bounded API change, write the plan directly, then implement and verify it.
 ```
 
 ## What it changes
@@ -23,18 +23,23 @@ Littlepowers selects planning depth by unresolved decisions and risk:
 | Route | When to use it | Durable artifact |
 | --- | --- | --- |
 | Direct | The outcome and approach are clear | None; long work may still use an execution ledger |
+| Lean plan | A small bounded change needs one real decision and an executable plan | Brainstorm → plan |
 | Compact | A few connected decisions need shaping | One shape brief |
 | Full | Explicit request, or material unresolved architecture, security, migration, cross-system, irreversible, or costly-rollback choices | Brainstorm → spec → design → plan |
 
 Durable artifacts default to `docs/littlepowers/...`. A different root is used only when the latest user request or a current repository instruction explicitly names it for new workflow artifacts. Existing directories, backlinks, and historical or tool-branded paths do not silently override the default.
 
-Full-route phase artifacts are review gates: the agent presents each brainstorm, specification, design, and plan for approval and waits before starting the next phase, unless you explicitly authorize unattended end-to-end execution. In Codex, the tracked task checklist is also mirrored through the native `update_plan` tool (in OpenCode, through its todo tool) so the plan renders in the host interface; the Markdown plan file remains the durable source of truth.
+Lean- and full-route phase artifacts are review gates: the agent presents each artifact for approval and waits before starting the next phase, unless you explicitly authorize unattended end-to-end execution.
+
+All routes bind the latest request and any approved parent PRD, interaction flow, prototype, screenshot set, or contract as the complete outcome. The agent cannot create a smaller product or technical slice on its own. Any `Added / Changed / Deferred / Removed` scope delta is highlighted for explicit approval; otherwise it records `No scope delta`. Tasks and waves are implementation order only and stay under one definition of done. For UI fidelity, implementation-generated screenshots are regression evidence, not substitutes for a user-approved baseline.
+
+In Codex, the tracked task checklist is mirrored through the native `update_plan` tool (in OpenCode, through its todo tool) so the plan renders in the host interface; the Markdown plan file remains the durable source of truth.
 
 Three complementary skills apply only when their conditions are present:
 
 - **Systematic debugging** reproduces a failure, traces the earliest supported divergence, tests one hypothesis at a time, and preserves diagnosis-only authority.
 - **Proportional verification** gates completion on fresh evidence. Local rollback units get focused checks; shared contracts and releases add the relevant broad checks after integration. A full suite is not the default after every small edit.
-- **Lightweight review** gives acceptance/spec and code-quality verdicts for requested reviews, delegated integrations, shared milestones, or material rollback risk. Tiny isolated edits may use focused self-review.
+- **Lightweight review** gives separate work-unit compliance, approved-outcome fidelity, and code-quality verdicts for requested reviews, delegated integrations, shared milestones, or material rollback risk. Tiny isolated edits may use focused self-review.
 
 These skills do not create agents, choose models, require mandatory TDD, or expose hidden reasoning. Codex, Claude Code, Qoder, and OpenCode discover the same implementation.
 
@@ -174,6 +179,10 @@ Ask for the outcome and planning depth you want:
 
 ```text
 Use Littlepowers to implement this clear migration script. Track it because it may take several turns, but do not create planning documents.
+```
+
+```text
+Use Littlepowers to brainstorm this bounded change, write the plan directly without a separate spec or design, then implement and verify the complete outcome.
 ```
 
 ```text

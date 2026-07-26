@@ -1,6 +1,6 @@
 ---
 name: reviewing-changes
-description: Review implemented changes for acceptance compliance and code quality without editing them. Use when review is requested, delegated work is integrated, a shared milestone is reached, or impact and rollback cost make an independent assessment worthwhile.
+description: Review changes read-only for work-unit compliance, approved-outcome fidelity, and code quality. Use for requested or material integration review.
 ---
 
 # Reviewing changes
@@ -19,7 +19,7 @@ Use review when the user asks for it, delegated output is integrated, a shared m
 
 ## Prepare a neutral brief
 
-Review the approved outcome or acceptance criteria, exact diff or commit range, named affected interfaces, fresh verification evidence, and known limitations. Do not include a proposed verdict or coach the reviewer with a list of suspected findings.
+Review the highest-authority approved outcome and parent acceptance sources, the immediate work-unit requirements, exact diff or commit range, named affected interfaces, approved baselines, fresh verification evidence, and known limitations. Do not include a proposed verdict or coach the reviewer with a list of suspected findings.
 
 Treat implementation summaries and worker claims as navigation aids rather than proof. Inspect the actual files and tests. Keep unrelated pre-existing issues out of scope unless they directly change the safety or correctness of this change.
 
@@ -33,9 +33,11 @@ If one material candidate cannot fit a reliable review, report the scope limit a
 
 ## Assess acceptance and quality separately
 
-First assess acceptance/spec compliance. Map each required behavior to the implementation and evidence, identify unauthorized scope, and return exactly one verdict: `pass`, `fail`, or `blocked`.
+First assess acceptance/spec compliance as **work-unit compliance**. Map each immediate required behavior to the implementation and evidence, identify unauthorized scope, and return exactly one verdict: `pass`, `fail`, or `blocked`.
 
-Then assess code quality independently. Check correctness, failure modes, boundary handling, security and portability where relevant, maintainability, and whether tests exercise the changed risks. Return exactly one verdict: `approve`, `request changes`, or `blocked`.
+Then assess **approved-outcome fidelity** independently against the highest-authority parent requirements and approved baseline. Return exactly one verdict: `pass`, `fail`, or `blocked`. A narrower specification, implementation plan, technical slice, or generated fixture cannot erase parent requirements. When the available review inputs omit a known parent source or cover only part of it, report the fidelity verdict as `blocked`, never as product consistency. For visual or interaction fidelity, an implementation-generated screenshot or snapshot is regression evidence only and cannot replace the approved user or design baseline.
+
+Finally assess code quality independently. Check correctness, failure modes, boundary handling, security and portability where relevant, maintainability, and whether tests exercise the changed risks. Return exactly one verdict: `approve`, `request changes`, or `blocked`.
 
 Do not let a quality preference fail compliant code without a concrete consequence. Do not let clean style hide a missing requirement.
 
@@ -59,4 +61,4 @@ After an accepted repair, invalidate and rerun evidence affected by that repair.
 
 ## Report
 
-Return the review scope and rationale, the acceptance/spec verdict, the code-quality verdict, ordered findings, and residual risk or verification gaps. Keep the report read-only and distinguish blocking findings from optional improvements.
+Return the review scope and rationale, the work-unit compliance verdict, the approved-outcome fidelity verdict, the code-quality verdict, ordered findings, and residual risk or verification gaps. Keep the report read-only and distinguish blocking findings from optional improvements.

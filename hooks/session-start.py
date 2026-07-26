@@ -42,12 +42,12 @@ def main() -> int:
             return 0
         event_name = event.get("hook_event_name") or event.get("hookEventName")
         if event_name == "UserPromptSubmit":
-            context = render_prompt_reminder(state)
+            context = render_prompt_reminder(state, root=root)
         elif event_name == "SubagentStart":
-            context = render_worker_context(state)
+            context = render_worker_context(state, root=root)
         else:
             event_name = "SessionStart"
-            context = render_context(state)
+            context = render_context(state, root=root)
         if not context:
             return 0
         output = {

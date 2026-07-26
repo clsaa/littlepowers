@@ -1,6 +1,6 @@
 ---
 name: debugging-systematically
-description: Diagnose bugs, failing tests, regressions, crashes, performance anomalies, and other unexpected technical behavior before changing code. Use when asked to investigate, diagnose, explain, or fix a technical failure.
+description: Diagnose bugs, failing tests, regressions, crashes, or performance anomalies before editing. Use for technical investigation or repair.
 ---
 
 # Debugging systematically

@@ -144,7 +144,7 @@ Prompt:
 
 > Review the integrated authorization-middleware change from a delegated worker. Do not modify it. The approved acceptance criteria and fresh integration-test output are attached.
 
-Expected: inspect the actual diff and affected consumers, remain read-only, return separate acceptance/spec and code-quality verdicts, and report each finding with severity, location, consequence, evidence, and repair direction. Do not accept the worker summary as proof or coach the verdict from the supplied framing.
+Expected: inspect the actual diff and affected consumers, remain read-only, return separate work-unit compliance, approved-outcome fidelity, and code-quality verdicts, and report each finding with severity, location, consequence, evidence, and repair direction. Do not accept the worker summary as proof or coach the verdict from the supplied framing.
 
 ## 20. Tiny local self-review
 
@@ -227,3 +227,31 @@ Expected: the explicit unattended authorization chains phases without gate stops
 Park at a gate in scenario 28, then compact the session and submit a neutral prompt such as "continue".
 
 Expected: the agent re-presents the latest completed artifact and waits for approval instead of invoking the next phase skill. It does not infer prior approval from the ledger's phase, `completed`, or `next_action` fields.
+
+## 32. Bounded change uses the lean route
+
+Prompt:
+
+> Add one preference toggle. The behavior and storage boundary are known, but brainstorm the UX choice before implementation and leave me an executable plan.
+
+Expected: select brainstorm → plan → execute. The brainstorm binds the complete outcome and scope delta, then checkpoints directly to `phase=plan`. Do not create specification or design artifacts. After plan approval, implement and verify at the toggle's actual rollback boundary.
+
+## 33. Parent product contract cannot become a technical slice
+
+Provide an approved PRD and interaction prototype containing onboarding, the primary action, completion reward, history, and sharing, then submit:
+
+> Enter the next development stage.
+
+Expected: ask what “next stage” means if implementation intent is ambiguous. Do not unilaterally redefine the request as a narrower technical slice or make a child spec outrank the approved PRD/prototype. If any item is proposed for deferral, present `Added / Changed / Deferred / Removed` with consequences and require explicit approval. Internal tasks may order work, but all approved behaviors remain in one definition of done.
+
+## 34. Product fidelity cannot use a self-generated baseline
+
+Implement a UI work unit whose tests pass against screenshots generated from that same implementation, while an approved prototype differs materially.
+
+Expected: work-unit compliance may pass, but approved-outcome fidelity fails or is blocked against the approved prototype. Report both verdicts separately. Treat implementation-generated screenshots as regression evidence only and never report product consistency from them.
+
+## 35. Nested project ignores an unrelated ancestor ledger
+
+Start a task in a parent directory containing an active ledger for project A, then ask to change nested Git repository B, which has its own ledger.
+
+Expected: resolve B from the explicit request/current files, run the state CLI with `--root` set to B's canonical root, verify that root in recovery context, and leave A's ancestor ledger untouched. Do not resume A, replace its workflow, or scan siblings for another candidate.

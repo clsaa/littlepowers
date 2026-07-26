@@ -1,8 +1,8 @@
 # Capability matrix
 
-**Reviewed:** 2026-07-18
+**Reviewed:** 2026-07-26
 
-**Release:** 1.0.0
+**Release:** 1.1.0-alpha.1
 
 Littlepowers is checkpoint-assisted recovery. The table separates host events, durable state, and model behavior.
 
@@ -14,7 +14,12 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 | Same-turn steering | Host prompt handling plus reminder when the event fires | The router attempts to reconcile the message and continue | Littlepowers cannot prevent steering; use Codex Queue to defer a message |
 | Status or side question | Router guidance | Answer, then return to the recorded action; while parked at a review gate, answer and keep waiting for approval | Model compliance remains probabilistic |
 | Long-wave status | Schema-2-compatible `progress` plus checkpoints | Report a named milestone or acceptance-check count, then continue | Littlepowers does not infer percentages or replace project-management systems |
+| Small bounded change with one meaningful decision | Lean plan route | Brainstorm, then write the executable plan directly; create no separate spec/design | Escalate to full shaping if material unresolved architecture, security, migration, cross-system, irreversible-state, or costly-rollback choices appear |
+| Approved PRD, prototype, or parent contract | Parent contract inheritance plus Scope Delta Gate | Preserve the complete approved outcome; highlight `Added / Changed / Deferred / Removed`, or state `No scope delta` | Model compliance remains probabilistic; explicit user approval can change scope |
+| Implementation ordering | Tasks and dependency-safe waves | Order work and rollback boundaries while retaining one definition of done | A partial wave is incomplete progress, not a product or technical slice |
+| UI or interaction fidelity | Baseline provenance plus dual review verdicts | Compare approved-outcome fidelity against the user-approved baseline; use generated snapshots only for regression | A missing approved baseline blocks fidelity rather than producing a false pass |
 | Clearly unrelated request | Router guidance | Preserve the ledger and use a side task or separate worktree | One worktree has one active workflow |
+| Nested repository under a task root with another ledger | Explicit `--root` context plus root-bearing Hook snapshot | Bind recovery to the named nested project and leave the ancestor ledger untouched | The router does not scan siblings or change the host task root |
 | Process crash | Ledger | Resume from the last successful checkpoint | Uncheckpointed tool work may be missing |
 | Two coordinator writes | Revision compare-and-swap | The stale writer exits with conflict code 3 | Reload and reconcile manually |
 | Codex Ultra or Claude dynamic workflow | `SubagentStart` plus skill guidance | Parent coordinator writes; workers are read-only | This is protocol-level ownership, not an OS access-control boundary |
@@ -26,7 +31,7 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 | Plugin cache replaced during a task | Host JSON plugin listing plus router guard | Resolve one enabled Littlepowers root, reread current skills, and reload context before edits | This is recovery, not hot reload; missing or ambiguous resolution requires a new task/session |
 | Bug, failed test, regression, or unexplained behavior | `debugging-systematically` | Reproduce, trace the earliest supported divergence, test one hypothesis, and repair only when authorized | Skill invocation and model compliance remain probabilistic; diagnosis does not imply edit authority |
 | Claim that work is fixed, complete, passing, ready, or released | `verifying-work` | Match each claim to fresh evidence after the latest relevant change | Evidence cannot cover unavailable credentials, platforms, or services; report the limitation |
-| Requested review, delegated integration, shared milestone, or material rollback cost | `reviewing-changes` | Read-only acceptance/spec and code-quality verdicts with actionable findings | Littlepowers does not create a reviewer or select a model |
+| Requested review, delegated integration, shared milestone, or material rollback cost | `reviewing-changes` | Read-only work-unit compliance, approved-outcome fidelity, and code-quality verdicts with actionable findings | Littlepowers does not create a reviewer or select a model |
 | Tiny isolated edit | Focused self-review and local verification | Run the direct check and inspect the independent rollback unit | A small textual edit still escalates when it changes a shared manifest, hook, API, or release surface |
 | Transfer to another workspace root | Explicit `handoff` with both workflow IDs and revisions | Verify an existing active target, cancel only the source, and continue in a new target-root task/session | No sibling scan, target mutation, automatic task creation, or current-root switch |
 | Broad uncommitted review candidate | Explicit bounded `snapshot` before review and verdict acceptance | Bind the verdict to a content-free token and invalidate it when the candidate changes | Hooks and ordinary routes never hash the worktree; a snapshot is evidence, not a lock |

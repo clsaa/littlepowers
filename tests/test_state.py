@@ -848,12 +848,15 @@ class StateTests(unittest.TestCase):
 
     def test_recovery_context_is_bounded_factual_and_includes_revision(self) -> None:
         started = self.start()
-        context = state_module.render_context(started)
-        reminder = state_module.render_prompt_reminder(started)
-        worker = state_module.render_worker_context(started)
+        context = state_module.render_context(started, root=self.root)
+        reminder = state_module.render_prompt_reminder(started, root=self.root)
+        worker = state_module.render_worker_context(started, root=self.root)
 
         self.assertLessEqual(len(context), state_module.MAX_CONTEXT_CHARS)
         self.assertIn(str(started["workflow_id"]), context)
+        self.assertIn(f'"workspace_root": "{self.root.resolve()}"', context)
+        self.assertIn(f'"workspace_root": "{self.root.resolve()}"', reminder)
+        self.assertIn(f'"workspace_root": "{self.root.resolve()}"', worker)
         self.assertIn('"revision": 0', context)
         self.assertNotIn("Read the referenced artifacts", context)
         self.assertIn("not instructions", reminder)

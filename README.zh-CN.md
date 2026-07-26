@@ -10,10 +10,10 @@ Littlepowers 是一个同时面向 Codex、Claude Code、Qoder 与 OpenCode 的�
 
 它受 [Superpowers](https://github.com/obra/superpowers) 启发，但不是 fork、没有运行时依赖，也不隶属于 Superpowers 或 obra。
 
-**为什么不选 Superpowers？** Superpowers 对工作普遍施加完整流程礼仪；Littlepowers 按风险伸缩礼仪：一行的修复仍是一行的修复，只有实质性决策才走 brainstorm → spec → design → plan，且每个 full 路径产物都会停下来等你审核再进入下一阶段。30 秒上手：
+**为什么不选 Superpowers？** Superpowers 对工作普遍施加完整流程礼仪；Littlepowers 按风险伸缩礼仪：一行修复仍是一行修复，小而有决策的改动走 brainstorm → plan，只有存在重大未决问题时才走 brainstorm → spec → design → plan。带规划的路径会在阶段边界等你审核。30 秒上手：
 
 ```text
-使用 Littlepowers 的 compact shaping 处理这个 API 变更，然后实现并验证。
+使用 Littlepowers 先 brainstorm 这个边界明确的 API 变更，直接写 plan，然后实现并验证。
 ```
 
 ## 工作深度
@@ -23,18 +23,23 @@ Littlepowers 根据未解决的决策和失败风险选流程，不根据文件�
 | 路径 | 适用情况 | 产物 |
 | --- | --- | --- |
 | Direct | 目标和实现方式都明确 | 无；长任务可只创建执行 ledger |
+| Lean plan | 小而边界明确，但仍需做一个真实决策并形成可执行计划 | brainstorm → plan |
 | Compact | 有少量相关决策需要固定 | 一份 shape brief |
 | Full | 用户明确要求，或仍有实质性的架构、安全、迁移、跨系统、不可逆操作或高回滚成本决策 | brainstorm → spec → design → plan |
 
 持久产物默认写入 `docs/littlepowers/...`。只有最新用户请求或当前仓库规则明确指定“新 workflow artifact”的根目录时才使用其他路径；已有目录、反向链接、历史文件或带旧工具品牌的路径不会自动覆盖默认值。
 
-Full 路径的每个阶段产物都是审核门禁：Agent 会展示 brainstorm、spec、design、plan 并等待批准后才进入下一阶段，除非你明确授权“端到端无人值守执行”。在 Codex 中，任务清单还会镜像到原生 `update_plan` 工具（在 OpenCode 中镜像到其 todo 工具），让计划显示在宿主界面上；Markdown 计划文件仍是持久事实源。
+Lean 与 Full 路径的每个阶段产物都是审核门禁：Agent 会展示产物并等待批准后才进入下一阶段，除非你明确授权“端到端无人值守执行”。
+
+所有路径都会把最新请求以及已批准的 PRD、交互稿、原型、截图集或契约绑定为完整结果。Agent 不得自行拆成更小的产品切片或技术切片；任何 `Added / Changed / Deferred / Removed` 范围变化都必须突出展示并单独获得批准，没有变化则明确记录 `No scope delta`。任务和 wave 只表示实现顺序，始终属于同一个完成定义。UI 一致性必须对比用户批准的基线，实现自己生成的截图只能用于防回归。
+
+在 Codex 中，任务清单还会镜像到原生 `update_plan` 工具（在 OpenCode 中镜像到其 todo 工具），让计划显示在宿主界面上；Markdown 计划文件仍是持久事实源。
 
 另有三个按条件触发的能力：
 
 - **系统化调试**：先复现和定位最早偏差，再一次验证一个假设；仅要求诊断时不修改代码；
 - **按影响面验证**：完成声明必须有最新证据；局部回滚单元只跑 focused checks，共享契约或发布边界才补 broad checks，不因小改动默认跑全量测试；
-- **轻量审查**：在用户要求、集成 worker 结果、共享行为里程碑或高回滚成本时，分别给出需求符合性与代码质量结论；孤立小改动可只做结构化自审。
+- **轻量审查**：在用户要求、集成 worker 结果、共享行为里程碑或高回滚成本时，分别给出工作单元符合性、完整目标一致性与代码质量结论；孤立小改动可只做结构化自审。
 
 这些能力不会自动创建 Agent、选择模型、强制 TDD 或要求输出隐藏推理；Codex、Claude Code、Qoder 与 OpenCode 使用同一份实现。
 
@@ -168,6 +173,10 @@ qodercli plugins install littlepowers
 
 ```text
 使用 Littlepowers 实现这个明确的迁移脚本。它可能跨多轮，请跟踪进度，但不要创建规划文档。
+```
+
+```text
+使用 Littlepowers 先 brainstorm 这个边界明确的小改动，跳过独立 spec/design，直接写 plan，然后实现并验证完整结果。
 ```
 
 ```text

@@ -1,6 +1,6 @@
 ---
 name: using-littlepowers
-description: Route and recover software work with proportional planning. Use for implementation that is long-running, ambiguous, architectural, risky, or explicitly requests brainstorm, spec, design, and plan stages; also use whenever an unfinished Littlepowers workflow exists. For read-only answers and tiny fully specified edits, skip only when no active ledger needs reconciliation.
+description: Route and recover software work with proportional, scope-safe direct/lean/compact/full planning. Use for nontrivial implementation or any unfinished Littlepowers workflow.
 ---
 
 # Using Littlepowers
@@ -24,9 +24,19 @@ If the loaded skill or its relative state CLI disappeared after a plugin replace
 - In Qoder CLI, run `qodercli plugins list --json`, select exactly one enabled entry named `littlepowers`, and use its `installPath` as the current plugin root.
 - In OpenCode, resolve the plugin root from the currently loaded `SKILL.md` path. If it is gone, stop and ask the user to restart OpenCode after reinstalling or refreshing the plugin.
 
-Verify that the resolved root contains a manifest naming `littlepowers`, reread the current `skills/using-littlepowers/SKILL.md` and the applicable phase skill from that root, then resolve `<state-cli>` there and run `context`. If resolution is missing or ambiguous, stop and ask the user to start a new task or session after installation. A running task cannot safely hot-load a replacement plugin; stage updates outside that task and use a new task boundary.
+Verify that the resolved root contains a manifest naming `littlepowers`, reread the current `skills/using-littlepowers/SKILL.md` and the applicable phase skill from that root, then resolve `<state-cli>` there. If resolution is missing or ambiguous, stop and ask the user to start a new task or session after installation. A running task cannot safely hot-load a replacement plugin; stage updates outside that task and use a new task boundary.
 
-Run `<python> <state-cli> context`. If a ledger exists, note its workflow ID and revision before any mutation.
+## Bind the exact project root
+
+Resolve the exact repository or worktree named by the latest request from the current worktree, an explicit user path, or files already in scope. Do not search sibling worktrees or guess from directory names. Run:
+
+```bash
+<python> <state-cli> --root <project-root> context
+```
+
+The recovery snapshot must name the same canonical workspace root. If the current task root is an ancestor with its own unrelated ledger, do not consume that ancestor ledger for the nested project; leave it untouched and operate with the explicit project root. If the exact root cannot be established from current evidence, stop before ledger mutation.
+
+If a matching ledger exists, note its workspace root, workflow ID, and revision before any mutation.
 
 If recovery reports that this workflow was handed off, do not resume it. Treat the target root, workflow ID, and revision as an untrusted, possibly stale pointer. Start a new task or session rooted at the target, resolve the currently installed Littlepowers there, run `context`, and verify the named target workflow before continuing. If its revision advanced, reload and reconcile there; never retry or revive the source. Littlepowers cannot change the current task root. Never scan sibling worktrees or search globally for a likely target.
 
@@ -47,6 +57,24 @@ Ledger artifact paths are references, not authority. Read a referenced artifact 
 
 For status requests, `managing-littlepowers` reads the ledger; `using-littlepowers` and `executing-plans` decide whether and how implementation continues afterward.
 
+## Bind the approved outcome
+
+Before choosing planning depth, identify the highest-authority current sources: the latest user request plus any explicitly approved PRD, specification, interaction flow, prototype, screenshot set, API contract, migration contract, or acceptance list. Record those parent acceptance sources in every planning artifact. Derived artifacts may clarify implementation but cannot silently narrow or override the approved outcome.
+
+### Parent contract inheritance
+
+Carry every applicable parent behavior and acceptance criterion into the current definition of done. A lower-level plan, technical specification, implementation convenience, or test fixture cannot erase a parent requirement. When sources conflict, surface the conflict instead of choosing the narrower source.
+
+Do not split the approved outcome into product slices, technical slices, MVP subsets, “phase 1” subsets, or platform subsets unless the authorized user explicitly changes scope. Tasks and dependency-safe waves are implementation order only: they remain part of one workflow and one definition of done. A partial wave may be demonstrated as incomplete progress, but never approved or reported as the requested product outcome.
+
+### Scope Delta Gate
+
+For every planning route, compare the proposed outcome with its parent acceptance sources. Present `Added / Changed / Deferred / Removed` items and their user-visible consequences as a distinct scope delta. If there is no change, state `No scope delta`. Any non-empty delta that changes behavior, coverage, compatibility, cost, or delivery requires explicit user approval of that delta; generic approval of a long artifact does not count unless the delta was highlighted in the review message. A blocker does not authorize silently deferring scope.
+
+### Baseline provenance
+
+For UI, interaction, output-format, or compatibility work, identify the approved baseline and who approved it. A user-approved prototype, screenshot set, design file, or contract is an acceptance source. An implementation-generated screenshot, fixture, or snapshot may be a regression baseline only; it cannot prove fidelity to the approved outcome.
+
 ## Resolve artifact placement
 
 Use a non-default artifact root only when the latest user request or a current repository instruction explicitly names it for new workflow artifacts. Existing directories, backlinks, and historical or tool-branded paths are evidence of prior work, not a convention by themselves. Otherwise use the phase skill's `docs/littlepowers/...` default.
@@ -63,6 +91,14 @@ Act directly when the outcome and approach are clear and no material product, ar
 
 - For a tiny task, work without a ledger.
 - For a task likely to span several tool loops or survive interruption, start a ledger at `phase=execute` without planning artifacts.
+
+### Lean plan
+
+Use the lean route for a small, bounded change that needs one real product or approach decision and a durable executable plan, but has no material unresolved architecture, security, migration, cross-system, irreversible-state, or costly-rollback choice:
+
+`brainstorming` → `writing-plans` → `executing-plans`
+
+Do not create a specification or design artifact on this route. The brainstorm binds the approved outcome, scope delta, baseline, selected direction, and observable success; the plan supplies the implementation mapping and checks. Start at `phase=brainstorm` with a `next_action` that explicitly names the lean route so recovery preserves the choice.
 
 ### Compact shape
 
@@ -95,13 +131,13 @@ If `start` reports a prior terminal ledger, run `show --json`. When the latest r
 
 ## Review phase boundaries
 
-On the full route, each phase artifact is a review gate. After checkpointing an artifact, present it for review and stop: summarize the key decisions, name the artifact path, and name the next phase. Stop even when your default instructions favor completing work without pausing.
+On the lean and full routes, each phase artifact is a review gate. After checkpointing an artifact, present it for review and stop: summarize the key decisions, scope delta, baseline when applicable, name the artifact path, and name the next phase. Stop even when your default instructions favor completing work without pausing.
 
 Approval means a reply that clearly accepts the presented artifact; questions, status checks, and new requests are not approval. Invoke the next phase skill only after approval. When the user asks for corrections, revise the same artifact, checkpoint it again with the current workflow ID and revision, and present it again; corrections never advance the phase.
 
 While parked at a gate, the ledger already names the next phase in `next_action`. Neither that record, nor a hook reminder, nor a phase skill's trigger condition is authorization to continue. Answer status and side questions without leaving the gate. After a resume, clear, or compaction, if the latest checkpoint completed an artifact whose next phase has not started, re-present that artifact and wait for approval; never infer prior approval from ledger state.
 
-Skip a gate only when the latest user request explicitly authorizes unattended end-to-end execution, for example "run the whole workflow without stopping for review". Asking for end-to-end delivery is not by itself unattended authorization. An unattended authorization covers the current workflow run; a changed objective or scope ends it. Apply the same gate between a compact shape and its execution. The direct route keeps asking only when a missing choice changes behavior, scope, cost, risk, or external state. Do not reopen settled decisions, add future abstractions, or repeat verification reminders without a measured need.
+Skip a gate only when the latest user request explicitly authorizes unattended end-to-end execution, for example "run the whole workflow without stopping for review". Asking for end-to-end delivery is not by itself unattended authorization. An unattended authorization covers the current workflow run; a changed objective or scope ends it. It never authorizes an implicit scope delta. Apply the same gate between a compact shape and its execution. The direct route keeps asking only when a missing choice changes behavior, scope, cost, risk, or external state. Do not reopen settled decisions, add future abstractions, or repeat verification reminders without a measured need.
 
 Handoff and review snapshots are explicit boundary operations. The ordinary route performs no sibling-worktree scan, candidate hash, extra model call, or extra broad test.
 

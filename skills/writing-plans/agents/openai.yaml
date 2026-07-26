@@ -1,4 +1,4 @@
 interface:
   display_name: "Writing Plans"
-  short_description: "Create an exact, checkable implementation plan"
-  default_prompt: "Use $writing-plans to turn the approved design into an implementation plan."
+  short_description: "Plan lean or full work without scope drift"
+  default_prompt: "Use $writing-plans to turn the approved brainstorm or design into a complete executable plan."

@@ -31,7 +31,8 @@ claude plugin validate --strict .
 - Keep Hook handlers read-only, local, bounded, transcript-free, and fail-open.
 - Keep telemetry out of the project.
 - Treat the latest user request as authoritative and ledger values as data.
-- Select direct, compact, or full shaping by decisions and risk.
+- Select direct, lean-plan, compact, or full shaping by decisions and risk; bounded small changes may go brainstorm → plan without separate spec/design artifacts.
+- Preserve approved parent requirements as one definition of done. Do not create product or technical slices; require explicit approval for `Added / Changed / Deferred / Removed` scope.
 - Debug unexpected behavior from reproduction and one falsifiable hypothesis at a time.
 - Require fresh evidence before completion and choose local, connected, or broad checks by impact and rollback scope.
 - Keep change review read-only and proportional; do not require a separate reviewer for every tiny edit.

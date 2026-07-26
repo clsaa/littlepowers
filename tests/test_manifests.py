@@ -22,7 +22,7 @@ class ManifestTests(unittest.TestCase):
 
         self.assertEqual(codex["name"], "littlepowers")
         self.assertEqual(claude["name"], "littlepowers")
-        self.assertEqual(codex["version"], "1.0.0")
+        self.assertEqual(codex["version"], "1.1.0-alpha.1")
         self.assertEqual(claude["version"], codex["version"])
         self.assertEqual(claude["repository"], codex["repository"])
         self.assertIn("Claude Code", codex["description"])
@@ -147,6 +147,94 @@ class ManifestTests(unittest.TestCase):
                 self.assertIn(f"`{next_skill}`", skill)
                 self.assertIn("unattended end-to-end", skill)
 
+    def test_lean_route_runs_brainstorm_then_plan_without_spec_or_design(self) -> None:
+        router = (
+            ROOT / "skills" / "using-littlepowers" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        brainstorm = (
+            ROOT / "skills" / "brainstorming" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        writing = (
+            ROOT / "skills" / "writing-plans" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("### Lean plan", router)
+        self.assertIn(
+            "`brainstorming` → `writing-plans` → `executing-plans`",
+            router,
+        )
+        self.assertIn("Do not create a specification or design artifact", router)
+        self.assertIn("Lean route", brainstorm)
+        self.assertIn("--phase plan", brainstorm)
+        self.assertIn("`writing-plans`", brainstorm)
+        self.assertIn("brainstorm or design", writing)
+        self.assertIn("lean route", writing.lower())
+
+    def test_scope_integrity_prevents_implicit_product_slices(self) -> None:
+        router = (
+            ROOT / "skills" / "using-littlepowers" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        brainstorm = (
+            ROOT / "skills" / "brainstorming" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        specification = (
+            ROOT / "skills" / "writing-specs" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        design = (
+            ROOT / "skills" / "designing-solutions" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        plan = (
+            ROOT / "skills" / "writing-plans" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        execution = (
+            ROOT / "skills" / "executing-plans" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+
+        for skill in (router, brainstorm, specification, design, plan, execution):
+            with self.subTest(skill=skill[:80]):
+                self.assertIn("approved outcome", skill.lower())
+
+        self.assertIn("Parent contract inheritance", router)
+        self.assertIn("Scope Delta Gate", router)
+        self.assertIn("No scope delta", router)
+        self.assertIn("Do not split the approved outcome into product slices", router)
+        self.assertIn("implementation order only", router)
+        self.assertIn("Added / Changed / Deferred / Removed", brainstorm)
+        self.assertIn("No scope delta", brainstorm)
+        self.assertIn("lower-level specification", specification)
+        self.assertIn("every inherited requirement", design)
+        self.assertIn("one definition of done", plan)
+        self.assertIn("partial wave", execution)
+
+    def test_visual_baseline_and_dual_acceptance_verdicts_are_bound(self) -> None:
+        router = (
+            ROOT / "skills" / "using-littlepowers" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        review = (
+            ROOT / "skills" / "reviewing-changes" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        verify = (
+            ROOT / "skills" / "verifying-work" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("Baseline provenance", router)
+        self.assertIn("implementation-generated", router)
+        self.assertIn("work-unit compliance", review)
+        self.assertIn("approved-outcome fidelity", review)
+        self.assertIn("highest-authority", review)
+        self.assertIn("implementation-generated", review)
+        self.assertIn("approved baseline", verify)
+        self.assertIn("implementation-generated", verify)
+
+    def test_router_binds_recovery_to_the_exact_project_root(self) -> None:
+        router = (
+            ROOT / "skills" / "using-littlepowers" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("--root <project-root> context", router)
+        self.assertIn("ancestor ledger", router)
+        self.assertIn("leave it untouched", router)
+
     def test_plan_checklist_mirrors_the_host_plan_surface(self) -> None:
         writing = (ROOT / "skills" / "writing-plans" / "SKILL.md").read_text(
             encoding="utf-8"
@@ -215,6 +303,10 @@ class ManifestTests(unittest.TestCase):
             self.assertIn("latest user request", snippet)
             self.assertIn("new workflow artifacts", snippet)
             self.assertIn("legacy directories or backlinks", snippet)
+            self.assertIn("brainstorm → plan", snippet)
+            self.assertIn("Do not create product or technical slices", snippet)
+            self.assertIn("No scope delta", snippet)
+            self.assertIn("approved-outcome fidelity", snippet)
 
     def test_internal_phase_skills_gate_direct_invocation(self) -> None:
         internal = {
@@ -389,14 +481,18 @@ class ManifestTests(unittest.TestCase):
             ROOT / "evals" / "results" / "2026-07-17-v0.4-alpha.1.md"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("Release:** 1.0.0", capability)
+        self.assertIn("Release:** 1.1.0-alpha.1", capability)
         self.assertIn("`debugging-systematically`", capability)
         self.assertIn("`verifying-work`", capability)
         self.assertIn("`reviewing-changes`", capability)
         self.assertIn("observable summaries", compatibility)
         self.assertIn("Tiny isolated changes", compatibility)
         self.assertIn("original reproducer", evals)
-        self.assertIn("separate acceptance/spec and code-quality verdicts", evals)
+        self.assertIn(
+            "separate work-unit compliance, approved-outcome fidelity, "
+            "and code-quality verdicts",
+            evals,
+        )
         self.assertIn("legacy tool-branded artifact root", evals)
         self.assertIn("## [0.4.0-alpha.1]", changelog)
         self.assertIn("49 Python tests passed", evaluation)

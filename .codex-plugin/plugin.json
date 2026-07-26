@@ -1,7 +1,7 @@
 {
   "name": "littlepowers",
-  "version": "1.0.0",
-  "description": "A proportional planning, recovery, debugging, verification, and review protocol for Codex, Claude Code, Qoder, and OpenCode.",
+  "version": "1.1.0-alpha.1",
+  "description": "A proportional planning, scope integrity, recovery, debugging, verification, and review protocol for Codex, Claude Code, Qoder, and OpenCode.",
   "author": {
     "name": "clsaa",
     "url": "https://github.com/clsaa"
@@ -26,8 +26,8 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "Littlepowers",
-    "shortDescription": "Proportional planning, recovery, and verification",
-    "longDescription": "Route work through proportional planning, preserve it in a revisioned recovery ledger, debug from evidence, review consequential changes, and verify completion at the actual impact scope in Codex, Claude Code, Qoder, and OpenCode.",
+    "shortDescription": "Scope-safe planning, recovery, and verification",
+    "longDescription": "Route complete approved outcomes through proportional planning, preserve them in a revisioned recovery ledger, prevent silent scope slicing, debug from evidence, review consequential changes, and verify completion at the actual impact scope in Codex, Claude Code, Qoder, and OpenCode.",
     "developerName": "clsaa",
     "category": "Developer Tools",
     "capabilities": [
@@ -36,9 +36,9 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Use Littlepowers to shape and implement this work at proportional planning depth.",
-      "Resume the active Littlepowers plan and finish it.",
-      "Diagnose, review, and verify this change at its actual impact and rollback scope."
+      "Use Littlepowers to shape and implement this complete approved outcome at proportional planning depth without splitting it into slices.",
+      "For this bounded change, brainstorm once, write the plan directly, then implement and verify it.",
+      "Resume or diagnose this work, then review and verify it at its actual impact and rollback scope."
     ],
     "websiteURL": "https://github.com/clsaa/littlepowers",
     "brandColor": "#7C3AED"

@@ -4,6 +4,22 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+## [1.1.0-alpha.1] - 2026-07-26
+
+### Added
+
+- Add a lean planning route for bounded changes: brainstorm → plan → execute, with no separate specification or design artifact.
+- Add parent-contract inheritance, a highlighted `Added / Changed / Deferred / Removed` Scope Delta Gate, and approved-baseline provenance.
+- Add separate work-unit compliance and approved-outcome fidelity verdicts so a narrower technical work unit cannot be reported as complete product consistency.
+- Include the canonical workspace root in recovery snapshots and require explicit project-root context, preventing an unrelated ancestor ledger from silently driving a nested project.
+- Add regression/evaluation scenarios for small-change routing, implicit scope slicing, self-generated visual baselines, and nested-project ledger isolation.
+
+### Changed
+
+- Treat tasks and dependency-safe waves as implementation order only. Agents may not split an approved outcome into independently accepted product, technical, platform, MVP, or phase slices without an explicitly approved scope delta.
+- Require plans, execution, reviews, and completion evidence to retain inherited parent acceptance criteria under one definition of done.
+- Keep the new protections model-neutral and lightweight: no schema migration, extra model call, reviewer, background scan, or automatic test run.
+
 ## [1.0.0] - 2026-07-21
 
 The first stable release. Multi-host support (Codex, Claude Code, Qoder, OpenCode), full-route phase review gates, and host plan-surface mirroring land as the stable contract, with the expert-review fixes below.
@@ -114,7 +130,8 @@ The first stable release. Multi-host support (Codex, Claude Code, Qoder, OpenCod
 
 - Created the initial Codex plugin and planning workflow.
 
-[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.1.0-alpha.1...HEAD
+[1.1.0-alpha.1]: https://github.com/clsaa/littlepowers/compare/v1.0.0...v1.1.0-alpha.1
 [1.0.0]: https://github.com/clsaa/littlepowers/releases/tag/v1.0.0
 [0.5.0-alpha.1]: https://github.com/clsaa/littlepowers/compare/v0.4.0-alpha.1...v1.0.0
 [0.4.0-alpha.1]: https://github.com/clsaa/littlepowers/releases/tag/v0.4.0-alpha.1

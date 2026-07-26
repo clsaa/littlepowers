@@ -1,13 +1,13 @@
 ---
 name: executing-plans
-description: Execute and verify a tracked Littlepowers workflow. Use when active state says phase=execute or phase=verify, including tracked direct work, compact shapes, full plans, and resumed implementation. Route new work through using-littlepowers first.
+description: Execute and verify tracked Littlepowers work. Use for active phase=execute/verify; route new work through using-littlepowers.
 ---
 
 # Executing plans
 
-Carry the approved outcome to fresh verification while preserving useful checkpoints.
+Carry the approved outcome to fresh verification while preserving useful checkpoints and scope integrity.
 
-When the ledger names a plan or shape artifact that has not been approved yet in this session, present it and wait for approval instead of implementing. Tracked direct work without a planning artifact is unaffected.
+When the ledger names a plan or shape artifact that has not been approved yet in this session, present it and wait for approval instead of implementing. A highlighted scope delta also requires explicit approval. Tracked direct work without a planning artifact is unaffected.
 
 ## Recover
 
@@ -28,6 +28,8 @@ For each task or dependency-safe wave:
 5. Run focused checks and inspect their output.
 6. Review the diff against the intended outcome.
 7. Checkpoint integrated results and the next wave.
+
+Every task and wave remains subordinate to the approved outcome. A partial wave is progress, not a completed product slice, and cannot remove remaining acceptance criteria. If implementation reveals that an inherited behavior must change, defer, or disappear, stop that decision path and return to the Scope Delta Gate. An external blocker keeps the workflow incomplete; it does not shrink the objective.
 
 Express `progress` as a named milestone or acceptance-check count such as `Wave 1: 3/5 acceptance checks pass`. Do not invent a percentage from elapsed time, file count, or intuition. Keep the approved plan stable unless behavior or acceptance criteria change; live execution truth belongs in the ledger.
 
@@ -59,7 +61,7 @@ Use the returned revision. On conflict, reload and reconcile; never retry a stal
 
 Checkpoint `phase=verify`, then use `verifying-work` before any claim that work is complete, fixed, passing, ready, or released. Classify evidence by impact and rollback scope rather than edit size: local work gets the original reproducer or focused checks, connected work adds checks for affected boundaries, and broad shared or release work adds the relevant broad suite after integration. A full suite is not the default after every small edit.
 
-Compare fresh results with every acceptance criterion and inspect the full diff for regressions, debug artifacts, and unintended files. Record each command or inspection, scope rationale, exit status or equivalent result, and relevant observed signal. Worker reports are inputs; the coordinator verifies the integrated tree. Resolve any blocking review findings and rerun evidence invalidated by repairs. Record unavailable or partial evidence honestly.
+Compare fresh results with every immediate and inherited acceptance criterion and the approved baseline; inspect the full diff for regressions, debug artifacts, and unintended files. Record each command or inspection, scope rationale, exit status or equivalent result, and relevant observed signal. Worker reports are inputs; the coordinator verifies the integrated tree. Resolve any blocking review findings and rerun evidence invalidated by repairs. Record unavailable or partial evidence honestly.
 
 Only when fresh evidence shows no required work remains:
 

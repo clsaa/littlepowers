@@ -1,4 +1,4 @@
 interface:
   display_name: "Verifying Work"
-  short_description: "Gate completion on fresh, proportional evidence."
-  default_prompt: "Use $verifying-work to match each completion claim to fresh evidence at the appropriate impact and rollback scope."
+  short_description: "Gate full completion on fresh proportional evidence"
+  default_prompt: "Use $verifying-work to match the complete approved outcome to fresh evidence at the appropriate impact and rollback scope."

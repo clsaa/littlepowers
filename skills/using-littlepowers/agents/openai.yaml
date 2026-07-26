@@ -1,4 +1,4 @@
 interface:
   display_name: "Using Littlepowers"
-  short_description: "Route and resume deliberate development work"
-  default_prompt: "Use $using-littlepowers to shape and carry this task through completion."
+  short_description: "Route scope-safe, proportional development work"
+  default_prompt: "Use $using-littlepowers to preserve the approved outcome, choose a proportional route, and carry this task through completion."
