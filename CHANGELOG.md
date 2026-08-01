@@ -59,6 +59,9 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
   while binding the two views through the underlying device and file identity.
   The adversarial replacement regression now also closes an opened Windows
   handle when the operating system rejects replacement before the mock returns.
+- Make the exact-session invocation regression platform-neutral by capturing
+  the injected process call directly instead of executing a POSIX shebang test
+  fixture on Windows.
 
 ### Security and performance
 

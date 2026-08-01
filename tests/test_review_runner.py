@@ -192,28 +192,29 @@ class ReviewRunnerTests(unittest.TestCase):
         self.schedule(state)
         gate = state["review"]["gate"]
         assert isinstance(gate, dict)
-        old_log = os.environ.get("LP_ARGV_LOG")
-        os.environ["LP_ARGV_LOG"] = str(self.argv_log)
-        try:
-            with mock.patch.object(
-                runner.state_module,
-                "review_gate_status",
-                side_effect=self.eligible_status,
-            ):
-                result = runner.run_job(
-                    root_text=str(self.root),
-                    workflow=str(state["workflow_id"]),
-                    gate_revision=gate["opened_revision"],
-                    sleep=lambda _seconds: None,
-                )
-        finally:
-            if old_log is None:
-                os.environ.pop("LP_ARGV_LOG", None)
-            else:
-                os.environ["LP_ARGV_LOG"] = old_log
+        commands: list[list[str]] = []
+
+        def host_call(command: list[str], **_kwargs: object) -> ImmediateProcess:
+            commands.append(command)
+            return ImmediateProcess()
+
+        with mock.patch.object(
+            runner.state_module,
+            "review_gate_status",
+            side_effect=self.eligible_status,
+        ):
+            result = runner.run_job(
+                root_text=str(self.root),
+                workflow=str(state["workflow_id"]),
+                gate_revision=gate["opened_revision"],
+                sleep=lambda _seconds: None,
+                popen=host_call,
+            )
 
         self.assertEqual(result, 0)
-        argv = json.loads(self.argv_log.read_text(encoding="utf-8"))
+        self.assertEqual(len(commands), 1)
+        self.assertEqual(commands[0][0], str(self.fake_claude))
+        argv = commands[0][1:]
         self.assertEqual(argv[:3], ["-p", "--resume", self.session])
         self.assertEqual(len(argv), 4)
         prompt = argv[3]
