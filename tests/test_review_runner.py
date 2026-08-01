@@ -12,6 +12,7 @@ import unittest
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 
@@ -425,6 +426,44 @@ class ReviewRunnerTests(unittest.TestCase):
                 gate_revision=gate["opened_revision"],
             )
 
+    def test_read_accepts_equivalent_path_and_handle_stat_views(self) -> None:
+        state = self.create_window()
+        self.schedule(state)
+        gate = state["review"]["gate"]
+        assert isinstance(gate, dict)
+        path = (
+            self.root
+            / ".littlepowers"
+            / "review-jobs"
+            / f"{state['workflow_id']}-r{gate['opened_revision']}.json"
+        )
+        original_lstat = runner.state_module._entry_lstat
+
+        def platform_path_stat(
+            directory: Path, name: str, directory_fd: int | None
+        ) -> os.stat_result | SimpleNamespace:
+            details = original_lstat(directory, name, directory_fd)
+            if directory == path.parent and name == path.name:
+                values = {
+                    field: getattr(details, field)
+                    for field in dir(details)
+                    if field.startswith("st_")
+                }
+                values["st_ctime_ns"] = details.st_ctime_ns + 1
+                return SimpleNamespace(**values)
+            return details
+
+        with mock.patch.object(
+            runner.state_module, "_entry_lstat", side_effect=platform_path_stat
+        ):
+            status = runner.job_status(
+                root_text=str(self.root),
+                workflow=str(state["workflow_id"]),
+                gate_revision=gate["opened_revision"],
+            )
+
+        self.assertEqual(status["status"], "armed")
+
     def test_lost_sleeper_leaves_durable_gate_and_armed_status(self) -> None:
         state = self.create_window()
         self.schedule(state)
@@ -473,11 +512,17 @@ class ReviewRunnerTests(unittest.TestCase):
                 and not flags & getattr(os, "O_DIRECTORY", 0)
             ):
                 replaced = True
-                os.replace(replacement, path)
+                try:
+                    os.replace(replacement, path)
+                except OSError:
+                    os.close(descriptor)
+                    raise
             return descriptor
 
         with mock.patch.object(runner.os, "open", side_effect=replace_after_open):
-            with self.assertRaisesRegex(runner.RunnerError, "path changed"):
+            with self.assertRaisesRegex(
+                runner.RunnerError, "path changed|cannot safely open"
+            ):
                 runner.job_status(
                     root_text=str(self.root),
                     workflow=str(state["workflow_id"]),

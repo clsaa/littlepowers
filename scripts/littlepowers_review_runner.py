@@ -59,6 +59,26 @@ class JobConflict(RunnerError):
     """Raised when another runner already advanced the exact review job."""
 
 
+def _job_stat_snapshot(details: os.stat_result) -> tuple[int, ...]:
+    """Return one same-interface snapshot for a review-job race check."""
+
+    return (
+        details.st_dev,
+        details.st_ino,
+        details.st_mode,
+        details.st_nlink,
+        details.st_size,
+        details.st_mtime_ns,
+        details.st_ctime_ns,
+    )
+
+
+def _job_file_identity(details: os.stat_result) -> tuple[int, int]:
+    """Return the cross-interface file identity shared by path and handle stats."""
+
+    return (details.st_dev, details.st_ino)
+
+
 def _canonical_uuid(value: str, label: str) -> str:
     try:
         parsed = uuid.UUID(value)
@@ -299,10 +319,9 @@ def _read_job(path: Path, directory_fd: int | None) -> dict[str, Any]:
         raise RunnerError(f"cannot safely open review job {path}: {exc}") from exc
     try:
         opened = os.fstat(descriptor)
-        if not stat.S_ISREG(opened.st_mode) or (
-            opened.st_dev,
-            opened.st_ino,
-        ) != (details.st_dev, details.st_ino):
+        if not stat.S_ISREG(opened.st_mode) or _job_file_identity(
+            opened
+        ) != _job_file_identity(details):
             raise RunnerError(f"review job changed while opening: {path}")
         chunks: list[bytes] = []
         remaining = state_module.MAX_STATE_FILE_BYTES + 1
@@ -316,33 +335,10 @@ def _read_job(path: Path, directory_fd: int | None) -> dict[str, Any]:
         if len(payload) > state_module.MAX_STATE_FILE_BYTES:
             raise RunnerError("review job exceeds the state-file byte limit")
         after = os.fstat(descriptor)
-        observed = (
-            after.st_dev,
-            after.st_ino,
-            after.st_mode,
-            after.st_size,
-            after.st_mtime_ns,
-            after.st_ctime_ns,
-        )
-        expected = (
-            opened.st_dev,
-            opened.st_ino,
-            opened.st_mode,
-            opened.st_size,
-            opened.st_mtime_ns,
-            opened.st_ctime_ns,
-        )
-        if observed != expected:
+        if _job_stat_snapshot(after) != _job_stat_snapshot(opened):
             raise RunnerError(f"review job changed while reading: {path}")
         current = state_module._entry_lstat(path.parent, path.name, directory_fd)
-        if (
-            current.st_dev,
-            current.st_ino,
-            current.st_mode,
-            current.st_size,
-            current.st_mtime_ns,
-            current.st_ctime_ns,
-        ) != expected:
+        if _job_stat_snapshot(current) != _job_stat_snapshot(details):
             raise RunnerError(f"review job path changed while reading: {path}")
     except OSError as exc:
         raise RunnerError(f"cannot safely read review job {path}: {exc}") from exc

@@ -697,7 +697,7 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("Acceptance/spec compliance:** `pass`", evaluation)
         self.assertIn("Code quality:** `approve`", evaluation)
         self.assertIn("Candidate: `1.3.0`", stable_evaluation)
-        self.assertIn("197/197 passed", stable_evaluation)
+        self.assertIn("198/198 passed", stable_evaluation)
         self.assertIn("same-byte path substitution", stable_evaluation)
 
 

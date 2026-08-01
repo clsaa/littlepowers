@@ -52,6 +52,14 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 - Align Codex, Claude Code, Qoder, OpenCode, and package metadata on stable
   `1.3.0` while retaining the same eleven discoverable skills.
 
+### Fixed
+
+- Keep review-job replacement checks portable on Windows by comparing path
+  snapshots with path snapshots and handle snapshots with handle snapshots,
+  while binding the two views through the underlying device and file identity.
+  The adversarial replacement regression now also closes an opened Windows
+  handle when the operating system rejects replacement before the mock returns.
+
 ### Security and performance
 
 - Keep the independent index bounded, ignored, trusted, locked, and atomically
