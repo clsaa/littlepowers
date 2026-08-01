@@ -1,4 +1,4 @@
-# Outcome Lock protocol 1.2
+# Outcome Lock under protocol 1.3
 
 Read this reference only when creating, binding, mapping, reconciling, or
 verifying a tracked Outcome Lock workflow. The state CLI is the authority for
@@ -117,11 +117,14 @@ Bind an approved artifact:
 <python> <state-cli> --root <project-root> bind-contract \
   --workflow <id> --expect-revision <revision> \
   --artifact <contract-artifact.md> \
-  --approval-kind <review-gate|unattended-authorization> \
+  --approval-kind <review-gate|implementation-mandate|window-expired|unattended-authorization> \
   [--approve-scope-delta]
 ```
 
 Use `--approve-scope-delta` exactly when the highlighted delta is non-empty.
+The approval kind must match the persisted successful Review Gate resolution
+for this exact artifact key, original path, byte digest, and explicit
+source-digest set. A successful bind consumes that boundary authorization once.
 
 ## Outcome Plan Map
 
@@ -157,9 +160,12 @@ Validate an approved plan or compact shape:
   --artifact <plan-or-shape.md>
 ```
 
-The command fails atomically when an active ID is missing, an unknown/ineligible
-ID is mapped, evidence is absent, the contract drifted, or the delta lacks
-distinct approval.
+The command fails atomically when the plan lacks an unconsumed matching
+successful Review Gate resolution, an active ID is missing, an
+unknown/ineligible ID is mapped, evidence is absent, the contract drifted, or
+the delta lacks distinct approval. Successful validation consumes that exact
+Plan boundary once; execution checks the recorded consumption instead of
+reusing the authorization.
 
 ## Verification Record
 
@@ -240,12 +246,16 @@ explicit fidelity evidence, and aggregate verdict consistency.
   add a planning artifact. Visual, interaction, output-format, migration,
   security, or compatibility work needing a baseline or material review is not
   direct.
-- The tracked direct objective is its locked Contract. If that objective
-  changes, replace the workflow or reconcile through an approved artifact
-  Contract; do not rewrite it with an execution checkpoint.
-- Active or paused schema-1/schema-2 workflows load as
+- Every tracked objective is locked in place. If it changes, use
+  `start --replace` with the current workflow ID and revision; no checkpoint
+  may carry prior Review Lease authority into a new objective.
+- Active or paused schema-1/schema-2/schema-3 workflows load as schema 4;
+  older workflows without a bound Outcome Contract remain
   `reconcile_required`. Bind the current approved contract and validate its
   current Plan Map before execution progress.
+- A planning Review Gate is resolved before its boundary owner binds a
+  Contract or validates a Plan Map. An automatic Review Lease never supplies
+  `--approve-scope-delta`; distinct delta approval remains mandatory.
 - `check-contract` records `bound` or `drifted` without adopting changed
   content. Only an explicit rebind adopts new digests.
 - Entering `execute` or `verify` performs a fresh contract/plan check. Ordinary
@@ -264,12 +274,15 @@ Use:
 ```
 
 after a drift report. Rebind changed approved content; do not edit the raw
-ledger. A 1.1 runtime cannot read a schema-3 ledger, so preserve the matching
-`pre-schema3` archive before any runtime rollback.
+ledger. A 1.2 runtime cannot read a schema-4 ledger, so stop writers and restore
+the byte-identical matching `pre-schema4` archive before any runtime rollback.
 
 ## Bounded runtime
 
 The protocol uses only Python's standard library. Each protocol Markdown file
 is limited to 128 KiB. An explicit parent or evidence file is limited to 16 MiB,
-with a 64 MiB total per check. There is no background process, automatic broad
-test run, model call, telemetry, recursive discovery, or network access.
+with a 64 MiB total per check. There is no background process in the Outcome
+Lock path, automatic broad test run, model call, telemetry, recursive discovery,
+or network access. Review Lease may create one explicitly authorized host
+callback or one-shot Claude sleeper; neither runs from hooks or changes Outcome
+Lock authority.

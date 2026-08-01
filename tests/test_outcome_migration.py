@@ -100,11 +100,13 @@ class OutcomeMigrationTests(unittest.TestCase):
             **values,
         )
 
-    def test_new_state_is_schema_3_protocol_1_2_and_unbound(self) -> None:
+    def test_new_state_is_schema_4_protocol_1_3_and_unbound(self) -> None:
         created = self.start()
 
-        self.assertEqual(created["schema_version"], 3)
-        self.assertEqual(created["protocol_version"], "1.2")
+        self.assertEqual(created["schema_version"], 4)
+        self.assertEqual(created["protocol_version"], "1.3")
+        self.assertEqual(created["review"]["policy"]["mode"], "blocking")
+        self.assertIsNone(created["review"]["gate"])
         self.assertEqual(
             set(created["artifacts"]),
             {
@@ -166,8 +168,9 @@ class OutcomeMigrationTests(unittest.TestCase):
                 loaded = state_module.load_state(self.root)
 
                 assert loaded is not None
-                self.assertEqual(loaded["schema_version"], 3)
-                self.assertEqual(loaded["protocol_version"], "1.2")
+                self.assertEqual(loaded["schema_version"], 4)
+                self.assertEqual(loaded["protocol_version"], "1.3")
+                self.assertEqual(loaded["review"]["policy"]["mode"], "blocking")
                 self.assertEqual(loaded["status"], status)
                 self.assertEqual(loaded["revision"], legacy["revision"])
                 self.assertEqual(
@@ -219,12 +222,12 @@ class OutcomeMigrationTests(unittest.TestCase):
             self.root,
         )
 
-        self.assertEqual(migrated["schema_version"], 3)
+        self.assertEqual(migrated["schema_version"], 4)
         self.assertEqual(migrated["revision"], legacy["revision"] + 1)
-        self.assertEqual(json.loads(path.read_text())["schema_version"], 3)
+        self.assertEqual(json.loads(path.read_text())["schema_version"], 4)
         archives = list(
             (self.root / ".littlepowers" / "archive").glob(
-                "*-pre-schema3-v2.json"
+                "*-pre-schema4-v2.json"
             )
         )
         self.assertEqual(len(archives), 1)
@@ -238,7 +241,7 @@ class OutcomeMigrationTests(unittest.TestCase):
             len(
                 list(
                     (self.root / ".littlepowers" / "archive").glob(
-                        "*-pre-schema3-v2.json"
+                        "*-pre-schema4-v2.json"
                     )
                 )
             ),
@@ -287,7 +290,7 @@ class OutcomeMigrationTests(unittest.TestCase):
         second = state_module.load_state(self.root)
         assert first is not None and second is not None
         self.assertEqual(first["workflow_id"], second["workflow_id"])
-        self.assertEqual(first["schema_version"], 3)
+        self.assertEqual(first["schema_version"], 4)
         self.assertEqual(first["outcome_lock"]["status"], "reconcile_required")
 
         migrated = state_module.command_checkpoint(
@@ -297,7 +300,7 @@ class OutcomeMigrationTests(unittest.TestCase):
         self.assertEqual(migrated["revision"], 1)
         archives = list(
             (self.root / ".littlepowers" / "archive").glob(
-                "*-pre-schema3-v1.json"
+                "*-pre-schema4-v1.json"
             )
         )
         self.assertEqual(len(archives), 1)

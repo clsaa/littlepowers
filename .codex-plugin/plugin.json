@@ -1,7 +1,7 @@
 {
   "name": "littlepowers",
-  "version": "1.2.0-alpha.1",
-  "description": "A proportional planning, scope integrity, recovery, debugging, verification, and review protocol for Codex, Claude Code, Qoder, and OpenCode.",
+  "version": "1.3.0",
+  "description": "A proportional planning, Outcome Lock, Review Lease, recovery, debugging, verification, and review protocol for Codex, Claude Code, Qoder, and OpenCode.",
   "author": {
     "name": "clsaa",
     "url": "https://github.com/clsaa"
@@ -27,7 +27,7 @@
   "interface": {
     "displayName": "Littlepowers",
     "shortDescription": "Scope-safe planning, recovery, and verification",
-    "longDescription": "Route complete approved outcomes through proportional planning, preserve them in a revisioned recovery ledger, prevent silent scope slicing, debug from evidence, review consequential changes, and verify completion at the actual impact scope in Codex, Claude Code, Qoder, and OpenCode.",
+    "longDescription": "Route complete approved outcomes through proportional planning, preserve them in a revisioned recovery ledger, use explicit Review Leases at planning boundaries, prevent silent scope slicing, debug from evidence, review consequential changes, and verify completion at the actual impact scope in Codex, Claude Code, Qoder, and OpenCode.",
     "developerName": "clsaa",
     "category": "Developer Tools",
     "capabilities": [
@@ -37,7 +37,7 @@
     ],
     "defaultPrompt": [
       "Use Littlepowers to shape and implement this complete approved outcome at proportional planning depth without splitting it into slices.",
-      "For this bounded change, brainstorm once, write the plan directly, then implement and verify it.",
+      "For this bounded change, brainstorm once, write the plan directly, then continue implementation under my fixed implementation mandate.",
       "Resume or diagnose this work, then review and verify it at its actual impact and rollback scope."
     ],
     "websiteURL": "https://github.com/clsaa/littlepowers",

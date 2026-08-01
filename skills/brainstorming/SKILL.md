@@ -53,7 +53,16 @@ When `using-littlepowers` selected the lean route, checkpoint directly to plan:
   --next-action "Write the implementation plan from the approved brainstorm"
 ```
 
-Use the returned revision, then present the brainstorm for review and stop. Name `writing-plans` as the next phase. After explicit approval of the brainstorm and any highlighted scope delta, bind this artifact with `bind-contract --approval-kind review-gate`, adding `--approve-scope-delta` only for the distinctly approved non-empty delta. For an explicitly authorized unattended run, use `--approval-kind unattended-authorization`; unattended authority never approves an implicit delta. Invoke `writing-plans` only after the bind succeeds and use its returned revision.
+Use the returned revision, read
+[`../../references/review-lease.md`](../../references/review-lease.md) and use
+the checkpoint revision to `park-review --artifact-key brainstorm` with the
+declared scope state and open-question count. A blocking gate is presented for
+review and stop. Resolve an eligible implementation mandate, unattended gate,
+or pre-authorized expired window with its exact kind, then choose the matching
+Contract approval kind (`implementation-mandate`, `unattended-authorization`,
+or `window-expired`). Only a distinctly approved blocking gate uses
+`review-gate`. No kind approves a scope delta. Invoke `writing-plans` only
+after gate resolution and Contract binding succeed.
 
 ## Full route
 
@@ -69,4 +78,11 @@ Checkpoint with the `<state-cli>`, workflow ID, and revision established by `usi
   --next-action "Write the product specification"
 ```
 
-Use the returned revision, then present the brainstorm for review and stop: summarize the selected direction, rationale, scope delta, baseline when applicable, and open questions; name the artifact path and name `writing-specs` as the next phase. Invoke `writing-specs` only after explicit approval of this artifact and any highlighted scope delta, or immediately when the latest user request explicitly authorized unattended end-to-end execution and there is no unapproved scope delta. On either route, when the user asks for corrections, revise this artifact, checkpoint again, and present it again instead of advancing.
+Use the returned revision, read the Review Lease reference, and `park-review
+--artifact-key brainstorm` with the declared scope state and open-question
+count. For a blocking policy, present the brainstorm for review and stop:
+summarize the selected direction, rationale, scope delta, baseline when
+applicable, and open questions; name the artifact path and `writing-specs` as
+the next phase. Resolve only an exact eligible automatic gate before invoking
+`writing-specs`. A correction cancels the gate, revises/checkpoints the same
+artifact, and parks it again instead of advancing.

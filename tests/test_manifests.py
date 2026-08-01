@@ -24,7 +24,7 @@ class ManifestTests(unittest.TestCase):
 
         self.assertEqual(codex["name"], "littlepowers")
         self.assertEqual(claude["name"], "littlepowers")
-        self.assertEqual(codex["version"], "1.2.0-alpha.1")
+        self.assertEqual(codex["version"], "1.3.0")
         self.assertEqual(claude["version"], codex["version"])
         self.assertEqual(claude["repository"], codex["repository"])
         self.assertIn("Claude Code", codex["description"])
@@ -103,7 +103,7 @@ class ManifestTests(unittest.TestCase):
     def test_opencode_plugin_registers_skills_and_injects_read_only(self) -> None:
         package = read_json(ROOT / "package.json")
         self.assertEqual(package["name"], "littlepowers")
-        self.assertEqual(package["version"], "1.2.0-alpha.1")
+        self.assertEqual(package["version"], "1.3.0")
         self.assertEqual(package["main"], ".opencode/plugins/littlepowers.js")
         self.assertEqual(package["type"], "module")
         self.assertNotIn("dependencies", package)
@@ -127,28 +127,50 @@ class ManifestTests(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr.decode())
 
-    def test_full_route_phases_stop_for_review_by_default(self) -> None:
+    def test_planning_phases_use_deterministic_review_lease_gates(self) -> None:
         router = (ROOT / "skills" / "using-littlepowers" / "SKILL.md").read_text(
             encoding="utf-8"
         )
         self.assertIn("Review phase boundaries", router)
-        self.assertIn("unattended end-to-end", router)
+        for mode in (
+            "blocking",
+            "implementation_mandate",
+            "windowed",
+            "unattended",
+        ):
+            self.assertIn(mode, router)
+        self.assertIn("review-status", router)
+        self.assertIn("--observed-no-intervention", router)
 
         gated = {
-            "brainstorming": "writing-specs",
-            "writing-specs": "designing-solutions",
-            "designing-solutions": "writing-plans",
-            "writing-plans": "executing-plans",
-            "compact-shaping": "executing-plans",
+            "brainstorming": ("brainstorm", "writing-plans"),
+            "writing-specs": ("spec", "designing-solutions"),
+            "designing-solutions": ("design", "writing-plans"),
+            "writing-plans": ("plan", "executing-plans"),
+            "compact-shaping": ("shape", "executing-plans"),
         }
-        for name, next_skill in gated.items():
+        for name, (artifact_key, next_skill) in gated.items():
             with self.subTest(skill=name):
                 skill = (ROOT / "skills" / name / "SKILL.md").read_text(
                     encoding="utf-8"
                 )
-                self.assertIn("for review and stop", skill)
+                self.assertIn(f"park-review --artifact-key {artifact_key}", skill)
+                self.assertIn("blocking", skill)
                 self.assertIn(f"`{next_skill}`", skill)
-                self.assertIn("unattended end-to-end", skill)
+
+        reference = (ROOT / "references" / "review-lease.md").read_text(
+            encoding="utf-8"
+        )
+        for command in (
+            "set-review-policy",
+            "park-review",
+            "review-status",
+            "resolve-review",
+            "cancel-review",
+        ):
+            self.assertIn(command, reference)
+        self.assertIn("same-task one-shot Scheduled Task", reference)
+        self.assertIn("claude -p --resume", reference)
 
     def test_lean_route_runs_brainstorm_then_plan_without_spec_or_design(self) -> None:
         router = (
@@ -563,6 +585,45 @@ class ManifestTests(unittest.TestCase):
         self.assertNotIn("create_review_snapshot", hook)
         self.assertNotIn("snapshot", hook)
 
+    def test_project_workflow_index_is_explicit_read_only_and_hook_free(self) -> None:
+        state_cli = (ROOT / "scripts" / "littlepowers_state.py").read_text(
+            encoding="utf-8"
+        )
+        router = (ROOT / "skills" / "using-littlepowers" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        managing = (
+            ROOT / "skills" / "managing-littlepowers" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        hook = (ROOT / "hooks" / "session-start.py").read_text(encoding="utf-8")
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        readme_zh = (ROOT / "README.zh-CN.md").read_text(encoding="utf-8")
+        capability = (ROOT / "docs" / "capability-matrix.md").read_text(
+            encoding="utf-8"
+        )
+        security = (ROOT / "docs" / "security-model.md").read_text(
+            encoding="utf-8"
+        )
+        scenarios = (ROOT / "evals" / "scenarios.md").read_text(
+            encoding="utf-8"
+        )
+
+        for command in ("project-register", "project-unregister", "project-status"):
+            with self.subTest(command=command):
+                self.assertIn(command, state_cli)
+                self.assertIn(command, managing)
+                self.assertIn(command, readme)
+                self.assertIn(command, readme_zh)
+        self.assertIn("MAX_PROJECT_MEMBERS = 16", state_cli)
+        self.assertIn("Project Workflow Index", router)
+        self.assertIn("Never scan siblings", router)
+        self.assertIn("Parallel independent iterations", capability)
+        self.assertIn("performs no index or member write", security)
+        self.assertIn("Explicit parallel-worktree overview", scenarios)
+        self.assertNotIn("worktree\", \"list", state_cli)
+        self.assertNotIn("project-index", hook)
+        self.assertNotIn("project-status", hook)
+
     def test_public_trust_and_contribution_files_exist(self) -> None:
         required = (
             "CHANGELOG.md",
@@ -576,6 +637,7 @@ class ManifestTests(unittest.TestCase):
             "docs/model-compatibility.md",
             "docs/security-model.md",
             "evals/results/2026-07-17-v0.4-alpha.1.md",
+            "evals/results/2026-08-01-v1.3.0-release.md",
             ".github/pull_request_template.md",
             ".github/ISSUE_TEMPLATE/bug.yml",
             ".github/ISSUE_TEMPLATE/compatibility.yml",
@@ -590,8 +652,9 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("cannot force a model", readme)
         self.assertIn("UserPromptSubmit", readme)
         self.assertIn("coordinator is the only ledger writer", readme)
-        self.assertIn("1.2.0-alpha.1", readme)
-        self.assertIn("Outcome Lock protocol 1.2", readme)
+        self.assertIn("v1.3.0", readme)
+        self.assertIn("Outcome Lock protocol 1.3", readme)
+        self.assertIn("Review Lease", readme)
         self.assertIn("one continuous stream", readme)
         self.assertIn("Systematic debugging", readme)
         self.assertIn("Proportional verification", readme)
@@ -610,8 +673,11 @@ class ManifestTests(unittest.TestCase):
         evaluation = (
             ROOT / "evals" / "results" / "2026-07-17-v0.4-alpha.1.md"
         ).read_text(encoding="utf-8")
+        stable_evaluation = (
+            ROOT / "evals" / "results" / "2026-08-01-v1.3.0-release.md"
+        ).read_text(encoding="utf-8")
 
-        self.assertIn("Release:** 1.2.0-alpha.1", capability)
+        self.assertIn("Release:** 1.3.0", capability)
         self.assertIn("Outcome Coverage Gate", capability)
         self.assertIn("`debugging-systematically`", capability)
         self.assertIn("`verifying-work`", capability)
@@ -630,6 +696,9 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("17 directly affected", evaluation)
         self.assertIn("Acceptance/spec compliance:** `pass`", evaluation)
         self.assertIn("Code quality:** `approve`", evaluation)
+        self.assertIn("Candidate: `1.3.0`", stable_evaluation)
+        self.assertIn("197/197 passed", stable_evaluation)
+        self.assertIn("same-byte path substitution", stable_evaluation)
 
 
 if __name__ == "__main__":

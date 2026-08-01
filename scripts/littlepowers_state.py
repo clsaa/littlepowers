@@ -15,13 +15,14 @@ import tempfile
 import time
 import uuid
 from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Iterable, Iterator
 
 
-SCHEMA_VERSION = 3
-PROTOCOL_VERSION = "1.2"
+SCHEMA_VERSION = 4
+PROTOCOL_VERSION = "1.3"
 CREATED_BY = "littlepowers"
 STATUSES = {"active", "paused", "complete", "cancelled"}
 PHASES = {"brainstorm", "spec", "design", "plan", "shape", "execute", "verify"}
@@ -54,6 +55,7 @@ STATE_KEYS = {
     "created_at",
     "updated_at",
     "outcome_lock",
+    "review",
 }
 HANDOFF_KEYS = {
     "target_root",
@@ -89,6 +91,41 @@ MAX_PROTOCOL_TASKS = 500
 MAX_PROTOCOL_EVIDENCE = 500
 MAX_PROTOCOL_LABEL_LENGTH = 500
 MAX_BOUND_PATH_LENGTH = 2_048
+MIN_REVIEW_WAIT_SECONDS = 60
+MAX_REVIEW_WAIT_SECONDS = 604_800
+MAX_REVIEW_UNRESOLVED_QUESTIONS = 1_000
+PROJECT_INDEX_SCHEMA_VERSION = 1
+PROJECT_INDEX_KEYS = {"schema_version", "revision", "members", "updated_at"}
+PROJECT_MEMBER_KEYS = {"root", "label", "registered_at"}
+MAX_PROJECT_MEMBERS = 16
+MAX_PROJECT_ROOT_LENGTH = 2_048
+MAX_PROJECT_LABEL_LENGTH = 80
+REVIEW_MODES = {
+    "blocking",
+    "implementation_mandate",
+    "windowed",
+    "unattended",
+}
+REVIEW_BOUNDARIES = {"next_phase", "execute"}
+REVIEW_ARTIFACT_KEYS = {"brainstorm", "spec", "design", "plan", "shape"}
+REVIEW_RESOLUTION_KINDS = {
+    "explicit_approval",
+    "implementation_mandate",
+    "window_expired",
+    "unattended",
+    "cancelled",
+}
+REVIEW_CANCELLATION_REASONS = {
+    "intervention",
+    "correction",
+    "hold",
+    "replacement",
+    "manual",
+}
+REVIEW_CONSUMPTION_KEYS = {
+    "contract_bind_revision",
+    "plan_validation_revision",
+}
 OUTCOME_ID_PATTERN = re.compile(r"OUT-[0-9]{3}\Z")
 SOURCE_ID_PATTERN = re.compile(r"SRC-[0-9]{3}\Z")
 FIDELITY_ID_PATTERN = re.compile(r"FID-[0-9]{3}\Z")
@@ -127,6 +164,23 @@ class StateConflict(StateError):
     """Raised when a stale writer tries to mutate a newer workflow."""
 
 
+@dataclass(frozen=True)
+class MigrationSource:
+    """Validated pre-schema4 state plus its exact on-disk bytes."""
+
+    record: dict[str, Any]
+    payload: bytes
+
+
+@dataclass(frozen=True)
+class GitWorktreeIdentity:
+    """Canonical identity for one explicitly named Git worktree."""
+
+    root: Path
+    common_dir: Path
+    branch: str | None
+
+
 def _exact_record_keys(
     value: Any, expected: set[str], field: str
 ) -> dict[str, Any]:
@@ -141,6 +195,19 @@ def _exact_record_keys(
             f"(missing={missing}, unknown={unknown})"
         )
     return value
+
+
+def _compatible_record_keys(
+    value: Any,
+    current: set[str],
+    legacy: set[str],
+    field: str,
+) -> dict[str, Any]:
+    """Accept one fail-closed prerelease record shape alongside the current one."""
+
+    if isinstance(value, dict) and set(value) == legacy:
+        return value
+    return _exact_record_keys(value, current, field)
 
 
 def _record_text(value: Any, field: str, *, maximum: int) -> str:
@@ -949,8 +1016,12 @@ def outcome_lock_completion_failures(outcome_lock: dict[str, Any]) -> list[str]:
 
 
 def utc_now() -> str:
+    return _format_utc(datetime.now(timezone.utc))
+
+
+def _format_utc(value: datetime) -> str:
     return (
-        datetime.now(timezone.utc)
+        value.astimezone(timezone.utc)
         .replace(microsecond=0)
         .isoformat()
         .replace("+00:00", "Z")
@@ -1209,6 +1280,10 @@ def state_directory(root: Path) -> Path:
 
 def state_path(root: Path) -> Path:
     return state_directory(root) / "state.json"
+
+
+def project_index_path(root: Path) -> Path:
+    return state_directory(root) / "project-index.json"
 
 
 def _is_link_or_reparse(path: Path) -> bool:
@@ -1493,6 +1568,60 @@ def _is_git_worktree(root: Path) -> bool:
     return bool(result and result.returncode == 0 and result.stdout.strip() == "true")
 
 
+def _git_worktree_identity(value: Path | str, field: str) -> GitWorktreeIdentity:
+    """Resolve one explicit worktree without enumerating repository worktrees."""
+
+    candidate = Path(os.path.abspath(Path(value).expanduser()))
+    try:
+        linked = _is_link_or_reparse(candidate)
+    except OSError as exc:
+        raise StateError(f"cannot inspect {field} {candidate}: {exc}") from exc
+    if linked:
+        raise StateError(f"{field} must be a non-linked directory: {candidate}")
+    try:
+        root = candidate.resolve(strict=True)
+    except OSError as exc:
+        raise StateError(f"cannot resolve {field} {candidate}: {exc}") from exc
+    if len(str(root)) > MAX_PROJECT_ROOT_LENGTH:
+        raise StateError(f"{field} exceeds {MAX_PROJECT_ROOT_LENGTH} characters")
+
+    workspace_fd = _open_workspace_directory(root)
+    if workspace_fd is not None:
+        os.close(workspace_fd)
+
+    result = _git_result(
+        root,
+        ["rev-parse", "--show-toplevel", "--git-common-dir", "--abbrev-ref", "HEAD"],
+    )
+    if result is None:
+        raise StateError(f"cannot inspect Git identity for {field}: Git is unavailable")
+    if result.returncode != 0:
+        detail = result.stderr.strip() or "not a Git worktree"
+        raise StateError(f"cannot inspect Git identity for {field}: {detail}")
+    lines = result.stdout.splitlines()
+    if len(lines) != 3 or any(not line for line in lines[:2]):
+        raise StateError(f"Git identity for {field} is malformed")
+
+    try:
+        top_level = Path(lines[0]).resolve(strict=True)
+        common_candidate = Path(lines[1])
+        if not common_candidate.is_absolute():
+            common_candidate = root / common_candidate
+        common_dir = common_candidate.resolve(strict=True)
+    except OSError as exc:
+        raise StateError(f"cannot resolve Git identity for {field}: {exc}") from exc
+    if top_level != root:
+        raise StateError(f"{field} must be the Git worktree root: {top_level}")
+    if not common_dir.is_dir():
+        raise StateError(f"Git common directory is not a directory: {common_dir}")
+
+    branch_value = lines[2]
+    branch = None if branch_value == "HEAD" else branch_value
+    if branch is not None:
+        _validate_text(branch, f"{field} branch", maximum=MAX_TEXT_LENGTH)
+    return GitWorktreeIdentity(root=root, common_dir=common_dir, branch=branch)
+
+
 def state_file_is_tracked(root: Path) -> bool:
     """Return whether Git tracks the recovery ledger."""
 
@@ -1503,10 +1632,26 @@ def state_file_is_tracked(root: Path) -> bool:
     return bool(result and result.returncode == 0)
 
 
+def project_index_file_is_tracked(root: Path) -> bool:
+    result = _git_result(
+        root,
+        ["ls-files", "--error-unmatch", "--", ".littlepowers/project-index.json"],
+    )
+    return bool(result and result.returncode == 0)
+
+
 def state_file_is_ignored(root: Path) -> bool:
     """Return whether Git ignores the recovery ledger."""
 
     result = _git_result(root, ["check-ignore", "-q", "--", ".littlepowers/state.json"])
+    return bool(result and result.returncode == 0)
+
+
+def project_index_file_is_ignored(root: Path) -> bool:
+    result = _git_result(
+        root,
+        ["check-ignore", "-q", "--", ".littlepowers/project-index.json"],
+    )
     return bool(result and result.returncode == 0)
 
 
@@ -1589,7 +1734,12 @@ def _validate_text(
         raise StateError(f"{field} contains control characters")
 
 
-def _validate_timestamp(value: Any, field: str) -> datetime:
+def _validate_timestamp(
+    value: Any,
+    field: str,
+    *,
+    maximum_future_seconds: int = MAX_FUTURE_CLOCK_SKEW_SECONDS,
+) -> datetime:
     _validate_text(value, field, maximum=64)
     assert isinstance(value, str)
     try:
@@ -1599,7 +1749,7 @@ def _validate_timestamp(value: Any, field: str) -> datetime:
     if parsed.tzinfo is None:
         raise StateError(f"{field} must include a timezone")
     if parsed > datetime.now(timezone.utc) + timedelta(
-        seconds=MAX_FUTURE_CLOCK_SKEW_SECONDS
+        seconds=maximum_future_seconds
     ):
         raise StateError(f"{field} is too far in the future")
     return parsed
@@ -1655,6 +1805,287 @@ def normalize_artifact_path(root: Path | None, value: str) -> str:
     )
 
 
+def _default_review_boundary(mode: str) -> str:
+    return "next_phase" if mode == "blocking" else "execute"
+
+
+def new_review_state(
+    *,
+    mode: str = "blocking",
+    through: str | None = None,
+    wait_seconds: int | None = None,
+    recorded_at: str | None = None,
+) -> dict[str, Any]:
+    """Create one compact schema-4 Review Lease record."""
+
+    if mode not in REVIEW_MODES:
+        raise StateError(f"invalid review policy mode: {mode!r}")
+    if mode == "windowed" and through is None:
+        raise StateError(
+            "windowed review policy requires an explicit through boundary"
+        )
+    if through is None:
+        through = _default_review_boundary(mode)
+    policy = {
+        "mode": mode,
+        "through": through,
+        "wait_seconds": wait_seconds,
+        "recorded_at": recorded_at or utc_now(),
+    }
+    review = {"policy": policy, "gate": None, "last_resolution": None}
+    _validate_review(
+        review,
+        state_status="active",
+        state_revision=0,
+        artifacts={key: None for key in ARTIFACT_KEYS},
+        updated_at=policy["recorded_at"],
+        root=None,
+    )
+    return review
+
+
+def _validate_review(
+    review: Any,
+    *,
+    state_status: str,
+    state_revision: int,
+    artifacts: dict[str, str | None],
+    updated_at: str,
+    root: Path | None,
+) -> dict[str, Any]:
+    review = _exact_record_keys(
+        review,
+        {"policy", "gate", "last_resolution"},
+        "review",
+    )
+    policy = _exact_record_keys(
+        review["policy"],
+        {"mode", "through", "wait_seconds", "recorded_at"},
+        "review.policy",
+    )
+    mode = _record_enum(policy["mode"], REVIEW_MODES, "review.policy.mode")
+    through = _record_enum(
+        policy["through"], REVIEW_BOUNDARIES, "review.policy.through"
+    )
+    wait_seconds = policy["wait_seconds"]
+    if mode == "windowed":
+        if (
+            isinstance(wait_seconds, bool)
+            or not isinstance(wait_seconds, int)
+            or not MIN_REVIEW_WAIT_SECONDS
+            <= wait_seconds
+            <= MAX_REVIEW_WAIT_SECONDS
+        ):
+            raise StateError(
+                "review.policy.wait_seconds must be an integer from "
+                f"{MIN_REVIEW_WAIT_SECONDS} through {MAX_REVIEW_WAIT_SECONDS}"
+            )
+    elif wait_seconds is not None:
+        raise StateError("only a windowed review policy accepts wait_seconds")
+    if mode == "blocking" and through != "next_phase":
+        raise StateError("blocking review policy requires through=next_phase")
+    if mode in {"implementation_mandate", "unattended"} and through != "execute":
+        raise StateError(f"{mode} review policy requires through=execute")
+    policy_recorded_at = _validate_timestamp(
+        policy["recorded_at"], "review.policy.recorded_at"
+    )
+    state_updated_at = _validate_timestamp(updated_at, "updated_at")
+    if policy_recorded_at > state_updated_at:
+        raise StateError("review.policy.recorded_at must not follow updated_at")
+
+    gate = review["gate"]
+    if gate is not None:
+        gate_keys = {
+            "artifact_key",
+            "artifact",
+            "digest",
+            "sources_digest",
+            "policy_mode",
+            "through",
+            "opened_at",
+            "not_before",
+            "opened_revision",
+            "scope_delta",
+            "unresolved_questions",
+        }
+        gate = _compatible_record_keys(
+            gate,
+            gate_keys,
+            gate_keys - {"sources_digest"},
+            "review.gate",
+        )
+        artifact_key = _record_enum(
+            gate["artifact_key"], REVIEW_ARTIFACT_KEYS, "review.gate.artifact_key"
+        )
+        artifact = gate["artifact"]
+        _validate_text(
+            artifact, "review.gate.artifact", maximum=MAX_ARTIFACT_LENGTH
+        )
+        assert isinstance(artifact, str)
+        if normalize_artifact_path(root, artifact) != artifact:
+            raise StateError("review.gate.artifact is not normalized")
+        if artifacts.get(artifact_key) != artifact:
+            raise StateError("review.gate artifact must match the current ledger artifact")
+        _validate_digest(gate["digest"], "review.gate.digest")
+        _validate_digest(
+            gate.get("sources_digest"),
+            "review.gate.sources_digest",
+            allow_none=True,
+        )
+        gate_mode = _record_enum(
+            gate["policy_mode"], REVIEW_MODES, "review.gate.policy_mode"
+        )
+        gate_through = _record_enum(
+            gate["through"], REVIEW_BOUNDARIES, "review.gate.through"
+        )
+        if gate_mode != mode or gate_through != through:
+            raise StateError("review.gate must snapshot the current review policy")
+        opened_at = _validate_timestamp(gate["opened_at"], "review.gate.opened_at")
+        if opened_at > state_updated_at:
+            raise StateError("review.gate.opened_at must not follow updated_at")
+        not_before = gate["not_before"]
+        if gate_mode == "windowed":
+            deadline = _validate_timestamp(
+                not_before,
+                "review.gate.not_before",
+                maximum_future_seconds=(
+                    MAX_REVIEW_WAIT_SECONDS + MAX_FUTURE_CLOCK_SKEW_SECONDS
+                ),
+            )
+            assert isinstance(wait_seconds, int)
+            if deadline != opened_at + timedelta(seconds=wait_seconds):
+                raise StateError(
+                    "review.gate.not_before must equal opened_at plus wait_seconds"
+                )
+        elif not_before is not None:
+            raise StateError("only a windowed review gate accepts not_before")
+        opened_revision = gate["opened_revision"]
+        if (
+            isinstance(opened_revision, bool)
+            or not isinstance(opened_revision, int)
+            or opened_revision < 1
+        ):
+            raise StateError("review.gate.opened_revision must be a positive integer")
+        if opened_revision != state_revision:
+            raise StateError("an open review gate must own the current revision")
+        _record_enum(
+            gate["scope_delta"], {"none", "proposed"}, "review.gate.scope_delta"
+        )
+        unresolved = _validate_non_negative_integer(
+            gate["unresolved_questions"], "review.gate.unresolved_questions"
+        )
+        if unresolved > MAX_REVIEW_UNRESOLVED_QUESTIONS:
+            raise StateError(
+                "review.gate.unresolved_questions exceeds "
+                f"{MAX_REVIEW_UNRESOLVED_QUESTIONS}"
+            )
+        if state_status != "active":
+            raise StateError("only an active workflow may carry an open review gate")
+
+    resolution = review["last_resolution"]
+    if resolution is not None:
+        legacy_resolution_keys = {
+            "artifact_key",
+            "digest",
+            "opened_revision",
+            "kind",
+            "reason",
+            "recorded_at",
+        }
+        resolution = _compatible_record_keys(
+            resolution,
+            legacy_resolution_keys
+            | {"artifact", "sources_digest", "consumption"},
+            legacy_resolution_keys,
+            "review.last_resolution",
+        )
+        resolution_artifact_key = _record_enum(
+            resolution["artifact_key"],
+            REVIEW_ARTIFACT_KEYS,
+            "review.last_resolution.artifact_key",
+        )
+        resolution_artifact = resolution.get("artifact")
+        if resolution_artifact is not None:
+            _validate_text(
+                resolution_artifact,
+                "review.last_resolution.artifact",
+                maximum=MAX_ARTIFACT_LENGTH,
+            )
+            assert isinstance(resolution_artifact, str)
+            if normalize_artifact_path(root, resolution_artifact) != resolution_artifact:
+                raise StateError("review.last_resolution.artifact is not normalized")
+        _validate_digest(
+            resolution["digest"], "review.last_resolution.digest"
+        )
+        _validate_digest(
+            resolution.get("sources_digest"),
+            "review.last_resolution.sources_digest",
+            allow_none=True,
+        )
+        resolution_revision = resolution["opened_revision"]
+        if (
+            isinstance(resolution_revision, bool)
+            or not isinstance(resolution_revision, int)
+            or resolution_revision < 1
+            or resolution_revision > state_revision
+        ):
+            raise StateError(
+                "review.last_resolution.opened_revision must name a prior revision"
+            )
+        kind = _record_enum(
+            resolution["kind"],
+            REVIEW_RESOLUTION_KINDS,
+            "review.last_resolution.kind",
+        )
+        reason = resolution["reason"]
+        if kind == "cancelled":
+            _record_enum(
+                reason,
+                REVIEW_CANCELLATION_REASONS,
+                "review.last_resolution.reason",
+            )
+        elif reason is not None:
+            raise StateError("only a cancelled review resolution accepts a reason")
+        resolution_at = _validate_timestamp(
+            resolution["recorded_at"], "review.last_resolution.recorded_at"
+        )
+        if resolution_at > state_updated_at:
+            raise StateError("review.last_resolution.recorded_at must not follow updated_at")
+        consumption = resolution.get("consumption")
+        if consumption is not None:
+            consumption = _exact_record_keys(
+                consumption,
+                REVIEW_CONSUMPTION_KEYS,
+                "review.last_resolution.consumption",
+            )
+            for field, allowed_keys in (
+                ("contract_bind_revision", {"brainstorm", "shape", "spec"}),
+                ("plan_validation_revision", {"plan", "shape"}),
+            ):
+                consumed_revision = consumption[field]
+                if consumed_revision is None:
+                    continue
+                if (
+                    isinstance(consumed_revision, bool)
+                    or not isinstance(consumed_revision, int)
+                    or consumed_revision <= resolution_revision
+                    or consumed_revision > state_revision
+                ):
+                    raise StateError(
+                        f"review.last_resolution.consumption.{field} must name "
+                        "a later current-or-prior revision"
+                    )
+                if resolution_artifact_key not in allowed_keys:
+                    raise StateError(
+                        f"review.last_resolution artifact key cannot consume {field}"
+                    )
+            if kind == "cancelled" and any(
+                value is not None for value in consumption.values()
+            ):
+                raise StateError("a cancelled Review Resolution cannot be consumed")
+    return review
+
+
 def _empty_coverage(*, direct: bool = False) -> dict[str, Any]:
     total = 1 if direct else 0
     return {
@@ -1675,7 +2106,7 @@ def new_outcome_lock(
     objective: str | None = None,
     legacy_terminal: bool = False,
 ) -> dict[str, Any]:
-    """Create one compact schema-3 Outcome Lock summary."""
+    """Create one compact Outcome Lock summary for the current ledger."""
 
     if legacy_terminal:
         mode = "legacy_terminal"
@@ -1875,7 +2306,12 @@ def _validate_outcome_lock(
     _validate_approval(
         contract["approval"],
         "outcome_lock.contract.approval",
-        allowed_kinds={"review_gate", "unattended_authorization"},
+        allowed_kinds={
+            "review_gate",
+            "implementation_mandate",
+            "window_expired",
+            "unattended_authorization",
+        },
     )
     sources = _record_list(
         contract["sources"],
@@ -2254,12 +2690,12 @@ def _validate_outcome_lock(
         failures = outcome_lock_completion_failures(lock)
         if failures:
             raise StateError(
-                "complete schema-3 state violates the completion gate: "
+                "complete schema-4 state violates the completion gate: "
                 + "; ".join(failures)
             )
         if not verification_is_recorded:
             raise StateError(
-                "complete schema-3 state requires a Verification Record"
+                "complete schema-4 state requires a Verification Record"
             )
     return lock
 
@@ -2275,7 +2711,8 @@ LEGACY_V1_KEYS = {
     "completed",
     "updated_at",
 }
-LEGACY_V2_KEYS = STATE_KEYS - {"protocol_version", "outcome_lock"}
+LEGACY_V3_KEYS = STATE_KEYS - {"review"}
+LEGACY_V2_KEYS = LEGACY_V3_KEYS - {"protocol_version", "outcome_lock"}
 
 
 def _migrate_v1_to_v2(state: dict[str, Any], root: Path) -> dict[str, Any]:
@@ -2322,8 +2759,8 @@ def _migrate_v2_to_v3(state: dict[str, Any]) -> dict[str, Any]:
         lock["status"] = "reconcile_required"
         lock["baseline"]["status"] = "reconcile_required"
     return {
-        "schema_version": SCHEMA_VERSION,
-        "protocol_version": PROTOCOL_VERSION,
+        "schema_version": 3,
+        "protocol_version": "1.2",
         "created_by": state.get("created_by"),
         "workflow_id": state.get("workflow_id"),
         "revision": state.get("revision"),
@@ -2342,18 +2779,34 @@ def _migrate_v2_to_v3(state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _migrate_v3_to_v4(state: dict[str, Any]) -> dict[str, Any]:
+    _exact_record_keys(state, LEGACY_V3_KEYS, "schema-3 state")
+    if state.get("schema_version") != 3:
+        raise StateError("schema-3 state has an invalid schema_version")
+    if state.get("protocol_version") != "1.2":
+        raise StateError("schema-3 state has an invalid protocol_version")
+    return {
+        **state,
+        "schema_version": SCHEMA_VERSION,
+        "protocol_version": PROTOCOL_VERSION,
+        "review": new_review_state(recorded_at=state.get("updated_at")),
+    }
+
+
 def migrate_legacy_state(
     state: dict[str, Any], root: Path
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
-    """Return a validated schema-3 view plus the untouched legacy record."""
+    """Return a schema-4 view plus the untouched pre-schema4 record."""
 
     schema = state.get("schema_version")
     if schema == 1:
         legacy = state
         state = _migrate_v1_to_v2(state, root)
-        return _migrate_v2_to_v3(state), legacy
+        return _migrate_v3_to_v4(_migrate_v2_to_v3(state)), legacy
     if schema == 2:
-        return _migrate_v2_to_v3(state), state
+        return _migrate_v3_to_v4(_migrate_v2_to_v3(state)), state
+    if schema == 3:
+        return _migrate_v3_to_v4(state), state
     if schema == SCHEMA_VERSION:
         return state, None
     raise StateError(f"unsupported schema_version: {schema!r}")
@@ -2465,12 +2918,20 @@ def validate_state(state: Any, root: Path | None = None) -> dict[str, Any]:
         state_status=state["status"],
         root=root,
     )
+    _validate_review(
+        state.get("review"),
+        state_status=state["status"],
+        state_revision=state["revision"],
+        artifacts=artifacts,
+        updated_at=state["updated_at"],
+        root=root,
+    )
     if (
         state["status"] == "complete"
         and outcome_lock["mode"] != "legacy_terminal"
         and state["phase"] != "verify"
     ):
-        raise StateError("complete schema-3 state requires phase: verify")
+        raise StateError("complete schema-4 state requires phase: verify")
     last_checked_at = state["outcome_lock"]["last_checked_at"]
     if (
         last_checked_at is not None
@@ -2481,12 +2942,100 @@ def validate_state(state: Any, root: Path | None = None) -> dict[str, Any]:
     return state
 
 
-def _read_state_bytes(path: Path, directory_fd: int | None = None) -> bytes:
+def new_project_index() -> dict[str, Any]:
+    return {
+        "schema_version": PROJECT_INDEX_SCHEMA_VERSION,
+        "revision": 0,
+        "members": [],
+        "updated_at": utc_now(),
+    }
+
+
+def _normalize_project_label(value: str | None) -> str | None:
+    if value is None:
+        return None
+    label = value.strip()
+    _validate_text(label, "project member label", maximum=MAX_PROJECT_LABEL_LENGTH)
+    if any(character in "\n\r\t" for character in label):
+        raise StateError("project member label must be one line")
+    return label
+
+
+def _canonical_project_member_root(value: str) -> Path:
+    _validate_text(value, "member root", maximum=MAX_PROJECT_ROOT_LENGTH)
+    candidate = Path(value).expanduser()
+    try:
+        root = candidate.resolve(strict=False)
+    except OSError as exc:
+        raise StateError(f"cannot normalize member root {candidate}: {exc}") from exc
+    if not root.is_absolute():  # pragma: no cover - resolve is absolute
+        raise StateError("member root must resolve to an absolute path")
+    if len(str(root)) > MAX_PROJECT_ROOT_LENGTH:
+        raise StateError(f"member root exceeds {MAX_PROJECT_ROOT_LENGTH} characters")
+    return root
+
+
+def validate_project_index(value: Any) -> dict[str, Any]:
+    index = _exact_record_keys(value, PROJECT_INDEX_KEYS, "project index")
+    if index["schema_version"] != PROJECT_INDEX_SCHEMA_VERSION:
+        raise StateError(
+            "project index schema_version must be "
+            f"{PROJECT_INDEX_SCHEMA_VERSION}"
+        )
+    _validate_non_negative_integer(index["revision"], "project index revision")
+    updated_at = _validate_timestamp(index["updated_at"], "project index updated_at")
+
+    members = index["members"]
+    if not isinstance(members, list):
+        raise StateError("project index members must be a list")
+    if len(members) > MAX_PROJECT_MEMBERS:
+        raise StateError(
+            f"project index members exceed {MAX_PROJECT_MEMBERS} entries"
+        )
+
+    seen_roots: set[str] = set()
+    for position, raw_member in enumerate(members):
+        field = f"project index members[{position}]"
+        member = _exact_record_keys(raw_member, PROJECT_MEMBER_KEYS, field)
+        root_value = member["root"]
+        _validate_text(
+            root_value,
+            f"{field}.root",
+            maximum=MAX_PROJECT_ROOT_LENGTH,
+        )
+        assert isinstance(root_value, str)
+        root_path = Path(root_value)
+        if not root_path.is_absolute() or os.path.normpath(root_value) != root_value:
+            raise StateError(f"{field}.root must be a normalized absolute path")
+        root_key = os.path.normcase(root_value)
+        if root_key in seen_roots:
+            raise StateError("project index member roots must be unique")
+        seen_roots.add(root_key)
+
+        label = member["label"]
+        if label is not None:
+            normalized_label = _normalize_project_label(label)
+            if normalized_label != label:
+                raise StateError(f"{field}.label must be normalized")
+        registered_at = _validate_timestamp(
+            member["registered_at"], f"{field}.registered_at"
+        )
+        if registered_at > updated_at:
+            raise StateError(f"{field}.registered_at must not follow updated_at")
+    return index
+
+
+def _read_state_bytes(
+    path: Path,
+    directory_fd: int | None = None,
+    *,
+    label: str = "state file",
+) -> bytes:
     expected = _require_regular_entry(
-        path.parent, path.name, "state file", directory_fd
+        path.parent, path.name, label, directory_fd
     )
     if expected.st_size > MAX_STATE_FILE_BYTES:
-        raise StateError(f"state file exceeds {MAX_STATE_FILE_BYTES} bytes")
+        raise StateError(f"{label} exceeds {MAX_STATE_FILE_BYTES} bytes")
     flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
     try:
         if directory_fd is not None:
@@ -2498,12 +3047,12 @@ def _read_state_bytes(path: Path, directory_fd: int | None = None) -> bytes:
     try:
         opened = os.fstat(descriptor)
         if not stat.S_ISREG(opened.st_mode):
-            raise StateError(f"state file must be regular: {path}")
-        _require_owned_metadata(opened, path, "state file", single_link=True)
+            raise StateError(f"{label} must be regular: {path}")
+        _require_owned_metadata(opened, path, label, single_link=True)
         if (opened.st_dev, opened.st_ino) != (expected.st_dev, expected.st_ino):
-            raise StateError(f"state file changed while opening: {path}")
+            raise StateError(f"{label} changed while opening: {path}")
         if opened.st_size > MAX_STATE_FILE_BYTES:
-            raise StateError(f"state file exceeds {MAX_STATE_FILE_BYTES} bytes")
+            raise StateError(f"{label} exceeds {MAX_STATE_FILE_BYTES} bytes")
         chunks: list[bytes] = []
         remaining = MAX_STATE_FILE_BYTES + 1
         while remaining:
@@ -2514,7 +3063,7 @@ def _read_state_bytes(path: Path, directory_fd: int | None = None) -> bytes:
             remaining -= len(chunk)
         payload = b"".join(chunks)
         if len(payload) > MAX_STATE_FILE_BYTES:
-            raise StateError(f"state file exceeds {MAX_STATE_FILE_BYTES} bytes")
+            raise StateError(f"{label} exceeds {MAX_STATE_FILE_BYTES} bytes")
         return payload
     finally:
         os.close(descriptor)
@@ -2549,7 +3098,8 @@ def load_state(
         if tracked:
             raise StateError("refusing Git-tracked .littlepowers/state.json")
         try:
-            payload = _read_state_bytes(path, directory_fd).decode("utf-8")
+            raw_payload = _read_state_bytes(path, directory_fd)
+            payload = raw_payload.decode("utf-8")
             raw = json.loads(
                 payload, object_pairs_hook=_json_without_duplicate_keys
             )
@@ -2559,7 +3109,56 @@ def load_state(
             raise StateError("state must be a JSON object")
         view, legacy = migrate_legacy_state(raw, root)
         validated = validate_state(view, root)
-        return (validated, legacy) if return_legacy else validated
+        migration_source = (
+            MigrationSource(record=legacy, payload=raw_payload)
+            if legacy is not None
+            else None
+        )
+        return (validated, migration_source) if return_legacy else validated
+    finally:
+        if owned_directory_fd is not None:
+            os.close(owned_directory_fd)
+        if owned_workspace_fd is not None:
+            os.close(owned_workspace_fd)
+
+
+def load_project_index(
+    root: Path,
+    *,
+    missing_ok: bool = False,
+    directory_fd: int | None = None,
+) -> dict[str, Any] | None:
+    root = root.resolve()
+    owned_directory_fd: int | None = None
+    owned_workspace_fd: int | None = None
+    if directory_fd is None:
+        directory, owned_workspace_fd, owned_directory_fd = _open_state_store_directory(
+            root, create=False
+        )
+        directory_fd = owned_directory_fd
+    else:
+        directory = state_directory(root)
+    path = project_index_path(root)
+    try:
+        if directory is None or not _entry_exists(directory, path.name, directory_fd):
+            if missing_ok:
+                return None
+            raise StateError(f"no project index found at {path}")
+        _verify_pinned_store_path(root, directory_fd)
+        tracked = project_index_file_is_tracked(root)
+        _verify_pinned_store_path(root, directory_fd)
+        if tracked:
+            raise StateError("refusing Git-tracked .littlepowers/project-index.json")
+        try:
+            payload = _read_state_bytes(
+                path, directory_fd, label="project index file"
+            ).decode("utf-8")
+            raw = json.loads(
+                payload, object_pairs_hook=_json_without_duplicate_keys
+            )
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise StateError(f"cannot read {path}: {exc}") from exc
+        return validate_project_index(raw)
     finally:
         if owned_directory_fd is not None:
             os.close(owned_directory_fd)
@@ -2692,11 +3291,13 @@ def _fsync_directory(directory: Path, directory_fd: int | None = None) -> None:
         os.close(descriptor)
 
 
-def _write_json_atomic(
+def _write_bytes_atomic(
     directory: Path,
     destination: Path,
-    value: dict[str, Any],
+    payload: bytes,
     directory_fd: int | None = None,
+    *,
+    size_error: str,
 ) -> None:
     if _entry_exists(directory, destination.name, directory_fd):
         details = _entry_lstat(directory, destination.name, directory_fd)
@@ -2706,11 +3307,8 @@ def _write_json_atomic(
             raise StateError(
                 f"refusing linked or reparse-point destination: {destination}"
             )
-    payload = (
-        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-    ).encode("utf-8")
     if len(payload) > MAX_STATE_FILE_BYTES:
-        raise StateError(f"serialized state exceeds {MAX_STATE_FILE_BYTES} bytes")
+        raise StateError(size_error)
     temporary_name: str
     if directory_fd is not None:
         temporary_name = f".{destination.stem}.{uuid.uuid4().hex}.tmp"
@@ -2764,12 +3362,73 @@ def _write_json_atomic(
             pass
 
 
+def _write_json_atomic(
+    directory: Path,
+    destination: Path,
+    value: dict[str, Any],
+    directory_fd: int | None = None,
+    *,
+    size_error: str | None = None,
+) -> None:
+    payload = (
+        json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    ).encode("utf-8")
+    _write_bytes_atomic(
+        directory,
+        destination,
+        payload,
+        directory_fd,
+        size_error=(
+            size_error
+            or f"serialized state exceeds {MAX_STATE_FILE_BYTES} bytes"
+        ),
+    )
+
+
+def _write_project_index_unlocked(
+    root: Path,
+    index: dict[str, Any],
+    directory_fd: int | None = None,
+) -> Path:
+    validate_project_index(index)
+    directory = (
+        state_directory(root)
+        if directory_fd is not None
+        else ensure_state_directory(root)
+    )
+    _verify_pinned_store_path(root, directory_fd)
+    tracked = project_index_file_is_tracked(root)
+    _verify_pinned_store_path(root, directory_fd)
+    git_worktree = _is_git_worktree(root)
+    _verify_pinned_store_path(root, directory_fd)
+    ignored = project_index_file_is_ignored(root) if git_worktree else True
+    _verify_pinned_store_path(root, directory_fd)
+    if tracked:
+        raise StateError("refusing to overwrite Git-tracked project index")
+    if not ignored:
+        raise StateError(
+            ".littlepowers/project-index.json is not ignored; add '*' to "
+            ".littlepowers/.gitignore before using the project index"
+        )
+    destination = project_index_path(root)
+    _write_json_atomic(
+        directory,
+        destination,
+        index,
+        directory_fd,
+        size_error=(
+            f"serialized project index exceeds {MAX_STATE_FILE_BYTES} bytes"
+        ),
+    )
+    return destination
+
+
 def _write_state_unlocked(
     root: Path,
     state: dict[str, Any],
     directory_fd: int | None = None,
     *,
-    legacy_state: dict[str, Any] | None = None,
+    legacy_state: MigrationSource | None = None,
 ) -> Path:
     validate_state(state, root)
     directory = (
@@ -2784,17 +3443,18 @@ def _write_state_unlocked(
         raise StateError("refusing to overwrite Git-tracked .littlepowers/state.json")
     destination = state_path(root)
     if legacy_state is not None:
-        legacy_schema = legacy_state.get("schema_version")
+        legacy_schema = legacy_state.record.get("schema_version")
         naming_state = {
             "workflow_id": state["workflow_id"],
             "revision": max(0, state["revision"] - 1),
         }
         _archive_state_unlocked(
             root,
-            legacy_state,
+            legacy_state.record,
             directory_fd,
             naming_state=naming_state,
-            name_suffix=f"-pre-schema3-v{legacy_schema}",
+            name_suffix=f"-pre-schema4-v{legacy_schema}",
+            raw_payload=legacy_state.payload,
         )
     _write_json_atomic(directory, destination, state, directory_fd)
     return destination
@@ -2813,6 +3473,7 @@ def _archive_state_unlocked(
     *,
     naming_state: dict[str, Any] | None = None,
     name_suffix: str = "",
+    raw_payload: bytes | None = None,
 ) -> Path:
     _verify_pinned_store_path(root, parent_fd)
     parent = (
@@ -2866,7 +3527,18 @@ def _archive_state_unlocked(
     )
     try:
         _verify_pinned_store_path(root, parent_fd)
-        _write_json_atomic(archive, destination, state, archive_fd)
+        if raw_payload is None:
+            _write_json_atomic(archive, destination, state, archive_fd)
+        else:
+            _write_bytes_atomic(
+                archive,
+                destination,
+                raw_payload,
+                archive_fd,
+                size_error=(
+                    f"legacy state exceeds {MAX_STATE_FILE_BYTES} bytes"
+                ),
+            )
     finally:
         if archive_fd is not None:
             os.close(archive_fd)
@@ -3106,6 +3778,9 @@ def new_state(
     artifacts: dict[str, str] | None = None,
     *,
     direct_lock: bool = False,
+    review_mode: str = "blocking",
+    review_through: str | None = None,
+    review_wait_seconds: int | None = None,
 ) -> dict[str, Any]:
     now = utc_now()
     artifact_map: dict[str, str | None] = {key: None for key in sorted(ARTIFACT_KEYS)}
@@ -3131,6 +3806,12 @@ def new_state(
             mode="direct" if direct_lock else "unbound",
             objective=objective if direct_lock else None,
         ),
+        "review": new_review_state(
+            mode=review_mode,
+            through=review_through,
+            wait_seconds=review_wait_seconds,
+            recorded_at=now,
+        ),
     }
 
 
@@ -3153,7 +3834,8 @@ def _load_for_mutation(
     directory_fd: int | None,
     *,
     statuses: set[str],
-) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    allow_review_gate: bool = False,
+) -> tuple[dict[str, Any], MigrationSource | None]:
     state, legacy = load_state(
         root, directory_fd=directory_fd, return_legacy=True
     )
@@ -3163,6 +3845,11 @@ def _load_for_mutation(
         allowed = ", ".join(sorted(statuses))
         raise StateError(
             f"state is {state['status']!r}; this operation requires status: {allowed}"
+        )
+    if state["review"]["gate"] is not None and not allow_review_gate:
+        raise StateError(
+            "an open Review Gate blocks this mutation; resolve, replace, cancel, "
+            "or cancel the workflow first"
         )
     return state, legacy
 
@@ -3195,6 +3882,10 @@ def command_start(args: argparse.Namespace, root: Path) -> dict[str, Any]:
             )
         if existing and args.replace:
             _check_writer(args, existing)
+            if existing["review"]["gate"] is not None:
+                raise StateError(
+                    "an open Review Gate must be cancelled before workflow replacement"
+                )
         objective = args.objective.strip()
         next_action = args.next_action.strip()
         if not objective or not next_action:
@@ -3206,11 +3897,22 @@ def command_start(args: argparse.Namespace, root: Path) -> dict[str, Any]:
         if direct_lock and artifacts:
             raise StateError("--direct-lock does not accept planning artifacts")
         if existing:
+            archive_state = (
+                existing_legacy.record if existing_legacy is not None else existing
+            )
             _archive_state_unlocked(
                 root,
-                existing_legacy or existing,
+                archive_state,
                 directory_fd,
                 naming_state=existing,
+                name_suffix=(
+                    f"-pre-schema4-v{existing_legacy.record.get('schema_version')}"
+                    if existing_legacy is not None
+                    else ""
+                ),
+                raw_payload=(
+                    existing_legacy.payload if existing_legacy is not None else None
+                ),
             )
         state = new_state(
             objective,
@@ -3218,6 +3920,9 @@ def command_start(args: argparse.Namespace, root: Path) -> dict[str, Any]:
             next_action,
             artifacts,
             direct_lock=direct_lock,
+            review_mode=getattr(args, "review_policy", "blocking"),
+            review_through=getattr(args, "review_through", None),
+            review_wait_seconds=getattr(args, "review_wait_seconds", None),
         )
         _write_state_unlocked(root, state, directory_fd)
         return state
@@ -3225,6 +3930,154 @@ def command_start(args: argparse.Namespace, root: Path) -> dict[str, Any]:
 
 def _sha256_digest(payload: bytes) -> str:
     return f"sha256:{hashlib.sha256(payload).hexdigest()}"
+
+
+def _read_review_artifact_bytes(root: Path, artifact: str) -> bytes:
+    normalized = normalize_artifact_path(root, artifact)
+    payload = read_workspace_file(
+        root,
+        normalized,
+        maximum_bytes=MAX_ARTIFACT_FILE_BYTES,
+        label="Review Gate artifact",
+    )
+    try:
+        payload.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise StateError(
+            f"Review Gate artifact must be UTF-8 text: {normalized}"
+        ) from exc
+    return payload
+
+
+def _review_resolution_record(
+    gate: dict[str, Any],
+    *,
+    kind: str,
+    recorded_at: str,
+    reason: str | None = None,
+) -> dict[str, Any]:
+    return {
+        "artifact_key": gate["artifact_key"],
+        "artifact": gate["artifact"],
+        "digest": gate["digest"],
+        "sources_digest": gate.get("sources_digest"),
+        "opened_revision": gate["opened_revision"],
+        "kind": kind,
+        "reason": reason,
+        "recorded_at": recorded_at,
+        "consumption": {
+            "contract_bind_revision": None,
+            "plan_validation_revision": None,
+        },
+    }
+
+
+def _review_contract_sources_digest(
+    root: Path,
+    payload: bytes,
+) -> str | None:
+    """Hash the exact explicit source set embedded in a reviewed artifact."""
+
+    markdown = payload.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    if "<!-- littlepowers:contract:v1 -->" not in markdown:
+        return None
+    contract = parse_outcome_contract(markdown)
+    return protocol_digest(_hash_contract_sources(root, contract))
+
+
+def _require_review_resolution(
+    root: Path,
+    state: dict[str, Any],
+    artifact: str,
+    *,
+    artifact_keys: set[str],
+    approval_kind: str | None = None,
+    consumption_key: str | None = None,
+    consumed: bool | None = None,
+) -> tuple[dict[str, Any], bytes]:
+    """Require one successful resolution for the exact current artifact bytes."""
+
+    resolution = state["review"]["last_resolution"]
+    if resolution is None or resolution["kind"] == "cancelled":
+        raise StateError(
+            "the exact planning artifact requires a successful Review Gate resolution"
+        )
+    artifact_key = resolution["artifact_key"]
+    if artifact_key not in artifact_keys:
+        expected = ", ".join(sorted(artifact_keys))
+        raise StateError(
+            "Review Gate resolution must belong to the current artifact key: "
+            + expected
+        )
+    if resolution.get("artifact") is None:
+        raise StateError(
+            "legacy Review Gate resolution lacks its original artifact path; "
+            "park and resolve the exact artifact again"
+        )
+    if resolution["artifact"] != artifact:
+        raise StateError(
+            "Review Gate resolution does not match the approved artifact path"
+        )
+    if state["artifacts"].get(artifact_key) != artifact:
+        raise StateError(
+            "Review Gate resolution does not match the current artifact path"
+        )
+    payload = _read_review_artifact_bytes(root, artifact)
+    if _sha256_digest(payload) != resolution["digest"]:
+        raise StateError(
+            "Review Gate resolution does not match the current artifact bytes"
+        )
+    sources_digest = _review_contract_sources_digest(root, payload)
+    if sources_digest != resolution.get("sources_digest"):
+        raise StateError(
+            "Review Gate resolution does not match the approved contract sources"
+        )
+    if approval_kind is not None:
+        required_resolution = {
+            "review-gate": "explicit_approval",
+            "implementation-mandate": "implementation_mandate",
+            "window-expired": "window_expired",
+            "unattended-authorization": "unattended",
+        }[approval_kind]
+        if resolution["kind"] != required_resolution:
+            raise StateError(
+                f"approval kind {approval_kind} requires Review Gate resolution "
+                f"{required_resolution}"
+            )
+    if consumption_key is not None:
+        if consumption_key not in REVIEW_CONSUMPTION_KEYS:
+            raise StateError(f"invalid Review Resolution consumption: {consumption_key}")
+        consumption = resolution.get("consumption")
+        if consumption is None:
+            raise StateError(
+                "legacy Review Gate resolution has no deterministic consumption; "
+                "park and resolve the exact artifact again"
+            )
+        consumed_revision = consumption[consumption_key]
+        if consumed is False and consumed_revision is not None:
+            raise StateError(
+                f"Review Gate resolution was already consumed by {consumption_key}"
+            )
+        if consumed is True and consumed_revision is None:
+            raise StateError(
+                f"Review Gate resolution was not consumed by {consumption_key}"
+            )
+    return resolution, payload
+
+
+def _consume_review_resolution(
+    state: dict[str, Any],
+    resolution: dict[str, Any],
+    consumption_key: str,
+) -> None:
+    """Record one boundary use in the same revision as its successful mutation."""
+
+    if state["review"]["last_resolution"] is not resolution:
+        raise StateError("Review Gate resolution changed before consumption")
+    consumption = resolution.get("consumption")
+    if consumption is None or consumption[consumption_key] is not None:
+        raise StateError("Review Gate resolution cannot be consumed twice")
+    consumption[consumption_key] = state["revision"] + 1
 
 
 def _hash_contract_sources(
@@ -3379,9 +4232,16 @@ def command_bind_contract(
             statuses={"active", "paused"},
         )
         artifact = normalize_artifact_path(root, args.artifact.strip())
-        markdown = read_markdown_file(
-            root, artifact, label="Outcome Contract artifact"
+        resolution, payload = _require_review_resolution(
+            root,
+            state,
+            artifact,
+            artifact_keys={"brainstorm", "shape", "spec"},
+            approval_kind=args.approval_kind,
+            consumption_key="contract_bind_revision",
+            consumed=False,
         )
+        markdown = payload.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
         contract = parse_outcome_contract(markdown)
         proposed = contract["scope_delta"]["status"] == "proposed"
         approved_delta = bool(getattr(args, "approve_scope_delta", False))
@@ -3395,7 +4255,12 @@ def command_bind_contract(
             )
         approval_kind = _record_enum(
             args.approval_kind,
-            {"review-gate", "unattended-authorization"},
+            {
+                "review-gate",
+                "implementation-mandate",
+                "window-expired",
+                "unattended-authorization",
+            },
             "approval kind",
         )
         previous_outcomes = state["outcome_lock"]["contract"]["outcomes"]
@@ -3403,6 +4268,10 @@ def command_bind_contract(
             _validate_contract_rebind(previous_outcomes, contract)
 
         source_summaries = _hash_contract_sources(root, contract)
+        if protocol_digest(source_summaries) != resolution["sources_digest"]:
+            raise StateError(
+                "Review Gate resolution does not match the approved contract sources"
+            )
         recorded_at = utc_now()
         outcome_digests = {
             outcome["id"]: protocol_digest(outcome)
@@ -3455,6 +4324,11 @@ def command_bind_contract(
             "last_checked_at": recorded_at,
             "drift": [],
         }
+        _consume_review_resolution(
+            state,
+            resolution,
+            "contract_bind_revision",
+        )
         _advance_revision(state)
         _write_state_unlocked(
             root, state, directory_fd, legacy_state=legacy
@@ -3708,6 +4582,19 @@ def execution_gate_failures(
                 )
             if not drift:
                 failures.extend(observe_current_plan(root, state, contract))
+                plan_artifact = lock["plan"]["artifact"]
+                if plan_artifact is not None:
+                    try:
+                        _require_review_resolution(
+                            root,
+                            state,
+                            plan_artifact,
+                            artifact_keys={"plan", "shape"},
+                            consumption_key="plan_validation_revision",
+                            consumed=True,
+                        )
+                    except StateError as exc:
+                        failures.append(str(exc))
     elif lock["mode"] != "artifact":
         failures.append("an approved contract is required")
     return failures
@@ -3748,9 +4635,15 @@ def command_validate_plan(
             raise StateError(f"contract drift blocks plan validation: {details}")
 
         artifact = normalize_artifact_path(root, args.artifact.strip())
-        markdown = read_markdown_file(
-            root, artifact, label="Outcome Plan Map artifact"
+        resolution, payload = _require_review_resolution(
+            root,
+            state,
+            artifact,
+            artifact_keys={"plan", "shape"},
+            consumption_key="plan_validation_revision",
+            consumed=False,
         )
+        markdown = payload.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
         plan_map = parse_outcome_plan_map(markdown)
         result = evaluate_plan_coverage(
             contract,
@@ -3784,10 +4677,408 @@ def command_validate_plan(
             state["artifacts"]["shape"] = artifact
         else:
             state["artifacts"]["plan"] = artifact
+        _consume_review_resolution(
+            state,
+            resolution,
+            "plan_validation_revision",
+        )
         _advance_revision(state)
         _write_state_unlocked(
             root, state, directory_fd, legacy_state=legacy
         )
+        return state
+
+
+def _embedded_review_contract(markdown: str) -> dict[str, Any] | None:
+    if "<!-- littlepowers:contract:v1 -->" not in markdown:
+        return None
+    return parse_outcome_contract(markdown)
+
+
+def _embedded_review_plan(markdown: str) -> dict[str, Any] | None:
+    if "<!-- littlepowers:plan-map:v1 -->" not in markdown:
+        return None
+    return parse_outcome_plan_map(markdown)
+
+
+def _review_gate_fresh_failures(
+    root: Path,
+    state: dict[str, Any],
+    payload: bytes,
+) -> tuple[list[str], str | None]:
+    """Return bounded gate failures and the best current route."""
+
+    gate = state["review"]["gate"]
+    assert isinstance(gate, dict)
+    failures: list[str] = []
+    if _sha256_digest(payload) != gate["digest"]:
+        failures.append("artifact_changed")
+    try:
+        markdown = payload.decode("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    except UnicodeDecodeError:
+        return ["artifact_not_utf8"], None
+
+    embedded_contract: dict[str, Any] | None = None
+    try:
+        embedded_contract = _embedded_review_contract(markdown)
+    except StateError:
+        failures.append("embedded_contract_invalid")
+    if embedded_contract is not None:
+        declared_delta = embedded_contract["scope_delta"]["status"]
+        if declared_delta != gate["scope_delta"]:
+            failures.append("scope_delta_claim_mismatch")
+        try:
+            current_sources_digest = protocol_digest(
+                _hash_contract_sources(root, embedded_contract)
+            )
+        except StateError:
+            failures.append("contract_sources_unavailable")
+        else:
+            if current_sources_digest != gate.get("sources_digest"):
+                failures.append("contract_sources_changed")
+    elif gate.get("sources_digest") is not None:
+        failures.append("contract_sources_changed")
+
+    current_contract: dict[str, Any] | None = None
+    lock = state["outcome_lock"]
+    if lock["mode"] in {"artifact", "direct"}:
+        try:
+            current_contract, drift = observe_bound_contract(root, state)
+        except StateError:
+            failures.append("contract_unavailable")
+        else:
+            if drift:
+                explicit_contract_rebind = (
+                    gate["policy_mode"] == "blocking"
+                    and embedded_contract is not None
+                    and lock["mode"] == "artifact"
+                    and lock["contract"]["artifact"] == gate["artifact"]
+                )
+                if not explicit_contract_rebind:
+                    failures.append("contract_drift")
+            elif lock["mode"] == "direct":
+                current_contract = _direct_contract(state)
+    elif lock["status"] not in {"unbound", "reconcile_required"}:
+        failures.append("contract_state_invalid")
+
+    route_contract = current_contract or embedded_contract
+    route = route_contract["route"] if route_contract is not None else None
+    if embedded_contract is not None and current_contract is not None:
+        embedded_ids = {
+            item["id"] for item in embedded_contract["outcomes"]
+        }
+        current_ids = {item["id"] for item in current_contract["outcomes"]}
+        if embedded_ids != current_ids:
+            failures.append("embedded_contract_conflicts_with_bound_contract")
+
+    if lock["baseline"]["requirement"] == "required" and lock["baseline"][
+        "status"
+    ] not in {"bound", "pending", "pass"}:
+        failures.append("approved_baseline_unavailable")
+
+    if gate["artifact_key"] in {"plan", "shape"}:
+        try:
+            plan = _embedded_review_plan(markdown)
+        except StateError:
+            plan = None
+            failures.append("plan_map_invalid")
+        if plan is None:
+            failures.append("plan_map_missing")
+        elif route_contract is None:
+            failures.append("contract_required_for_plan")
+        else:
+            try:
+                coverage = evaluate_plan_coverage(
+                    route_contract,
+                    plan,
+                    scope_delta_approved=True,
+                )
+            except StateError:
+                failures.append("plan_map_invalid")
+            else:
+                if coverage["missing"]:
+                    failures.append("plan_coverage_incomplete")
+                if coverage["unknown"] or coverage["ineligible"]:
+                    failures.append("plan_coverage_invalid")
+    return sorted(set(failures)), route
+
+
+def review_gate_status(
+    root: Path,
+    state: dict[str, Any],
+    *,
+    gate_revision: int,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Evaluate one exact Review Gate without mutation."""
+
+    gate = state["review"]["gate"]
+    if gate is None:
+        return {
+            "workflow_id": state["workflow_id"],
+            "gate_revision": gate_revision,
+            "status": "no_gate",
+            "mode": None,
+            "artifact_key": None,
+            "not_before": None,
+            "reasons": ["no_open_gate"],
+        }
+    if gate["opened_revision"] != gate_revision:
+        return {
+            "workflow_id": state["workflow_id"],
+            "gate_revision": gate_revision,
+            "status": "no_gate",
+            "mode": None,
+            "artifact_key": None,
+            "not_before": None,
+            "reasons": ["gate_revision_changed"],
+        }
+    try:
+        payload = _read_review_artifact_bytes(root, gate["artifact"])
+    except StateError:
+        failures = ["artifact_unreadable"]
+        route = None
+    else:
+        failures, route = _review_gate_fresh_failures(root, state, payload)
+
+    mode = gate["policy_mode"]
+    automatic = mode in {
+        "implementation_mandate",
+        "windowed",
+        "unattended",
+    }
+    if automatic and gate["scope_delta"] != "none":
+        failures.append("automatic_scope_delta_forbidden")
+    if automatic and gate["unresolved_questions"]:
+        failures.append("unresolved_questions")
+    if mode == "implementation_mandate" and route not in {"lean", "compact"}:
+        failures.append("implementation_mandate_requires_lean_or_compact")
+    if state["status"] != "active":
+        failures.append("workflow_not_active")
+    if failures:
+        status = "blocked"
+        reasons = sorted(set(failures))
+    elif mode == "blocking":
+        status = "waiting"
+        reasons = ["explicit_approval_required"]
+    elif mode == "windowed":
+        assert gate["not_before"] is not None
+        deadline = datetime.fromisoformat(gate["not_before"].replace("Z", "+00:00"))
+        observed_now = now or datetime.now(timezone.utc)
+        if observed_now < deadline:
+            status = "waiting"
+            reasons = ["deadline_not_reached"]
+        else:
+            status = "eligible"
+            reasons = []
+    else:
+        status = "eligible"
+        reasons = []
+    return {
+        "workflow_id": state["workflow_id"],
+        "gate_revision": gate_revision,
+        "status": status,
+        "mode": mode,
+        "artifact_key": gate["artifact_key"],
+        "not_before": gate["not_before"],
+        "reasons": reasons,
+    }
+
+
+def command_set_review_policy(
+    args: argparse.Namespace, root: Path
+) -> dict[str, Any]:
+    root = root.resolve()
+    with state_lock(root) as directory_fd:
+        state, legacy = _load_for_mutation(
+            args, root, directory_fd, statuses={"active", "paused"}
+        )
+        replacement = new_review_state(
+            mode=args.mode,
+            through=getattr(args, "through", None),
+            wait_seconds=getattr(args, "wait_seconds", None),
+        )
+        replacement["last_resolution"] = state["review"]["last_resolution"]
+        state["review"] = replacement
+        _advance_revision(state)
+        _write_state_unlocked(root, state, directory_fd, legacy_state=legacy)
+        return state
+
+
+def command_park_review(args: argparse.Namespace, root: Path) -> dict[str, Any]:
+    root = root.resolve()
+    with state_lock(root) as directory_fd:
+        state, legacy = _load_for_mutation(
+            args,
+            root,
+            directory_fd,
+            statuses={"active"},
+            allow_review_gate=True,
+        )
+        if state["outcome_lock"]["mode"] == "direct":
+            raise StateError("tracked direct work does not park Review Gates")
+        artifact_key = args.artifact_key
+        existing = state["review"]["gate"]
+        replacing = bool(getattr(args, "replace", False))
+        if existing is None and replacing:
+            raise StateError("--replace requires an open Review Gate")
+        if existing is not None:
+            if not replacing:
+                raise StateError("a Review Gate is already open")
+            if existing["artifact_key"] != artifact_key:
+                raise StateError("only the same open Review Gate may be replaced")
+        artifact = state["artifacts"].get(artifact_key)
+        if not artifact:
+            raise StateError(f"workflow has no current {artifact_key!r} artifact")
+        if artifact_key not in state["completed"]:
+            raise StateError("Review Gate artifact must be checkpointed as completed")
+        payload = _read_review_artifact_bytes(root, artifact)
+        sources_digest = _review_contract_sources_digest(root, payload)
+        unresolved = args.unresolved_questions
+        if (
+            isinstance(unresolved, bool)
+            or unresolved < 0
+            or unresolved > MAX_REVIEW_UNRESOLVED_QUESTIONS
+        ):
+            raise StateError(
+                "unresolved questions must be from 0 through "
+                f"{MAX_REVIEW_UNRESOLVED_QUESTIONS}"
+            )
+        policy = state["review"]["policy"]
+        opened_at = utc_now()
+        not_before: str | None = None
+        if policy["mode"] == "windowed":
+            opened = datetime.fromisoformat(opened_at.replace("Z", "+00:00"))
+            not_before = _format_utc(
+                opened + timedelta(seconds=policy["wait_seconds"])
+            )
+        state["review"]["gate"] = {
+            "artifact_key": artifact_key,
+            "artifact": artifact,
+            "digest": _sha256_digest(payload),
+            "sources_digest": sources_digest,
+            "policy_mode": policy["mode"],
+            "through": policy["through"],
+            "opened_at": opened_at,
+            "not_before": not_before,
+            "opened_revision": state["revision"] + 1,
+            "scope_delta": args.scope_delta,
+            "unresolved_questions": unresolved,
+        }
+        _advance_revision(state)
+        _write_state_unlocked(root, state, directory_fd, legacy_state=legacy)
+        return state
+
+
+def command_review_status(args: argparse.Namespace, root: Path) -> dict[str, Any]:
+    root = root.resolve()
+    state = load_state(root)
+    assert state is not None
+    if args.workflow != state["workflow_id"]:
+        raise StateConflict(
+            f"workflow changed: expected {args.workflow}, current {state['workflow_id']}"
+        )
+    return review_gate_status(
+        root,
+        state,
+        gate_revision=args.gate_revision,
+    )
+
+
+def command_resolve_review(
+    args: argparse.Namespace, root: Path
+) -> dict[str, Any]:
+    root = root.resolve()
+    with state_lock(root) as directory_fd:
+        state, legacy = _load_for_mutation(
+            args,
+            root,
+            directory_fd,
+            statuses={"active"},
+            allow_review_gate=True,
+        )
+        gate = state["review"]["gate"]
+        if gate is None:
+            raise StateError("no Review Gate is open")
+        expected_kind = {
+            "blocking": "explicit_approval",
+            "implementation_mandate": "implementation_mandate",
+            "windowed": "window_expired",
+            "unattended": "unattended",
+        }[gate["policy_mode"]]
+        if args.kind != expected_kind:
+            raise StateError(
+                f"review policy {gate['policy_mode']} requires resolution kind "
+                f"{expected_kind}"
+            )
+        observed = bool(getattr(args, "observed_no_intervention", False))
+        if args.kind == "window_expired" and not observed:
+            raise StateError(
+                "window_expired resolution requires --observed-no-intervention"
+            )
+        if args.kind != "window_expired" and observed:
+            raise StateError(
+                "--observed-no-intervention applies only to window_expired"
+            )
+        result = review_gate_status(
+            root,
+            state,
+            gate_revision=gate["opened_revision"],
+        )
+        if result["status"] == "blocked":
+            raise StateError(
+                "Review Gate is blocked: " + ", ".join(result["reasons"])
+            )
+        if gate["policy_mode"] == "windowed" and result["status"] != "eligible":
+            raise StateError("Review Gate deadline has not been reached")
+        recorded_at = utc_now()
+        state["review"]["last_resolution"] = _review_resolution_record(
+            gate,
+            kind=args.kind,
+            recorded_at=recorded_at,
+        )
+        state["review"]["gate"] = None
+        if gate["policy_mode"] == "windowed":
+            successor_mode = (
+                "blocking" if gate["through"] == "next_phase" else "unattended"
+            )
+            state["review"]["policy"] = new_review_state(
+                mode=successor_mode,
+                recorded_at=recorded_at,
+            )["policy"]
+        _advance_revision(state)
+        _write_state_unlocked(root, state, directory_fd, legacy_state=legacy)
+        return state
+
+
+def command_cancel_review(
+    args: argparse.Namespace, root: Path
+) -> dict[str, Any]:
+    root = root.resolve()
+    with state_lock(root) as directory_fd:
+        state, legacy = _load_for_mutation(
+            args,
+            root,
+            directory_fd,
+            statuses={"active"},
+            allow_review_gate=True,
+        )
+        gate = state["review"]["gate"]
+        if gate is None:
+            raise StateError("no Review Gate is open")
+        recorded_at = utc_now()
+        state["review"]["last_resolution"] = _review_resolution_record(
+            gate,
+            kind="cancelled",
+            reason=args.reason,
+            recorded_at=recorded_at,
+        )
+        state["review"]["gate"] = None
+        state["review"]["policy"] = new_review_state(
+            mode="blocking", recorded_at=recorded_at
+        )["policy"]
+        _advance_revision(state)
+        _write_state_unlocked(root, state, directory_fd, legacy_state=legacy)
         return state
 
 
@@ -3964,13 +5255,12 @@ def command_checkpoint(args: argparse.Namespace, root: Path) -> dict[str, Any]:
         target_phase = requested_phase or current_phase
         requested_objective = getattr(args, "objective", None)
         if (
-            state["outcome_lock"]["mode"] == "direct"
-            and requested_objective is not None
+            requested_objective is not None
             and requested_objective.strip() != state["objective"]
         ):
             raise StateError(
-                "tracked direct objective is locked; replace the workflow or "
-                "reconcile through an approved artifact contract"
+                "workflow objective is locked; use start --replace so prior "
+                "Review Lease authority cannot cross objectives"
             )
         if target_phase in {"execute", "verify"}:
             reconciliation_only = (
@@ -4140,6 +5430,185 @@ def command_handoff(args: argparse.Namespace, root: Path) -> dict[str, Any]:
         return state
 
 
+def _same_git_common_directory(
+    left: GitWorktreeIdentity, right: GitWorktreeIdentity
+) -> bool:
+    return os.path.normcase(str(left.common_dir)) == os.path.normcase(
+        str(right.common_dir)
+    )
+
+
+def command_project_register(
+    args: argparse.Namespace, root: Path
+) -> dict[str, Any]:
+    root = root.resolve()
+    label = _normalize_project_label(getattr(args, "label", None))
+    with state_lock(root) as directory_fd:
+        manager = _git_worktree_identity(root, "manager root")
+        member = _git_worktree_identity(args.member_root, "member root")
+        if member.root == manager.root:
+            raise StateError("project member must differ from the manager root")
+        if not _same_git_common_directory(manager, member):
+            raise StateError(
+                "project member must be a worktree from the manager's Git repository"
+            )
+
+        index = load_project_index(
+            root, missing_ok=True, directory_fd=directory_fd
+        ) or new_project_index()
+        member_key = os.path.normcase(str(member.root))
+        if any(
+            os.path.normcase(entry["root"]) == member_key
+            for entry in index["members"]
+        ):
+            raise StateError(f"project member is already registered: {member.root}")
+        if len(index["members"]) >= MAX_PROJECT_MEMBERS:
+            raise StateError(
+                f"project index already has {MAX_PROJECT_MEMBERS} members"
+            )
+
+        recorded_at = utc_now()
+        index["members"].append(
+            {
+                "root": str(member.root),
+                "label": label,
+                "registered_at": recorded_at,
+            }
+        )
+        index["revision"] += 1
+        index["updated_at"] = recorded_at
+        _write_project_index_unlocked(root, index, directory_fd)
+        return index
+
+
+def command_project_unregister(
+    args: argparse.Namespace, root: Path
+) -> dict[str, Any]:
+    root = root.resolve()
+    _validate_text(
+        args.member_root, "member root", maximum=MAX_PROJECT_ROOT_LENGTH
+    )
+    supplied = Path(args.member_root).expanduser()
+    lexical_root = Path(os.path.abspath(os.path.normpath(str(supplied))))
+    parent_resolved_root = lexical_root.parent.resolve(strict=False) / lexical_root.name
+    resolved_root = _canonical_project_member_root(args.member_root)
+    lexical_key = os.path.normcase(str(lexical_root))
+    parent_key = os.path.normcase(str(parent_resolved_root))
+    resolved_key = os.path.normcase(str(resolved_root))
+    with state_lock(root) as directory_fd:
+        index = load_project_index(root, directory_fd=directory_fd)
+        assert index is not None
+        positions_by_key = {
+            os.path.normcase(entry["root"]): offset
+            for offset, entry in enumerate(index["members"])
+        }
+        position = positions_by_key.get(lexical_key)
+        if position is None:
+            position = positions_by_key.get(parent_key)
+        if position is None:
+            resolved_matches = [
+                offset
+                for offset, entry in enumerate(index["members"])
+                if os.path.normcase(entry["root"]) == resolved_key
+            ]
+            if len(resolved_matches) == 1:
+                position = resolved_matches[0]
+        if position is None:
+            raise StateError(
+                f"project member is not registered: {lexical_root}"
+            )
+        del index["members"][position]
+        index["revision"] += 1
+        index["updated_at"] = utc_now()
+        _write_project_index_unlocked(root, index, directory_fd)
+        return index
+
+
+def _project_ledger_summary(state: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "workflow_id": state["workflow_id"],
+        "revision": state["revision"],
+        "status": state["status"],
+        "objective": state["objective"],
+        "phase": state["phase"],
+        "current_task": state["current_task"],
+        "progress": state["progress"],
+        "next_action": state["next_action"],
+        "updated_at": state["updated_at"],
+        "review": _recovery_review_summary(state),
+    }
+
+
+def _project_status_row(
+    *,
+    role: str,
+    label: str | None,
+    root: Path,
+    manager: GitWorktreeIdentity,
+) -> dict[str, Any]:
+    row: dict[str, Any] = {
+        "role": role,
+        "label": label,
+        "root": str(root),
+        "branch": None,
+        "availability": "error",
+        "ledger": None,
+        "error": None,
+    }
+    try:
+        identity = _git_worktree_identity(root, f"{role} worktree")
+        if not _same_git_common_directory(manager, identity):
+            raise StateError(
+                "registered root is no longer a worktree from the manager's "
+                "Git repository"
+            )
+        row["root"] = str(identity.root)
+        row["branch"] = identity.branch
+        state = load_state(identity.root, missing_ok=True)
+        if state is None:
+            row["availability"] = "no_ledger"
+        else:
+            row["availability"] = "ok"
+            row["ledger"] = _project_ledger_summary(state)
+    except StateError as exc:
+        row["error"] = str(exc)[:MAX_TEXT_LENGTH]
+    return row
+
+
+def command_project_status(root: Path) -> dict[str, Any]:
+    """Read only the manager and explicitly registered worktree roots."""
+
+    root = root.resolve()
+    manager = _git_worktree_identity(root, "manager root")
+    index = load_project_index(root, missing_ok=True)
+    members = [] if index is None else index["members"]
+    rows = [
+        _project_status_row(
+            role="primary",
+            label="primary",
+            root=manager.root,
+            manager=manager,
+        )
+    ]
+    rows.extend(
+        _project_status_row(
+            role="member",
+            label=entry["label"],
+            root=Path(entry["root"]),
+            manager=manager,
+        )
+        for entry in members
+    )
+    return {
+        "index_root": str(manager.root),
+        "index_schema_version": PROJECT_INDEX_SCHEMA_VERSION,
+        "index_revision": None if index is None else index["revision"],
+        "index_updated_at": None if index is None else index["updated_at"],
+        "registered_members": len(members),
+        "worktrees": rows,
+    }
+
+
 def completion_gate_failures(
     root: Path, state: dict[str, Any]
 ) -> list[str]:
@@ -4239,7 +5708,11 @@ def command_finish(args: argparse.Namespace, root: Path, status: str) -> dict[st
     allowed = {"active", "paused"} if status == "cancelled" else {"active"}
     with state_lock(root) as directory_fd:
         state, legacy = _load_for_mutation(
-            args, root, directory_fd, statuses=allowed
+            args,
+            root,
+            directory_fd,
+            statuses=allowed,
+            allow_review_gate=status == "cancelled",
         )
         if status == "complete":
             failures = completion_gate_failures(root, state)
@@ -4247,6 +5720,20 @@ def command_finish(args: argparse.Namespace, root: Path, status: str) -> dict[st
                 raise StateError(
                     "completion gate failed:\n- " + "\n- ".join(failures)
                 )
+        elif state["review"]["gate"] is not None:
+            gate = state["review"]["gate"]
+            assert isinstance(gate, dict)
+            recorded_at = utc_now()
+            state["review"]["last_resolution"] = _review_resolution_record(
+                gate,
+                kind="cancelled",
+                reason="manual",
+                recorded_at=recorded_at,
+            )
+            state["review"]["gate"] = None
+            state["review"]["policy"] = new_review_state(
+                mode="blocking", recorded_at=recorded_at
+            )["policy"]
         state["status"] = status
         if args.next_action is not None:
             next_action = args.next_action.strip()
@@ -4304,6 +5791,29 @@ def _recovery_lock_summary(
     return summary
 
 
+def _recovery_review_summary(state: dict[str, Any]) -> dict[str, Any]:
+    review = state["review"]
+    gate = review["gate"]
+    if gate is None:
+        return {
+            "mode": review["policy"]["mode"],
+            "gate": None,
+            "state": "no_gate",
+            "not_before": None,
+        }
+    stored_state = (
+        "waiting"
+        if gate["policy_mode"] in {"blocking", "windowed"}
+        else "open"
+    )
+    return {
+        "mode": gate["policy_mode"],
+        "gate": gate["artifact_key"],
+        "state": stored_state,
+        "not_before": gate["not_before"],
+    }
+
+
 def _recovery_data(
     state: dict[str, Any], *, brief: bool, root: Path | None = None
 ) -> dict[str, Any]:
@@ -4321,6 +5831,7 @@ def _recovery_data(
         "age_days": age_days,
         "explicit_resume_required": state["status"] == "paused",
         "outcome_lock": _recovery_lock_summary(state, brief=brief),
+        "review": _recovery_review_summary(state),
     }
     if root is not None:
         base["workspace_root"] = str(root.resolve())
@@ -4436,6 +5947,10 @@ def print_state(state: dict[str, Any], *, as_json: bool) -> None:
     print(f"coverage: {lock_summary['coverage']}")
     print(f"baseline: {lock_summary['baseline']}")
     print(f"fidelity: {lock_summary['fidelity']}")
+    review_summary = _recovery_review_summary(state)
+    print(f"review policy: {review_summary['mode']}")
+    print(f"review gate: {review_summary['gate'] or 'none'}")
+    print(f"review state: {review_summary['state']}")
     if state.get("handoff") is not None:
         print(f"handoff target: {state['handoff']['target_root']}")
         print(f"handoff workflow: {state['handoff']['target_workflow_id']}")
@@ -4456,6 +5971,101 @@ def print_mutation(state: dict[str, Any], root: Path) -> None:
     )
 
 
+def print_project_index_mutation(
+    index: dict[str, Any], root: Path, *, action: str
+) -> None:
+    print(
+        json.dumps(
+            {
+                "action": action,
+                "path": str(project_index_path(root)),
+                "revision": index["revision"],
+                "members": len(index["members"]),
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
+def print_project_status(result: dict[str, Any], *, as_json: bool) -> None:
+    if as_json:
+        print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+        return
+    revision = result["index_revision"]
+    print(f"project index root: {result['index_root']}")
+    print(f"project index revision: {revision if revision is not None else 'none'}")
+    print(f"registered members: {result['registered_members']}")
+    for row in result["worktrees"]:
+        label = row["label"] or Path(row["root"]).name
+        branch = row["branch"] or "detached"
+        print(f"[{row['role']}] {label}: {row['root']} ({branch})")
+        if row["availability"] == "error":
+            print(f"  error: {row['error']}")
+            continue
+        if row["availability"] == "no_ledger":
+            print("  ledger: none")
+            continue
+        ledger = row["ledger"]
+        assert ledger is not None
+        print(
+            "  workflow: "
+            f"{ledger['workflow_id']} {ledger['status']}/{ledger['phase']} "
+            f"r{ledger['revision']}"
+        )
+        print(f"  objective: {ledger['objective']}")
+        print(f"  progress: {ledger['progress'] or 'none'}")
+        print(f"  next action: {ledger['next_action']}")
+        review = ledger["review"]
+        print(
+            "  review: "
+            f"{review['mode']}/{review['state']} "
+            f"gate={review['gate'] or 'none'}"
+        )
+
+
+def print_review_mutation(state: dict[str, Any], root: Path) -> None:
+    gate = state["review"]["gate"]
+    print(
+        json.dumps(
+            {
+                "path": str(state_path(root)),
+                "workflow_id": state["workflow_id"],
+                "revision": state["revision"],
+                "status": state["status"],
+                "review": {
+                    "mode": state["review"]["policy"]["mode"],
+                    "gate": (
+                        None
+                        if gate is None
+                        else {
+                            "artifact_key": gate["artifact_key"],
+                            "opened_revision": gate["opened_revision"],
+                            "not_before": gate["not_before"],
+                        }
+                    ),
+                },
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    )
+
+
+def print_review_status(result: dict[str, Any], *, as_json: bool) -> None:
+    if as_json:
+        print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+        return
+    print(f"review gate: {result['status']}")
+    print(f"workflow: {result['workflow_id']}")
+    print(f"gate revision: {result['gate_revision']}")
+    print(f"mode: {result['mode'] or 'none'}")
+    print(f"artifact: {result['artifact_key'] or 'none'}")
+    print(f"not before: {result['not_before'] or 'none'}")
+    if result["reasons"]:
+        print("reasons: " + ", ".join(result["reasons"]))
+
+
 def command_doctor(root: Path) -> bool:
     checks: list[tuple[str, bool, str]] = []
     directory = state_directory(root)
@@ -4470,6 +6080,7 @@ def command_doctor(root: Path) -> bool:
 
     if inspected is None:
         checks.append(("ledger", True, "absent"))
+        checks.append(("project index", True, "absent"))
     else:
         for name, path in (
             ("state ignore file", inspected / ".gitignore"),
@@ -4527,6 +6138,30 @@ def command_doctor(root: Path) -> bool:
         except StateError as exc:
             checks.append(("ledger", False, str(exc)))
 
+        index_path = project_index_path(root)
+        index_exists = os.path.lexists(index_path)
+        if index_exists and _is_git_worktree(root):
+            checks.append(
+                (
+                    "project index Git ignore",
+                    project_index_file_is_ignored(root),
+                    str(directory / ".gitignore"),
+                )
+            )
+        try:
+            index = load_project_index(root, missing_ok=True)
+            detail = (
+                "absent"
+                if index is None
+                else (
+                    f"schema {index['schema_version']}, revision "
+                    f"{index['revision']}, members {len(index['members'])}"
+                )
+            )
+            checks.append(("project index", True, detail))
+        except StateError as exc:
+            checks.append(("project index", False, str(exc)))
+
     for name, passed, detail in checks:
         print(f"{'ok' if passed else 'error'}: {name}: {detail}")
     return all(passed for _, passed, _ in checks)
@@ -4554,6 +6189,17 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Track one tiny execute-phase objective without a planning artifact",
     )
+    start.add_argument(
+        "--review-policy",
+        choices=sorted(REVIEW_MODES),
+        default="blocking",
+        help="Persist the review policy selected from the latest request",
+    )
+    start.add_argument(
+        "--review-through",
+        choices=sorted(REVIEW_BOUNDARIES),
+    )
+    start.add_argument("--review-wait-seconds", type=int)
     start.add_argument("--replace", action="store_true")
     start.add_argument("--workflow", help="Expected workflow UUID when using --replace")
     start.add_argument("--expect-revision", type=int)
@@ -4567,7 +6213,12 @@ def build_parser() -> argparse.ArgumentParser:
     bind_contract.add_argument(
         "--approval-kind",
         required=True,
-        choices=["review-gate", "unattended-authorization"],
+        choices=[
+            "review-gate",
+            "implementation-mandate",
+            "window-expired",
+            "unattended-authorization",
+        ],
     )
     bind_contract.add_argument("--approve-scope-delta", action="store_true")
 
@@ -4576,6 +6227,61 @@ def build_parser() -> argparse.ArgumentParser:
         help="Check bound contract and source digests without adopting drift",
     )
     _add_writer_arguments(check_contract)
+
+    set_review_policy = subparsers.add_parser(
+        "set-review-policy",
+        help="Set the persisted Review Lease policy while no gate is open",
+    )
+    _add_writer_arguments(set_review_policy)
+    set_review_policy.add_argument("--mode", required=True, choices=sorted(REVIEW_MODES))
+    set_review_policy.add_argument("--through", choices=sorted(REVIEW_BOUNDARIES))
+    set_review_policy.add_argument("--wait-seconds", type=int)
+
+    park_review = subparsers.add_parser(
+        "park-review", help="Bind one completed planning artifact as a Review Gate"
+    )
+    _add_writer_arguments(park_review)
+    park_review.add_argument(
+        "--artifact-key", required=True, choices=sorted(REVIEW_ARTIFACT_KEYS)
+    )
+    park_review.add_argument(
+        "--scope-delta", required=True, choices=["none", "proposed"]
+    )
+    park_review.add_argument("--unresolved-questions", required=True, type=int)
+    park_review.add_argument("--replace", action="store_true")
+
+    review_status = subparsers.add_parser(
+        "review-status", help="Check one exact Review Gate without mutation"
+    )
+    review_status.add_argument("--workflow", required=True)
+    review_status.add_argument("--gate-revision", required=True, type=int)
+    review_status.add_argument("--json", action="store_true")
+
+    resolve_review = subparsers.add_parser(
+        "resolve-review", help="Consume one eligible Review Gate exactly once"
+    )
+    _add_writer_arguments(resolve_review)
+    resolve_review.add_argument(
+        "--kind",
+        required=True,
+        choices=[
+            "explicit_approval",
+            "implementation_mandate",
+            "window_expired",
+            "unattended",
+        ],
+    )
+    resolve_review.add_argument(
+        "--observed-no-intervention", action="store_true"
+    )
+
+    cancel_review = subparsers.add_parser(
+        "cancel-review", help="Cancel one open Review Gate without advancing phase"
+    )
+    _add_writer_arguments(cancel_review)
+    cancel_review.add_argument(
+        "--reason", required=True, choices=sorted(REVIEW_CANCELLATION_REASONS)
+    )
 
     validate_plan = subparsers.add_parser(
         "validate-plan",
@@ -4619,6 +6325,25 @@ def build_parser() -> argparse.ArgumentParser:
     handoff.add_argument("--target-workflow", required=True)
     handoff.add_argument("--target-revision", required=True, type=int)
 
+    project_register = subparsers.add_parser(
+        "project-register",
+        help="Register one explicit same-repository worktree in the project index",
+    )
+    project_register.add_argument("--member-root", required=True)
+    project_register.add_argument("--label")
+
+    project_unregister = subparsers.add_parser(
+        "project-unregister",
+        help="Remove one explicit worktree root from the project index",
+    )
+    project_unregister.add_argument("--member-root", required=True)
+
+    project_status = subparsers.add_parser(
+        "project-status",
+        help="Read current summaries for the manager and registered worktrees",
+    )
+    project_status.add_argument("--json", action="store_true")
+
     complete = subparsers.add_parser(
         "complete", help="Mark the active workflow complete"
     )
@@ -4655,6 +6380,18 @@ def main(argv: list[str] | None = None) -> int:
             print_mutation(command_bind_contract(args, root), root)
         elif args.command == "check-contract":
             print_mutation(command_check_contract(args, root), root)
+        elif args.command == "set-review-policy":
+            print_review_mutation(command_set_review_policy(args, root), root)
+        elif args.command == "park-review":
+            print_review_mutation(command_park_review(args, root), root)
+        elif args.command == "review-status":
+            print_review_status(
+                command_review_status(args, root), as_json=args.json
+            )
+        elif args.command == "resolve-review":
+            print_review_mutation(command_resolve_review(args, root), root)
+        elif args.command == "cancel-review":
+            print_review_mutation(command_cancel_review(args, root), root)
         elif args.command == "validate-plan":
             print_mutation(command_validate_plan(args, root), root)
         elif args.command == "record-verification":
@@ -4667,6 +6404,16 @@ def main(argv: list[str] | None = None) -> int:
             print_mutation(command_resume(args, root), root)
         elif args.command == "handoff":
             print_mutation(command_handoff(args, root), root)
+        elif args.command == "project-register":
+            print_project_index_mutation(
+                command_project_register(args, root), root, action="registered"
+            )
+        elif args.command == "project-unregister":
+            print_project_index_mutation(
+                command_project_unregister(args, root), root, action="unregistered"
+            )
+        elif args.command == "project-status":
+            print_project_status(command_project_status(root), as_json=args.json)
         elif args.command == "complete":
             print_mutation(command_finish(args, root, "complete"), root)
         elif args.command == "cancel":

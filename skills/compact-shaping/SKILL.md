@@ -36,9 +36,22 @@ Checkpoint with the current workflow ID and revision:
   --workflow <workflow-id> --expect-revision <revision> \
   --phase shape \
   --artifact shape=<artifact-path> \
-  --completed "compact shape" \
+  --completed shape \
   --progress "Compact shape complete; execution is next" \
   --next-action "Review, bind, and validate the compact shape"
 ```
 
-Use the returned revision, then present the shape brief for review and stop: summarize the selected approach and execution steps, name the artifact path, and name `executing-plans` as the next phase. After approval, run `bind-contract --artifact <artifact-path> --approval-kind review-gate` with `--approve-scope-delta` only for a distinctly approved delta, then `validate-plan --artifact <artifact-path>`. For explicit unattended end-to-end authorization use the matching approval kind. After both commands succeed, checkpoint `--phase execute` and invoke `executing-plans`. When the user asks for corrections, revise this artifact, checkpoint again, and present it again instead of advancing.
+Use the returned revision, read
+[`../../references/review-lease.md`](../../references/review-lease.md), and
+`park-review --artifact-key shape` with the Contract scope state and
+open-question count. The fresh gate check validates the embedded Contract and
+complete Plan Map. For a blocking policy, present the shape brief for review
+and stop: summarize the selected approach and execution steps, name the
+artifact path, and name `executing-plans` as the next phase. Resolve an exact
+eligible implementation mandate, unattended gate, or expired window with its
+matching kind. Then bind with the corresponding approval kind and run
+`validate-plan --artifact <artifact-path>`; a distinctly approved blocking
+gate uses `review-gate`, and delta approval remains separate. After both
+commands succeed, checkpoint `--phase execute` and invoke `executing-plans`. A
+correction cancels the gate, revises/checkpoints the same shape, and parks it
+again instead of advancing.

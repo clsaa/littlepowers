@@ -6,6 +6,7 @@
   "plugins": [
     {
       "name": "littlepowers",
+      "description": "Proportional planning with deterministic Outcome Lock and Review Lease recovery.",
       "source": {
         "source": "url",
         "url": "./"

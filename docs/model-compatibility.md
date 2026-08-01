@@ -1,8 +1,8 @@
 # Model compatibility
 
-**Reviewed:** 2026-07-26
+**Reviewed:** 2026-08-01
 
-**Release:** 1.2.0-alpha.1
+**Release:** 1.3.0
 
 Littlepowers does not choose a model, reasoning effort, or context window. Planning depth follows task risk and unresolved decisions.
 
@@ -12,11 +12,11 @@ This report covers model and host compatibility, not simultaneous orchestration 
 
 | Host and model | Status | Evidence | Main caveat |
 | --- | --- | --- | --- |
-| Codex, GPT-5.6 Sol, xhigh | Prerelease evaluation passed | Independent routing evaluation passed scenarios 1 through 9 after two specification corrections | One evaluation campaign is functional evidence, not a reliability claim |
+| Codex, GPT-5.6 Sol, xhigh | Earlier prerelease routing evaluation passed; v1.3 authenticated flow not yet recorded | Independent routing evaluation passed scenarios 1 through 9 after two specification corrections; schema-4 tests are model-neutral | One earlier campaign is functional evidence, not a v1.3 reliability claim |
 | Codex, GPT-5.6 Sol, max | Prerelease adversarial review passed | Independent review found no remaining P0/P1 issue; 43 state, Hook, and manifest tests passed | Max may add latency, token use, and overplanning; use only when measured value justifies it |
 | Codex, GPT-5.6 Sol, Ultra | Prerelease coordination evaluation passed, with a protocol caveat | A root coordinator and two workers preserved sole-writer ownership; a stale write conflicted instead of overwriting | Worker read-only ownership is a protocol, not OS access control |
-| Claude Code, Fable 5 | Compatible by design; authenticated flow not yet recorded | Official Fable and Claude Code review, Claude Code 2.1.207 strict plugin validation | Fable prefers outcome-focused prompts and may fall back to Opus 4.8 for classified domains |
-| Claude Code, Opus 4.8 | Compatible by design; authenticated flow not yet recorded | Official Opus and Claude Code review, Claude Code 2.1.207 strict plugin validation | High effort is the documented default; xhigh/max can overthink fixed ceremony |
+| Claude Code, Fable 5 | Compatible by design; authenticated v1.3 flow not yet recorded | Existing host/model review plus strict plugin validation; fake-host runner tests prove argv/control behavior only | Fable prefers outcome-focused prompts and host routing remains outside Littlepowers |
+| Claude Code, Opus 4.8 | Compatible by design; authenticated v1.3 flow not yet recorded | Existing host/model review plus strict plugin validation; fake-host runner tests prove argv/control behavior only | Higher effort can overthink fixed ceremony; Littlepowers does not select it |
 | Qoder CLI / Qoder IDE, any model | Loads the same skills, hooks, and state CLI; authenticated flow not yet recorded | `qodercli plugins validate` and a local user-scope install discovering all 11 skills | The IDE fires only a subset of hook events and does not document `QODER_PLUGIN_ROOT` injection for plugin hooks |
 | OpenCode, any model | Loads the same skills and state CLI; authenticated flow not yet recorded | Source-level verification of the config and message-transform hooks against OpenCode v1.18.4, plus stubbed plugin behavior tests | Relies on two hooks OpenCode's docs do not document; no live end-to-end run recorded |
 
@@ -28,29 +28,50 @@ v0.4 adds native skills for systematic debugging, verification, and review. They
 
 The disciplines are conditional rather than a second mandatory router: debugging applies to unexpected behavior, review applies at requested or material boundaries, and verification applies before a success claim. Tiny isolated changes can use focused self-review and direct evidence without a separate reviewer or full suite. This limits repeated ceremony at xhigh/max/high effort while keeping an explicit evidence gate where mistakes are costly.
 
-The lean route reduces fixed ceremony: a small bounded change with one meaningful decision goes from brainstorm directly to plan, skipping separate specification and design artifacts. Outcome Lock 1.2 moves declared scope integrity from prompt-only wording into the local state boundary: stable Outcome IDs, explicit source digests, coverage, fidelity rows, and completion invariants are checked without another reviewer, model call, hidden chain-of-thought request, repository scan, or automatic test run. Implementation remains one continuous stream; tasks and rollback units do not become independently accepted product slices.
+The lean route reduces fixed ceremony: a small bounded change with one meaningful decision goes from brainstorm directly to plan, skipping separate specification and design artifacts. Outcome Lock protocol 1.3 moves declared scope integrity from prompt-only wording into the local state boundary: stable Outcome IDs, explicit source digests, coverage, fidelity rows, and completion invariants are checked without another reviewer, model call, hidden chain-of-thought request, repository scan, or automatic test run. Review Lease avoids a redundant human stop when the latest request already supplies a fixed implementation mandate or explicit unattended authorization. Implementation remains one continuous stream; tasks and rollback units do not become independently accepted product slices.
 
 The additional runtime cost occurs only at explicit lifecycle boundaries.
 Ordinary prompt and Hook paths read the bounded ledger summary and never open
-parent or evidence files. Bind, transition, resume/readiness, verification, and
+parent or evidence files. Bind, park/resolve, transition, resume/readiness, verification, and
 completion parse bounded Markdown/JSON and hash only explicitly named files
 (16 MiB per file, 64 MiB total). Cost is independent of repository size.
-Littlepowers neither competes for hidden reasoning nor starts a second planner,
-so it has no protocol-level parameter conflict with GPT-5.6 Sol
-xhigh/max/Ultra, Fable 5, or Opus 4.8. It may add a small local I/O boundary to
-tracked work; it does not add model inference latency.
+Littlepowers neither requests hidden reasoning nor starts an independent model
+call, so it has no model-parameter conflict with GPT-5.6 Sol xhigh/max/Ultra,
+Fable 5, or Opus 4.8. It adds small local I/O boundaries plus a limited number
+of planning-gate tool/continuation turns, which can add wall-clock time.
+
+Ordinary routes do not run a scheduler. Only an explicitly `windowed` Review
+Lease may arm one host callback: Codex only when a same-task one-shot scheduling
+capability is actually callable, or Claude Code through the optional exact-
+session runner. The callback resumes the configured host/model once; it neither
+selects another model nor adds a reviewer. Qoder and OpenCode continue manually.
+
+Claude dynamic workflows need a stricter authority boundary because the host
+workflow script can own an execution plan and may launch additional workflows.
+The approved Littlepowers plan remains the sole product-scope and acceptance
+authority; the host script is an execution adapter derived from it. Checkpoint
+before launch and after integration, and keep background workers ledger-read-
+only. This is protocol-compatible, but no authenticated representative dynamic-
+workflow run has certified orchestration behavior. Host workflows can add their
+own planning, token, and wall-clock cost. See [Claude Code dynamic
+workflows](https://code.claude.com/docs/en/workflows).
 
 Handoff and review-evidence additions are dormant commands, not a second execution loop. Ordinary routing and hooks do not scan sibling worktrees, hash review candidates, create reviewers, select models, add a model turn, or add a test run. A broad uncommitted review opts into one bounded snapshot before review and one comparison before verdict acceptance; an oversized review may be partitioned, but one acceptance owner aggregates shared-boundary evidence once.
 
 Littlepowers does not call Superpowers or depend on its runtime. Both can expose namespaced skills, but making both default workflow authorities can still create process-level duplication even though neither creates a model-parameter conflict.
 
-Historical routing and coordination evidence is recorded in [the v0.3 alpha evaluation report](../evals/results/2026-07-17-v0.3-alpha.1.md). The three v0.4 discipline checks and their limits are recorded separately in [the v0.4 alpha evaluation report](../evals/results/2026-07-17-v0.4-alpha.1.md), while [the 2026-07-18 static/runtime report](../evals/results/2026-07-18-lightweight-handoff-review-evidence.md) covers explicit handoff, snapshot timing, Hook cost, and model non-selection. The project requires three runs per configuration before making a reliability claim; this prerelease reports only the narrower outcomes actually observed.
+Historical routing and coordination evidence is recorded in [the v0.3 alpha evaluation report](../evals/results/2026-07-17-v0.3-alpha.1.md). The three v0.4 discipline checks and their limits are recorded separately in [the v0.4 alpha evaluation report](../evals/results/2026-07-17-v0.4-alpha.1.md), while [the 2026-07-18 static/runtime report](../evals/results/2026-07-18-lightweight-handoff-review-evidence.md) covers explicit handoff, snapshot timing, Hook cost, and model non-selection. The project requires three runs per configuration before making a reliability claim; this release reports only the narrower outcomes actually observed.
 
 ## GPT-5.6
 
 OpenAI's current model guidance lists `gpt-5.6-sol` as the frontier model and supports API reasoning efforts `none`, `low`, `medium`, `high`, `xhigh`, and `max`. It recommends reserving max for the hardest quality-first work and comparing it with xhigh.
 
-Codex Ultra is a product-level mode that maps to the API `reasoning.effort` value `ultra` and switches the host's multi-agent mode to proactive delegation for parallelizable work. Littlepowers does not write model configuration, change `reasoning.effort`, or select Ultra. Codex's model picker/configuration remains the authority for Sol and xhigh/max, while the host remains the authority for Ultra delegation.
+Codex Ultra is a product-level mode that adds automatic subagent delegation to
+the highest Codex reasoning choice. It is not a public Responses API
+`reasoning.effort` value: GPT-5.6's API efforts currently stop at `max`.
+Littlepowers does not write model configuration, change `reasoning.effort`, or
+select Ultra. Codex's model picker/configuration remains the authority for Sol
+and xhigh/max, while the host remains the authority for Ultra delegation.
 
 GPT-5.6 guidance also recommends lean prompts, single-stated rules, outcome-focused autonomy boundaries, and representative evaluation. Littlepowers responds by:
 
@@ -66,11 +87,15 @@ Official sources: [GPT-5.6 model guidance](https://developers.openai.com/api/doc
 
 ## Claude Fable 5 and Opus 4.8
 
-Claude Code exposes `fable` for Claude Fable 5 and `opus` for the current Opus model. Claude Code 2.1.207 or later satisfies the documented minimum versions for Fable 5 and Opus 4.8.
+Claude Code exposes `fable` for Claude Fable 5. The evolving `opus` alias maps
+to Opus 5 on current Anthropic API releases, so an Opus 4.8 evaluation must use
+its full model name or an explicit provider pin rather than assuming the alias.
+The documented minimums are Claude Code 2.1.170 for Fable 5 and 2.1.154 for
+Opus 4.8; the local validation host is 2.1.220.
 
 Fable 5 is designed for long autonomous work. Anthropic recommends describing outcomes rather than prescribing every step and says repeated verification reminders are usually unnecessary. Opus 4.8 supports higher effort for difficult or asynchronous work, but max should be evaluated for diminishing returns.
 
-Littlepowers does not request hidden reasoning or chain-of-thought. Artifacts record a reviewable decision rationale. The plugin does not override effort or model aliases. Its verification reminder appears at a completion boundary instead of repeating the whole workflow on every prompt, and proportional scope avoids forcing broad checks or separate review onto tiny work. Fable safety classifiers may route some cybersecurity, biology, chemistry, or distillation requests to Opus 4.8; that host behavior does not change the ledger schema.
+Littlepowers does not request hidden reasoning or chain-of-thought. Artifacts record a reviewable decision rationale. The plugin does not override effort or model aliases. Its verification reminder appears at a completion boundary instead of repeating the whole workflow on every prompt, and proportional scope avoids forcing broad checks or separate review onto tiny work. Current Claude Code can route Fable 5 cybersecurity flags to Opus 4.8 and biology flags to Opus 5; provider and organization settings can alter availability. That host behavior does not change the ledger schema.
 
 Official sources: [Claude Code model configuration](https://code.claude.com/docs/en/model-config), [Claude Fable 5](https://www.anthropic.com/news/claude-fable-5-mythos-5), [Claude Opus 4.8](https://www.anthropic.com/news/claude-opus-4-8), and [Claude Code hooks](https://code.claude.com/docs/en/hooks).
 
@@ -83,9 +108,9 @@ Release reports should distinguish:
 3. model routing evaluation;
 4. full authenticated implementation and interruption evaluation.
 
-The prerelease does not claim level 4 for Fable 5 or Opus 4.8, and earlier
-model results are not silently promoted into 1.2 reliability claims. Passing
-schema-3 protocol tests is model-agnostic evidence; it is not proof that a
+This release does not claim level 4 for Fable 5 or Opus 4.8, and earlier
+model results are not silently promoted into 1.3 reliability claims. Passing
+schema-4 protocol and fake-host runner tests is model-agnostic evidence; it is not proof that a
 model always builds a semantically complete Contract from free-form sources.
 Add dated results rather than turning a model snapshot into a permanent
 guarantee.

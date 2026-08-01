@@ -143,13 +143,14 @@ class StateTests(unittest.TestCase):
             self.root,
         )
 
-    def test_start_creates_valid_self_ignored_schema_3_state(self) -> None:
+    def test_start_creates_valid_self_ignored_schema_4_state(self) -> None:
         created = self.start()
 
         self.assertEqual(created["status"], "active")
         self.assertEqual(created["phase"], "brainstorm")
-        self.assertEqual(created["schema_version"], 3)
-        self.assertEqual(created["protocol_version"], "1.2")
+        self.assertEqual(created["schema_version"], 4)
+        self.assertEqual(created["protocol_version"], "1.3")
+        self.assertEqual(created["review"]["policy"]["mode"], "blocking")
         self.assertEqual(created["outcome_lock"]["status"], "unbound")
         self.assertIsNone(created["progress"])
         self.assertEqual(created["revision"], 0)
@@ -162,7 +163,7 @@ class StateTests(unittest.TestCase):
         persisted = json.loads(
             (self.root / ".littlepowers" / "state.json").read_text(encoding="utf-8")
         )
-        self.assertEqual(persisted["schema_version"], 3)
+        self.assertEqual(persisted["schema_version"], 4)
         self.assertFalse(list((self.root / ".littlepowers").glob("*.tmp")))
 
     def test_start_requires_explicit_replace_and_archives_prior_state(self) -> None:
@@ -678,7 +679,7 @@ class StateTests(unittest.TestCase):
             state_module.load_state(self.root)
 
     def test_oversized_mutation_does_not_brick_existing_state(self) -> None:
-        started = self.start()
+        started = self.start(objective="o" * state_module.MAX_TEXT_LENGTH)
         completed = [f"{index:03d}" + "x" * 497 for index in range(100)]
         artifacts = [
             f"{key}=docs/{letter * 240}/{letter * 240}.md"
@@ -693,7 +694,6 @@ class StateTests(unittest.TestCase):
             state_module.command_checkpoint(
                 self.writer(
                     started,
-                    objective="o" * state_module.MAX_TEXT_LENGTH,
                     current_task="c" * state_module.MAX_TEXT_LENGTH,
                     next_action="n" * state_module.MAX_TEXT_LENGTH,
                     completed=completed,
@@ -733,8 +733,8 @@ class StateTests(unittest.TestCase):
         second = state_module.load_state(self.root)
         assert first is not None and second is not None
         self.assertEqual(first["workflow_id"], second["workflow_id"])
-        self.assertEqual(first["schema_version"], 3)
-        self.assertEqual(first["protocol_version"], "1.2")
+        self.assertEqual(first["schema_version"], 4)
+        self.assertEqual(first["protocol_version"], "1.3")
         self.assertEqual(first["outcome_lock"]["status"], "reconcile_required")
         self.assertIsNone(first["progress"])
         self.assertIsNone(first["artifacts"]["shape"])
@@ -746,7 +746,7 @@ class StateTests(unittest.TestCase):
         )
         self.assertEqual(persisted["revision"], 1)
         on_disk = json.loads((directory / "state.json").read_text(encoding="utf-8"))
-        self.assertEqual(on_disk["schema_version"], 3)
+        self.assertEqual(on_disk["schema_version"], 4)
 
     def test_legacy_schema_2_requires_reconciliation_before_progress(self) -> None:
         started = self.start(phase="execute")
@@ -755,6 +755,7 @@ class StateTests(unittest.TestCase):
         legacy["schema_version"] = 2
         legacy.pop("protocol_version")
         legacy.pop("outcome_lock")
+        legacy.pop("review")
         legacy["artifacts"].pop("contract")
         legacy["artifacts"].pop("evidence")
         legacy.pop("progress")
@@ -762,8 +763,8 @@ class StateTests(unittest.TestCase):
 
         loaded = state_module.load_state(self.root)
         assert loaded is not None
-        self.assertEqual(loaded["schema_version"], 3)
-        self.assertEqual(loaded["protocol_version"], "1.2")
+        self.assertEqual(loaded["schema_version"], 4)
+        self.assertEqual(loaded["protocol_version"], "1.3")
         self.assertIsNone(loaded["progress"])
         self.assertEqual(json.loads(path.read_text())["schema_version"], 2)
         self.assertIsNone(loaded["handoff"])
@@ -786,9 +787,9 @@ class StateTests(unittest.TestCase):
             ),
             self.root,
         )
-        self.assertEqual(persisted["schema_version"], 3)
+        self.assertEqual(persisted["schema_version"], 4)
         self.assertIsNone(persisted["progress"])
-        self.assertEqual(json.loads(path.read_text())["schema_version"], 3)
+        self.assertEqual(json.loads(path.read_text())["schema_version"], 4)
 
     def test_tracked_state_is_rejected_by_shared_reader_and_writer(self) -> None:
         started = self.start()

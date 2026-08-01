@@ -28,7 +28,12 @@ Run each configuration at least three times before drawing a reliability conclus
 - `No scope delta` cannot coexist with changed, deferred, or removed Outcomes.
 - Visual, interaction, output, and compatibility fidelity use approved provenance rather than an implementation-generated baseline, and every required Fidelity row is verified.
 - Completion independently requires work-unit compliance, approved-outcome fidelity, code quality, zero blockers, and a current Contract, and reports all failures without mutation.
-- Active legacy schema-1/schema-2 work reconciles after the 1.2 runtime is loaded; terminal legacy work stays terminal.
+- Active legacy schema-1/schema-2/schema-3 work migrates recoverably after the 1.3 runtime is loaded; terminal legacy work stays terminal.
+- Review intent persists as exactly one of `blocking`, `implementation_mandate`, `windowed`, or `unattended`; ambiguous intent defaults to blocking and plain end-to-end delivery is not unattended authority.
+- Every planning transition parks the exact artifact and embedded Contract source set; resolution and boundary consumption reject changed bytes or sources, same-byte path substitution, Contract/Plan drift, unresolved questions, proposed scope delta, stale revision, invalid deadline, or replay.
+- A correction, hold, replacement, or uncertain latest conversation cancels automatic continuation before workflow mutation.
+- Codex arms a timed callback only when a callable same-task one-shot capability exists; Claude Code uses at most one exact-session resume through the optional runner; Qoder/OpenCode report manual continuation truthfully.
+- Review continuation never grants commit, push, PR, publish, deploy, destructive, secret-access, or permission-broadening authority.
 - The latest user request remains authoritative.
 - Related corrections update the workflow without restarting it.
 - A status question does not end unfinished work.
@@ -64,3 +69,10 @@ coverage, fidelity, completion, migration, and four-host validation evidence in
 `results/2026-07-26-v1.2-outcome-lock.md` when the aggregate verification has
 finished. Until that file contains fresh results, candidate behavior is not a
 release claim.
+
+The historical schema-4 Review Lease prerelease evidence remains in
+`results/2026-07-31-v1.3-review-lease.md`. The stable Review Lease plus Project
+Workflow Index candidate, final security repairs, 197-test aggregate boundary,
+and current four-host package validation are recorded in
+`results/2026-08-01-v1.3.0-release.md`. Fake-host argv and deterministic state
+evidence are not authenticated GPT-5.6, Fable, or Opus implementation runs.

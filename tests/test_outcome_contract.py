@@ -131,7 +131,57 @@ class OutcomeContractTests(unittest.TestCase):
         *,
         approve_scope_delta: bool = False,
     ) -> dict[str, object]:
-        current = state or self.state
+        current = state_module.load_state(self.root)
+        assert current is not None
+        current = self.authorize_contract(current)
+        return self.bind_authorized(
+            current, approve_scope_delta=approve_scope_delta
+        )
+
+    def authorize_contract(
+        self, state: dict[str, object]
+    ) -> dict[str, object]:
+        relative = "docs/contracts/outcome-lock.md"
+        if (
+            state["artifacts"]["spec"] != relative
+            or "spec" not in state["completed"]
+        ):
+            state = state_module.command_checkpoint(
+                self.writer(
+                    state,
+                    artifact=[f"spec={relative}"],
+                    completed=["spec"],
+                    next_action="Review the Outcome Contract",
+                ),
+                self.root,
+            )
+        parked = state_module.command_park_review(
+            self.writer(
+                state,
+                artifact_key="spec",
+                scope_delta=state_module.parse_outcome_contract(
+                    self.contract_path.read_text(encoding="utf-8")
+                )["scope_delta"]["status"],
+                unresolved_questions=0,
+                replace=False,
+            ),
+            self.root,
+        )
+        return state_module.command_resolve_review(
+            self.writer(
+                parked,
+                kind="explicit_approval",
+                observed_no_intervention=False,
+            ),
+            self.root,
+        )
+
+    def bind_authorized(
+        self,
+        current: dict[str, object],
+        *,
+        approve_scope_delta: bool = False,
+    ) -> dict[str, object]:
         return state_module.command_bind_contract(
             self.writer(
                 current,
@@ -154,7 +204,7 @@ class OutcomeContractTests(unittest.TestCase):
         bound = self.bind()
 
         lock = bound["outcome_lock"]
-        self.assertEqual(bound["revision"], self.state["revision"] + 1)
+        self.assertEqual(bound["revision"], self.state["revision"] + 4)
         self.assertEqual(lock["mode"], "artifact")
         self.assertEqual(lock["status"], "bound")
         self.assertEqual(
@@ -164,7 +214,9 @@ class OutcomeContractTests(unittest.TestCase):
             lock["contract"]["semantic_digest"], r"^sha256:[0-9a-f]{64}$"
         )
         source = lock["contract"]["sources"][0]
-        expected = hashlib.sha256(b"Approved behavior v1\n").hexdigest()
+        expected = hashlib.sha256(
+            (self.root / "docs/product/prd.md").read_bytes()
+        ).hexdigest()
         self.assertEqual(source["digest"], f"sha256:{expected}")
         self.assertEqual(set(lock["contract"]["outcomes"]), {"OUT-001"})
         self.assertEqual(lock["scope_delta"]["status"], "none")
@@ -175,23 +227,22 @@ class OutcomeContractTests(unittest.TestCase):
     def test_bind_rejects_missing_or_oversized_source_without_mutation(self) -> None:
         missing = contract_record(source_path="docs/product/missing.md")
         self.write_contract(missing)
-
         with self.assertRaisesRegex(state_module.StateError, "missing|cannot safely"):
-            self.bind()
+            self.authorize_contract(self.state)
 
         persisted = state_module.load_state(self.root)
         assert persisted is not None
-        self.assertEqual(persisted["revision"], self.state["revision"])
         self.assertEqual(persisted["outcome_lock"]["status"], "unbound")
+        self.assertIsNone(persisted["review"]["gate"])
 
         oversized = self.root / "docs" / "product" / "large.bin"
         with oversized.open("wb") as stream:
             stream.truncate(state_module.MAX_BOUND_FILE_BYTES + 1)
         self.write_contract(contract_record(source_path="docs/product/large.bin"))
         with self.assertRaisesRegex(state_module.StateError, "exceeds"):
-            self.bind()
+            self.authorize_contract(persisted)
         self.assertEqual(
-            state_module.load_state(self.root)["revision"], self.state["revision"]
+            state_module.load_state(self.root)["revision"], persisted["revision"]
         )
 
     @unittest.skipIf(os.name == "nt", "POSIX link security regression")
@@ -204,14 +255,17 @@ class OutcomeContractTests(unittest.TestCase):
         with self.assertRaisesRegex(
             state_module.StateError, "linked|safely open"
         ):
-            self.bind()
+            self.authorize_contract(self.state)
+        persisted = state_module.load_state(self.root)
+        assert persisted is not None
+        self.assertIsNone(persisted["review"]["gate"])
 
         linked.unlink()
         os.link(target, linked)
         with self.assertRaisesRegex(state_module.StateError, "hard-linked"):
-            self.bind()
+            self.authorize_contract(persisted)
         self.assertEqual(
-            state_module.load_state(self.root)["revision"], self.state["revision"]
+            state_module.load_state(self.root)["revision"], persisted["revision"]
         )
 
     def test_scope_delta_requires_distinct_approval_exactly_when_nonempty(
@@ -377,6 +431,58 @@ class OutcomeContractTests(unittest.TestCase):
         self.assertEqual(restored["outcome_lock"]["status"], "bound")
         self.assertEqual(restored["outcome_lock"]["drift"], [])
 
+    def test_explicit_contract_review_can_adopt_changed_source_digest(self) -> None:
+        bound = self.bind()
+        prior_digest = bound["outcome_lock"]["contract"]["sources"][0][
+            "digest"
+        ]
+        (self.root / "docs/product/prd.md").write_text(
+            "Explicitly approved behavior v2\n", encoding="utf-8"
+        )
+
+        rebound = self.bind(bound)
+
+        current_digest = rebound["outcome_lock"]["contract"]["sources"][0][
+            "digest"
+        ]
+        self.assertNotEqual(current_digest, prior_digest)
+        self.assertEqual(rebound["outcome_lock"]["status"], "bound")
+
+    def test_source_change_after_resolution_cannot_be_adopted_by_first_bind(
+        self,
+    ) -> None:
+        approved = self.authorize_contract(self.state)
+        before = (self.root / ".littlepowers" / "state.json").read_bytes()
+        (self.root / "docs/product/prd.md").write_text(
+            "Changed after approval\n", encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(state_module.StateError, "contract sources"):
+            self.bind_authorized(approved)
+
+        self.assertEqual(
+            (self.root / ".littlepowers" / "state.json").read_bytes(), before
+        )
+
+    def test_consumed_contract_resolution_cannot_rebind_changed_sources(
+        self,
+    ) -> None:
+        bound = self.bind()
+        prior_digest = bound["outcome_lock"]["contract"]["sources"][0]["digest"]
+        (self.root / "docs/product/prd.md").write_text(
+            "Changed without another review\n", encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(state_module.StateError, "contract sources|consumed"):
+            self.bind_authorized(bound)
+
+        persisted = state_module.load_state(self.root)
+        assert persisted is not None
+        self.assertEqual(
+            persisted["outcome_lock"]["contract"]["sources"][0]["digest"],
+            prior_digest,
+        )
+
     def test_check_records_missing_and_semantic_contract_drift(self) -> None:
         bound = self.bind()
         (self.root / "docs" / "product" / "prd.md").unlink()
@@ -431,6 +537,24 @@ class OutcomeContractTests(unittest.TestCase):
         assert persisted is not None
         self.assertEqual(persisted["objective"], "Rename one exact label")
         self.assertEqual(persisted["revision"], direct["revision"])
+
+    def test_artifact_workflow_objective_change_is_rejected_atomically(self) -> None:
+        with self.assertRaisesRegex(state_module.StateError, "objective is locked"):
+            state_module.command_checkpoint(
+                self.writer(
+                    self.state,
+                    objective="A different objective",
+                ),
+                self.root,
+            )
+
+        persisted = state_module.load_state(self.root)
+        assert persisted is not None
+        self.assertEqual(
+            persisted["objective"], "Implement the complete approved behavior"
+        )
+        self.assertEqual(persisted["review"]["policy"]["mode"], "blocking")
+        self.assertEqual(persisted["revision"], self.state["revision"])
 
     def test_stale_bind_and_unbound_check_do_not_mutate(self) -> None:
         with self.assertRaises(state_module.StateConflict):

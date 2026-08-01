@@ -6,8 +6,8 @@ Security fixes target the latest tagged release.
 
 | Version | Supported |
 | --- | --- |
-| 1.0.x | Yes |
-| 0.5.0-alpha.x and earlier | No |
+| 1.3.x | Yes |
+| 1.2.0-alpha.x and earlier | No |
 
 ## Report a vulnerability
 
@@ -34,6 +34,7 @@ High-priority reports include:
 - state or Hook prompt injection that crosses the documented data boundary;
 - unexpected network or transcript access;
 - lost-update or archive failures that bypass workflow revision checks;
+- Review Gate, exact-resolution, runner-claim, or Project Workflow Index trust-boundary bypasses;
 - plugin installation or Hook command injection;
 - bypasses of tracked-file, symlink, size, or artifact-path validation.
 

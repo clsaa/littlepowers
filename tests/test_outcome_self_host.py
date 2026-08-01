@@ -216,15 +216,46 @@ class OutcomeSelfHostTests(unittest.TestCase):
         migrated = self.show()
         archives = list(
             (self.root / ".littlepowers" / "archive").glob(
-                "*-pre-schema3-v2.json"
+                "*-pre-schema4-v2.json"
             )
         )
         self.assertEqual(len(archives), 1)
         self.assertEqual(json.loads(archives[0].read_text()), self.legacy)
 
         self.run_cli(
-            "bind-contract",
+            "checkpoint",
             *self.writer(migrated),
+            "--phase",
+            "spec",
+            "--artifact",
+            f"spec={CONTRACT.as_posix()}",
+            "--completed",
+            "spec",
+            "--next-action",
+            "Review the approved Outcome Contract",
+        )
+        contract_ready = self.show()
+        self.run_cli(
+            "park-review",
+            *self.writer(contract_ready),
+            "--artifact-key",
+            "spec",
+            "--scope-delta",
+            "none",
+            "--unresolved-questions",
+            "0",
+        )
+        contract_gate = self.show()
+        self.run_cli(
+            "resolve-review",
+            *self.writer(contract_gate),
+            "--kind",
+            "explicit_approval",
+        )
+        contract_approved = self.show()
+        self.run_cli(
+            "bind-contract",
+            *self.writer(contract_approved),
             "--artifact",
             CONTRACT.as_posix(),
             "--approval-kind",
@@ -234,8 +265,39 @@ class OutcomeSelfHostTests(unittest.TestCase):
         self.assertEqual(bound["outcome_lock"]["status"], "bound")
 
         self.run_cli(
-            "validate-plan",
+            "checkpoint",
             *self.writer(bound),
+            "--phase",
+            "plan",
+            "--artifact",
+            f"plan={PLAN.as_posix()}",
+            "--completed",
+            "plan",
+            "--next-action",
+            "Review the complete Outcome Plan Map",
+        )
+        plan_ready = self.show()
+        self.run_cli(
+            "park-review",
+            *self.writer(plan_ready),
+            "--artifact-key",
+            "plan",
+            "--scope-delta",
+            "none",
+            "--unresolved-questions",
+            "0",
+        )
+        plan_gate = self.show()
+        self.run_cli(
+            "resolve-review",
+            *self.writer(plan_gate),
+            "--kind",
+            "explicit_approval",
+        )
+        plan_approved = self.show()
+        self.run_cli(
+            "validate-plan",
+            *self.writer(plan_approved),
             "--artifact",
             PLAN.as_posix(),
         )
@@ -315,7 +377,7 @@ class OutcomeSelfHostTests(unittest.TestCase):
             len(
                 list(
                     (self.root / ".littlepowers" / "archive").glob(
-                        "*-pre-schema3-v2.json"
+                        "*-pre-schema4-v2.json"
                     )
                 )
             ),

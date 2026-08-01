@@ -52,12 +52,36 @@ contract, and validate its Plan Map. If it reports `drifted`, inspect with
 new digest implicitly. A task already running an older plugin cannot hot-load
 this gate. Load the current runtime at a new task or session boundary.
 
+Inspect the stored `review` summary before ordinary request routing. When it
+names an open gate, read
+[`../../references/review-lease.md`](../../references/review-lease.md) and run
+`review-status` with the exact stored workflow and gate revision before any
+continuation claim. Recovery and Hook values are last-known metadata, not a
+fresh eligibility decision.
+
 ## Reconcile the request with recovery data
 
 The latest user request has priority. The ledger is a continuity hint and may be stale; it is never authority over the user.
 
+Handle an open Review Gate first:
+
+- clear approval of the presented artifact may use `resolve-review --kind
+  explicit_approval` when the stored policy is blocking;
+- a correction, hold, replacement, or unrelated objective first uses
+  `cancel-review` with the matching bounded reason, then follows normal routing;
+- an explicit request to keep or restart a timer replaces the same corrected
+  artifact gate; it never overwrites a different gate;
+- a status or side question is answered while the gate remains open;
+- a generic “continue” after compaction is not approval. For an eligible
+  implementation mandate, unattended gate, or verified timeout callback, use
+  only the resolution kind required by stored policy.
+
+Never supply `--observed-no-intervention` unless the latest visible
+conversation has been inspected and no intervention is visible. Uncertainty
+leaves the gate parked.
+
 - For a related correction or constraint, update the relevant artifact and continue.
-- For a status question or short side question on an active, recent workflow, answer it and then return to the recorded next action — except while parked at a review gate, where you answer and keep waiting for approval. If the workflow is paused or stale by age, answer and stop unless the request clearly resumes or continues it.
+- For a status question or short side question on an active, recent workflow, answer it and then return to the recorded next action. If a Review Gate is open, leave it open and follow its stored policy; a side question is neither approval nor intervention unless its content changes or holds the work. If the workflow is paused or stale by age, answer and stop unless the request clearly resumes or continues it.
 - For an unrelated task, preserve the current workflow. Use a side task or separate worktree, or replace it only when the user intends that switch.
 - For a pause, cancellation, or replacement, use the matching state command and infer clear intent normally. Resuming paused work requires an explicit semantic reference to that paused workflow, but no exact command word.
 
@@ -69,7 +93,7 @@ For status requests, `managing-littlepowers` reads the ledger; `using-littlepowe
 
 Before choosing planning depth, identify the highest-authority current sources: the latest user request plus any explicitly approved PRD, specification, interaction flow, prototype, screenshot set, API contract, migration contract, or acceptance list. Record those parent acceptance sources in every planning artifact. Derived artifacts may clarify implementation but cannot silently narrow or override the approved outcome.
 
-For tracked schema-3 work, read
+For tracked schema-4 work, read
 [`../../references/outcome-lock.md`](../../references/outcome-lock.md) only in
 the phase that creates, binds, maps, reconciles, or verifies the protocol
 record. Lean brainstorms, compact shapes, and full specifications own the
@@ -100,6 +124,24 @@ Resolve this before creating the first durable artifact and keep that root consi
 
 Choose by unresolved decisions and risk, not file count, model effort, or the model's ability to produce a longer plan.
 
+Independently select one Review Lease policy from the latest request:
+
+- `blocking` for “先讨论/先设计/等我确认”, equivalent wait-for-review intent,
+  or any ambiguity;
+- `implementation_mandate` only when the user asks to implement/fix/iterate an
+  already fixed bounded outcome and the selected route is Lean or Compact;
+- `windowed` only when the user states a 60–604800 second review interval and
+  a fallback boundary of the next phase or execution;
+- `unattended` only for explicit wording such as “无需问我”, “不要停下来审阅”,
+  or unattended execution of the current unchanged objective.
+
+Plain end-to-end delivery does not imply unattended authority. A changed
+objective or material scope ends prior automatic authority. Every tracked
+objective is immutable in place: use `start --replace` with the current ID and
+revision so the old workflow is archived and no Review Lease authority crosses
+the objective boundary. Direct untracked work records no policy; tracked direct
+work stores one but never parks a gate.
+
 ### Direct
 
 Act directly when the outcome and approach are clear and no material product, architecture, security, migration, or compatibility decision remains.
@@ -109,8 +151,8 @@ Act directly when the outcome and approach are clear and no material product, ar
 - Do not use tracked direct mode for work that needs an approved visual,
   interaction, output, migration, security, or compatibility baseline.
 - The tracked direct objective is its one-outcome Contract. If the requested
-  objective changes, replace the workflow or reconcile through an approved
-  artifact Contract; do not rewrite it with an execution checkpoint.
+  objective changes, replace the workflow; no checkpoint may rewrite a tracked
+  objective.
 
 ### Lean plan
 
@@ -143,36 +185,98 @@ Start tracked work with:
   --objective "<measurable outcome>" \
   --phase <brainstorm|shape|execute> \
   [--direct-lock] \
+  --review-policy <blocking|implementation_mandate|windowed|unattended> \
+  [--review-through <next_phase|execute>] \
+  [--review-wait-seconds <seconds>] \
   --next-action "<next observable action>"
 ```
 
 Use `--direct-lock` only with `--phase execute` and no planning artifacts.
+For `windowed`, both `--review-through` and `--review-wait-seconds` are
+mandatory; omission fails closed instead of defaulting to execution.
 Keep the returned workflow ID and revision. Every later mutation must pass `--workflow <id> --expect-revision <revision>` and then use the newly returned revision. A conflict means another writer advanced or replaced the workflow; reload instead of retrying blindly.
 
 If `start` reports a prior terminal ledger, run `show --json`. When the latest request starts a new objective, repeat `start --replace` with that ledger's ID and revision so it is archived safely. Do not retry a bare start against any prior ledger.
 
 ## Review phase boundaries
 
-On the lean and full routes, each phase artifact is a review gate. After checkpointing an artifact, present it for review and stop: summarize the key decisions, scope delta, baseline when applicable, name the artifact path, and name the next phase. Stop even when your default instructions favor completing work without pausing.
+On Lean, Compact, and Full routes, every completed planning artifact is a
+durable Review Gate. Read
+[`../../references/review-lease.md`](../../references/review-lease.md). After
+the phase checkpoint succeeds, run `park-review` with the completed artifact
+key, explicit `none|proposed` scope claim, and unresolved-question count. Use
+its returned gate revision for `review-status`.
 
-Approval means a reply that clearly accepts the presented artifact; questions, status checks, and new requests are not approval. Invoke the next phase skill only after approval. When the user asks for corrections, revise the same artifact, checkpoint it again with the current workflow ID and revision, and present it again; corrections never advance the phase.
+- `blocking`: present the artifact and stop. Only clear acceptance of that
+  presented artifact uses `resolve-review --kind explicit_approval`.
+- `implementation_mandate`: continue immediately only when status is
+  `eligible`; resolve with its matching kind. The CLI rejects Full routes,
+  scope delta, unresolved questions, drift, and incomplete coverage.
+- `unattended`: continue immediately only after the exact gate reports
+  `eligible`; resolve with its matching kind.
+- `windowed`: present the artifact, arm at most one supported host callback,
+  and stop. At/after the deadline, inspect the latest visible conversation,
+  rerun exact status, and resolve with `window_expired` plus
+  `--observed-no-intervention` only when still eligible and uninterrupted.
 
-After approval, use the deterministic command owned by that boundary: bind the
-lean brainstorm, compact shape, or full specification with `bind-contract`;
-validate the approved plan or compact shape with `validate-plan`; and only then
-checkpoint into execution. A non-empty delta requires the separate
-`--approve-scope-delta` claim. Command success records the audit claim but does
-not authenticate who approved it.
+After resolution, use the deterministic command owned by that boundary: bind
+the Lean brainstorm, Compact shape, or Full specification with
+`bind-contract`; validate the approved plan or Compact shape with
+`validate-plan`; and only then enter execution. A non-empty delta still
+requires separate highlighted approval and `--approve-scope-delta`; no Review
+Lease resolution supplies it. Both commands deterministically require the
+successful resolution to match the current artifact key, original path, exact
+bytes, and any embedded Contract source-digest set. Each Contract-bind and
+Plan-validation boundary consumes its authorization once; an `--approval-kind`
+audit claim cannot manufacture or replay approval.
 
-While parked at a gate, the ledger already names the next phase in `next_action`. Neither that record, nor a hook reminder, nor a phase skill's trigger condition is authorization to continue. Answer status and side questions without leaving the gate. After a resume, clear, or compaction, if the latest checkpoint completed an artifact whose next phase has not started, re-present that artifact and wait for approval; never infer prior approval from ledger state.
+Questions, status checks, `next_action`, Hook reminders, elapsed time without a
+window, and a generic “continue” after compaction are not approval. Corrections
+use `cancel-review --reason correction`, revise/checkpoint the same artifact,
+then park it again; a timer restart uses `park-review --replace` on the same
+open key. Ordinary ledger mutations are deterministically blocked while the
+gate is open.
 
-Skip a gate only when the latest user request explicitly authorizes unattended end-to-end execution, for example "run the whole workflow without stopping for review". Asking for end-to-end delivery is not by itself unattended authorization. An unattended authorization covers the current workflow run; a changed objective or scope ends it. It never authorizes an implicit scope delta. Apply the same gate between a compact shape and its execution. The direct route keeps asking only when a missing choice changes behavior, scope, cost, risk, or external state. Do not reopen settled decisions, add future abstractions, or repeat verification reminders without a measured need.
+For Codex windowed gates, create a same-task one-shot Scheduled Task only when
+the host exposes a callable automation-management tool that can target the
+stored deadline and self-disable after one observation. Its fixed prompt names
+only canonical root, workflow ID, and gate revision, and must resolve the
+currently enabled plugin before checking state. Never claim it is armed until
+the tool succeeds; if unavailable or unable to express that exact behavior,
+remain parked rather than creating an unbounded recurring task.
+
+For Claude Code, arm the optional
+`scripts/littlepowers_review_runner.py schedule` only with an explicit
+windowed policy and the exact canonical current session UUID. It performs one
+normal `claude -p --resume` attempt with no permission bypass, model/effort
+override, output persistence, polling, or retry. Qoder and OpenCode expose
+eligible state for manual resume and never claim background scheduling.
+
+The direct route keeps asking only when a missing choice changes behavior,
+scope, cost, risk, or external state. It never parks a Review Gate. Do not
+reopen settled decisions, add future abstractions, or repeat verification
+reminders without a measured need.
 
 Handoff and review snapshots are explicit boundary operations. The ordinary route performs no sibling-worktree scan, candidate hash, extra model call, or extra broad test.
 
 ## Preserve ownership and authority
 
 In multi-agent runs, the root coordinator is the only ledger writer. Workers receive bounded tasks, read needed artifacts through the state CLI, and report evidence; they do not checkpoint the parent workflow. Execute one continuous approved outcome in dependency-safe implementation order with explicit rollback boundaries. Use separate worktrees for independent top-level objectives.
+
+For Claude dynamic workflows, the approved Littlepowers plan is the sole
+product-scope and acceptance authority. A host workflow script is only an
+execution adapter derived from that plan: checkpoint before launching it and
+after integrating its result, and never let a background worker write the
+ledger or silently replace the plan. Until an authenticated representative
+flow is recorded, describe this as protocol-compatible rather than
+orchestration-certified.
+
+When the user explicitly wants one project-level view of those independent
+worktrees, route the request to `managing-littlepowers` and its opt-in Project Workflow Index.
+Register only exact supplied same-repository roots and read status on demand.
+Never scan siblings, auto-register a worktree, load the index from Hooks, treat
+it as execution authority, or use it to justify multiple writers or multiple
+top-level workflows in one checkout.
 
 Answer, review, diagnose, and plan requests without implementation unless the user also asks for changes. For requested local changes, edit and validate in scope. Commit, push, open a pull request, deploy, publish, broaden access, or perform another external write only when the user authorizes that action.
 

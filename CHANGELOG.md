@@ -4,6 +4,89 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-08-01
+
+### Added
+
+- Add state schema 4 and Review Lease protocol 1.3 with four exact policies:
+  blocking review, a fixed bounded implementation mandate, an explicit timed
+  fallback, and explicit unattended continuation.
+- Add artifact-bound `park-review`, pure `review-status`, policy-matched
+  `resolve-review`, bounded `cancel-review`, and `set-review-policy` commands.
+  Contract binding and Plan validation now require the successful resolution
+  for the exact artifact key, original path, byte digest, and embedded Contract
+  source-digest set, then consume each declared boundary once.
+- Add an optional Python-standard-library Claude Code adapter that arms one
+  private exact-session sleeper for a future windowed gate, invokes at most one
+  normal `claude -p --resume`, stores no output, and never retries or bypasses
+  permissions.
+- Add an opt-in Project Workflow Index with `project-register`,
+  `project-unregister`, and read-only `project-status` commands. One explicit
+  manager worktree can summarize at most 16 explicitly registered worktrees
+  from the same Git repository while every worktree retains its own single
+  workflow and ledger writer.
+- Add adversarial state, command, Hook, manifest, runner, migration, and
+  worktree-index coverage, including Windows newline portability, objective
+  replacement, same-byte path substitution, source/replay bypass,
+  cancellation-at-invocation, atomic job creation, and ambiguous replaced-member
+  cleanup regressions.
+
+### Changed
+
+- Route ordinary implementation language as a fixed Lean/Compact mandate when
+  the outcome is already bounded, while keeping discussion, design, wait, and
+  ambiguous intent blocking. “End-to-end” alone is not unattended authority.
+- Require every tracked objective change to use `start --replace`; a checkpoint
+  cannot carry an old Review Lease policy into a new objective.
+- Require `windowed` policies to state both duration and `next_phase|execute`
+  boundary. Missing boundary information fails closed.
+- Persist Review Lease state in the ledger and recovery summary so resumed or
+  compacted sessions recheck the same deterministic gate instead of relying on
+  prompt memory.
+- Keep Qoder and OpenCode truthful and manual for timed continuation until an
+  exact-session scheduler is verified. Codex guidance arms a callback only when
+  a callable same-task one-shot scheduling capability is present.
+- Define the approved Littlepowers plan as the sole product-scope authority in
+  Claude dynamic workflows; a host workflow is a derived execution adapter,
+  with checkpoints before launch and after integration.
+- Align Codex, Claude Code, Qoder, OpenCode, and package metadata on stable
+  `1.3.0` while retaining the same eleven discoverable skills.
+
+### Security and performance
+
+- Keep the independent index bounded, ignored, trusted, locked, and atomically
+  written. Registration never enumerates worktrees; status isolates stale or
+  invalid members without pruning or writing them. Hooks never load the index,
+  so ordinary routing adds no filesystem, Git, model, scheduler, or agent cost.
+- Keep Hooks read-only, network-free, artifact-free, and scheduler-free. Review
+  hashing occurs only for explicitly named files at park/resolve and existing
+  Outcome Lock boundaries.
+- Atomically create runner metadata and revalidate, claim, and start the Claude
+  invocation under one state-lock linearization point. A cancellation that wins
+  the lock causes no host call.
+- Add no ordinary-route independent model call, reviewer, daemon, poll loop,
+  repository scan, broad test, model/effort selection, or telemetry. Planning
+  gates add bounded local tool/continuation overhead; one explicitly windowed
+  policy may arm one bounded host callback.
+- Limit review authority to the unchanged planning transition. It never grants
+  commit, push, PR, publish, deploy, destructive, secret-access, or
+  permission-broadening authority.
+
+### Compatibility
+
+- Active schema-1/schema-2/schema-3 workflows load through schema 4 and archive
+  their exact validated raw JSON once before the first successful schema-4
+  write.
+- A 1.2 runtime cannot read schema 4. Rollback requires cancelling any open
+  gate, pausing or finishing the workflow, restoring the matching pre-schema4
+  schema-3 archive, and only then installing 1.2. Do not hot-replace an active
+  task.
+- Exact-tag installation and schema-4 rollback steps are documented for Codex,
+  Claude Code, Qoder, and OpenCode.
+- Authenticated GPT-5.6, Fable 5, Opus 4.8, and Claude dynamic-workflow v1.3
+  implementation runs are not claimed; deterministic protocol and fake-host
+  results remain model-neutral evidence.
+
 ## [1.2.0-alpha.1] - 2026-07-26
 
 ### Added
@@ -183,7 +266,8 @@ The first stable release. Multi-host support (Codex, Claude Code, Qoder, OpenCod
 
 - Created the initial Codex plugin and planning workflow.
 
-[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.2.0-alpha.1...HEAD
+[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/clsaa/littlepowers/compare/v1.2.0-alpha.1...v1.3.0
 [1.2.0-alpha.1]: https://github.com/clsaa/littlepowers/compare/v1.1.0-alpha.1...v1.2.0-alpha.1
 [1.1.0-alpha.1]: https://github.com/clsaa/littlepowers/compare/v1.0.0...v1.1.0-alpha.1
 [1.0.0]: https://github.com/clsaa/littlepowers/releases/tag/v1.0.0

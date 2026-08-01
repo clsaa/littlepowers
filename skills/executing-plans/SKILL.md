@@ -7,7 +7,11 @@ description: Execute and verify tracked Littlepowers work. Use for active phase=
 
 Carry the approved outcome to fresh verification while preserving useful checkpoints and scope integrity.
 
-When the ledger names a plan or shape artifact that has not been approved yet in this session, present it and wait for approval instead of implementing. A highlighted scope delta also requires explicit approval. Tracked direct work without a planning artifact is unaffected.
+When the ledger names a plan or shape that has neither explicit approval nor a
+current policy-matching Review Lease resolution plus successful Plan Map
+validation, present it and wait instead of implementing. A highlighted scope
+delta also requires distinct explicit approval. Tracked direct work without a
+planning artifact is unaffected.
 
 ## Recover
 
@@ -21,6 +25,13 @@ contract and validate its current Plan Map first. `drifted` requires an explicit
 `check-contract` diagnosis and approved rebind. Do not bypass a failed
 checkpoint by editing the raw ledger. A valid tracked direct lock needs no Plan
 Map artifact.
+
+If recovery names an open Review Gate, do not edit or execute. Return to
+`using-littlepowers`, read `references/review-lease.md`, and inspect the exact
+gate with `review-status`. Only a successful policy-matching resolution plus
+the boundary's once-consumed Contract/Plan command permits execution. A copied
+path, changed parent source, generic continuation prompt, or `next_action` does
+not bypass the gate.
 
 ## Execute
 

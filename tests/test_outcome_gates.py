@@ -237,6 +237,9 @@ class OutcomeGateTests(unittest.TestCase):
 
     def bind(self, state: dict[str, object] | None = None) -> dict[str, object]:
         current = state or self.state
+        current = self.approve_artifact(
+            current, key="spec", relative="docs/contracts/contract.md"
+        )
         return state_module.command_bind_contract(
             self.writer(
                 current,
@@ -247,10 +250,50 @@ class OutcomeGateTests(unittest.TestCase):
         )
 
     def validate_plan(
-        self, state: dict[str, object]
+        self, state: dict[str, object], *, approve: bool = True
     ) -> dict[str, object]:
+        if approve:
+            state = self.approve_artifact(
+                state, key="plan", relative="docs/plans/plan.md"
+            )
         return state_module.command_validate_plan(
             self.writer(state, artifact="docs/plans/plan.md"),
+            self.root,
+        )
+
+    def approve_artifact(
+        self,
+        state: dict[str, object],
+        *,
+        key: str,
+        relative: str,
+    ) -> dict[str, object]:
+        if state["artifacts"][key] != relative or key not in state["completed"]:
+            state = state_module.command_checkpoint(
+                self.writer(
+                    state,
+                    artifact=[f"{key}={relative}"],
+                    completed=[key],
+                    next_action=f"Review {key}",
+                ),
+                self.root,
+            )
+        parked = state_module.command_park_review(
+            self.writer(
+                state,
+                artifact_key=key,
+                scope_delta="none",
+                unresolved_questions=0,
+                replace=False,
+            ),
+            self.root,
+        )
+        return state_module.command_resolve_review(
+            self.writer(
+                parked,
+                kind="explicit_approval",
+                observed_no_intervention=False,
+            ),
             self.root,
         )
 
@@ -278,13 +321,46 @@ class OutcomeGateTests(unittest.TestCase):
     def test_narrow_plan_is_rejected_with_all_missing_ids_atomically(self) -> None:
         bound = self.bind()
         self.write_plan(include_second=False)
+        plan_ready = state_module.command_checkpoint(
+            self.writer(
+                bound,
+                artifact=["plan=docs/plans/plan.md"],
+                completed=["plan"],
+                next_action="Review plan",
+            ),
+            self.root,
+        )
+        parked = state_module.command_park_review(
+            self.writer(
+                plan_ready,
+                artifact_key="plan",
+                scope_delta="none",
+                unresolved_questions=0,
+                replace=False,
+            ),
+            self.root,
+        )
 
-        with self.assertRaisesRegex(state_module.StateError, "OUT-002"):
-            self.validate_plan(bound)
+        status = state_module.review_gate_status(
+            self.root,
+            parked,
+            gate_revision=parked["review"]["gate"]["opened_revision"],
+        )
+        self.assertEqual(status["status"], "blocked")
+        self.assertIn("plan_coverage_incomplete", status["reasons"])
+        with self.assertRaisesRegex(state_module.StateError, "coverage"):
+            state_module.command_resolve_review(
+                self.writer(
+                    parked,
+                    kind="explicit_approval",
+                    observed_no_intervention=False,
+                ),
+                self.root,
+            )
 
         persisted = state_module.load_state(self.root)
         assert persisted is not None
-        self.assertEqual(persisted["revision"], bound["revision"])
+        self.assertEqual(persisted["revision"], parked["revision"])
         self.assertEqual(
             persisted["outcome_lock"]["plan"]["coverage"]["status"], "pending"
         )

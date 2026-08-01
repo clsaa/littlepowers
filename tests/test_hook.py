@@ -167,6 +167,8 @@ class RecoveryHookTests(unittest.TestCase):
         self.assertIn('"coverage": "1/1"', context)
         self.assertIn('"baseline": "not_applicable"', context)
         self.assertIn('"fidelity": "pending"', context)
+        self.assertIn('"mode": "blocking"', context)
+        self.assertIn('"state": "no_gate"', context)
 
     def test_user_prompt_submit_refreshes_short_state_without_prompt_text(self) -> None:
         state = self.start_state()
@@ -386,6 +388,54 @@ class RecoveryHookTests(unittest.TestCase):
         self.assertNotIn("private-contract", rendered)
         self.assertNotIn("private-parent", rendered)
         self.assertNotIn("private-evidence", rendered)
+
+    def test_hook_renders_only_stored_review_gate_metadata(self) -> None:
+        state = state_module.command_start(
+            argparse.Namespace(
+                objective="Review the planned outcome",
+                phase="brainstorm",
+                next_action="Write the brainstorm",
+                artifact=[],
+                replace=False,
+                direct_lock=False,
+            ),
+            self.workspace,
+        )
+        artifact = self.workspace / "docs" / "littlepowers" / "brainstorms" / "gate.md"
+        artifact.parent.mkdir(parents=True)
+        artifact.write_text("# Gate\n", encoding="utf-8")
+        state = state_module.command_checkpoint(
+            self.writer(
+                state,
+                phase="spec",
+                artifact=[
+                    "brainstorm=docs/littlepowers/brainstorms/gate.md"
+                ],
+                completed=["brainstorm"],
+                next_action="Review the brainstorm",
+            ),
+            self.workspace,
+        )
+        state_module.command_park_review(
+            self.writer(
+                state,
+                artifact_key="brainstorm",
+                scope_delta="none",
+                unresolved_questions=0,
+                replace=False,
+            ),
+            self.workspace,
+        )
+
+        result = self.run_hook(self.event("SessionStart"))
+        context = json.loads(result.stdout)["hookSpecificOutput"][
+            "additionalContext"
+        ]
+
+        self.assertIn('"gate": "brainstorm"', context)
+        self.assertIn('"mode": "blocking"', context)
+        self.assertIn('"state": "waiting"', context)
+        self.assertNotIn("# Gate", context)
 
 
 if __name__ == "__main__":
