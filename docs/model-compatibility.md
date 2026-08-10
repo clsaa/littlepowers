@@ -1,8 +1,8 @@
 # Model compatibility
 
-**Reviewed:** 2026-08-01
+**Reviewed:** 2026-08-10
 
-**Release:** 1.3.0
+**Release:** 1.3.1
 
 Littlepowers does not choose a model, reasoning effort, or context window. Planning depth follows task risk and unresolved decisions.
 
@@ -12,15 +12,24 @@ This report covers model and host compatibility, not simultaneous orchestration 
 
 | Host and model | Status | Evidence | Main caveat |
 | --- | --- | --- | --- |
-| Codex, GPT-5.6 Sol, xhigh | Earlier prerelease routing evaluation passed; v1.3 authenticated flow not yet recorded | Independent routing evaluation passed scenarios 1 through 9 after two specification corrections; schema-4 tests are model-neutral | One earlier campaign is functional evidence, not a v1.3 reliability claim |
+| Codex, GPT-5.6 Sol, xhigh | Earlier prerelease routing evaluation passed; v1.3.1 level-3 probe used `low`, not xhigh | Independent routing evaluation passed scenarios 1 through 9; Codex 0.147.0 delivered the current Hook to an authenticated `gpt-5.6-sol` probe and the model returned the exact workflow ID | The current probe proves delivery/routing, not a full implementation flow or xhigh reliability |
 | Codex, GPT-5.6 Sol, max | Prerelease adversarial review passed | Independent review found no remaining P0/P1 issue; 43 state, Hook, and manifest tests passed | Max may add latency, token use, and overplanning; use only when measured value justifies it |
 | Codex, GPT-5.6 Sol, Ultra | Prerelease coordination evaluation passed, with a protocol caveat | A root coordinator and two workers preserved sole-writer ownership; a stale write conflicted instead of overwriting | Worker read-only ownership is a protocol, not OS access control |
-| Claude Code, Fable 5 | Compatible by design; authenticated v1.3 flow not yet recorded | Existing host/model review plus strict plugin validation; fake-host runner tests prove argv/control behavior only | Fable prefers outcome-focused prompts and host routing remains outside Littlepowers |
+| Claude Code, Fable 5 | Compatible by design; current live probe blocked before model execution | Claude Code 2.1.226 strict plugin validation passed; a source-plugin probe reached the local host but expired OAuth could not refresh, returned cost 0, and provided no model evidence | Reauthenticate before claiming authenticated routing or implementation behavior; Fable prefers outcome-focused prompts |
 | Claude Code, Opus 4.8 | Compatible by design; authenticated v1.3 flow not yet recorded | Existing host/model review plus strict plugin validation; fake-host runner tests prove argv/control behavior only | Higher effort can overthink fixed ceremony; Littlepowers does not select it |
-| Qoder CLI / Qoder IDE, any model | Loads the same skills, hooks, and state CLI; authenticated flow not yet recorded | `qodercli plugins validate` and a local user-scope install discovering all 11 skills | The IDE fires only a subset of hook events and does not document `QODER_PLUGIN_ROOT` injection for plugin hooks |
+| Qoder CLI / Qoder IDE, any model | Qoder CLI level-3 Hook routing probe passed; IDE remains structurally validated only | Qoder CLI 1.1.18 validated the package, loaded the source plugin in an isolated project-settings run, and returned the exact temporary workflow ID | The CLI probe is not a full implementation flow; the IDE fires only a subset of events and does not document `QODER_PLUGIN_ROOT` injection |
 | OpenCode, any model | Loads the same skills and state CLI; authenticated flow not yet recorded | Source-level verification of the config and message-transform hooks against OpenCode v1.18.4, plus stubbed plugin behavior tests | Relies on two hooks OpenCode's docs do not document; no live end-to-end run recorded |
 
 “Compatible by design” means the plugin uses supported hooks and skills and does not set conflicting model parameters. It does not mean every scenario has passed an authenticated live-model evaluation.
+
+The 2026-08-10 local host boundary used Codex 0.147.0, Claude Code 2.1.226,
+and Qoder CLI 1.1.18. Codex, Claude Code, and Qoder validators accepted the
+candidate package; an authenticated Qoder CLI probe returned the exact Hook
+workflow ID, while the Claude model probe was blocked by expired local OAuth.
+Codex 0.147.0 also enforces 128 characters per starter
+prompt; 1.3.1 shortens all three and adds a regression for that host limit.
+These are dated compatibility observations, not permanent minimum-version
+guarantees.
 
 ## Engineering-discipline compatibility
 
@@ -39,6 +48,9 @@ Littlepowers neither requests hidden reasoning nor starts an independent model
 call, so it has no model-parameter conflict with GPT-5.6 Sol xhigh/max/Ultra,
 Fable 5, or Opus 4.8. It adds small local I/O boundaries plus a limited number
 of planning-gate tool/continuation turns, which can add wall-clock time.
+The 1.3.1 root-affinity guard adds one local `.git` marker `lstat` before Hook
+ledger loading and no Git process, repository scan, prompt read, model turn, or
+network call.
 
 Ordinary routes do not run a scheduler. Only an explicitly `windowed` Review
 Lease may arm one host callback: Codex only when a same-task one-shot scheduling
@@ -61,6 +73,10 @@ Handoff and review-evidence additions are dormant commands, not a second executi
 Littlepowers does not call Superpowers or depend on its runtime. Both can expose namespaced skills, but making both default workflow authorities can still create process-level duplication even though neither creates a model-parameter conflict.
 
 Historical routing and coordination evidence is recorded in [the v0.3 alpha evaluation report](../evals/results/2026-07-17-v0.3-alpha.1.md). The three v0.4 discipline checks and their limits are recorded separately in [the v0.4 alpha evaluation report](../evals/results/2026-07-17-v0.4-alpha.1.md), while [the 2026-07-18 static/runtime report](../evals/results/2026-07-18-lightweight-handoff-review-evidence.md) covers explicit handoff, snapshot timing, Hook cost, and model non-selection. The project requires three runs per configuration before making a reliability claim; this release reports only the narrower outcomes actually observed.
+
+The current dated host and candidate evidence is in [the 1.3.1 release-candidate
+report](../evals/results/2026-08-10-v1.3.1-release.md), including the successful
+Codex/Qoder routing probes and the authentication-blocked Claude probe.
 
 ## GPT-5.6
 
@@ -91,7 +107,7 @@ Claude Code exposes `fable` for Claude Fable 5. The evolving `opus` alias maps
 to Opus 5 on current Anthropic API releases, so an Opus 4.8 evaluation must use
 its full model name or an explicit provider pin rather than assuming the alias.
 The documented minimums are Claude Code 2.1.170 for Fable 5 and 2.1.154 for
-Opus 4.8; the local validation host is 2.1.220.
+Opus 4.8; the local validation host is 2.1.226.
 
 Fable 5 is designed for long autonomous work. Anthropic recommends describing outcomes rather than prescribing every step and says repeated verification reminders are usually unnecessary. Opus 4.8 supports higher effort for difficult or asynchronous work, but max should be evaluated for diminishing returns.
 

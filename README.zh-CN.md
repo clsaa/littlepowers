@@ -40,7 +40,7 @@ Lean、Compact 与 Full 的规划产物可以形成确定性的 Review Gate。�
 
 单说“端到端”不等于无人值守授权。更正、暂停、替换、未解决问题、拟议 scope delta、产物变化或 Contract 漂移都会停止自动续跑。审核授权也不会授权 commit、push、PR、发布、部署、破坏性操作、秘密访问或扩大权限。
 
-所有路径都会把最新请求以及已批准的 PRD、交互稿、原型、截图集或契约绑定为完整结果。Agent 不得自行拆成更小的产品切片或技术切片；任何 `Added / Changed / Deferred / Removed` 范围变化都必须突出展示并单独获得批准，没有变化则明确记录 `No scope delta`。实现过程是同一个完成定义下的连续工作流；任务、checkpoint、回滚单元和小提交只负责顺序与安全恢复，不是分期交付。UI 一致性必须对比用户批准的基线，实现自己生成的截图只能用于防回归。
+所有路径都会把最新请求以及已批准的 PRD、交互稿、原型、截图集或契约绑定为完整结果。Contract 来源必须在整个 workflow 内保持为稳定的验收输入：不得绑定计划将修改的文件、测试、fixture、生成截图、run card 或实现证据；没有稳定父文件时，由经审核的 Outcome 记录承载最新请求。Agent 不得自行拆成更小的产品切片或技术切片；任何 `Added / Changed / Deferred / Removed` 范围变化都必须突出展示并单独获得批准，没有变化则明确记录 `No scope delta`。实现过程是同一个完成定义下的连续工作流；任务、checkpoint、回滚单元和小提交只负责顺序与安全恢复，不是分期交付。UI 一致性必须对比用户批准的基线，实现自己生成的截图只能用于防回归。
 
 被追踪的工作使用 Outcome Lock 1.3：经审核的 Contract 记录稳定 `OUT-###` ID 和显式父来源摘要；Plan Map 必须在执行前把每个活跃 ID 映射到任务与证据；Verification Record 分别保存工作单元符合性、批准结果一致性和代码质量。Schema 4 把这些检查与持久化 Review Lease 组合起来，在来源漂移、覆盖不完整或 Review Gate 未解决时阻止执行。它无法推断经审核 Contract 本身遗漏的语义，因此阶段审核仍负责契约的语义完整性。
 
@@ -62,6 +62,8 @@ Lean、Compact 与 Full 的规划产物可以形成确定性的 Review Gate。�
 - `UserPromptSubmit`：每个受支持的新提示前提供更短的提醒；
 - `SubagentStart`：标记父任务由协调 Agent 写入，worker 只读。
 
+自动 Hook 恢复具有根亲和性：只有发现的 ledger 根目录本身是 Git 仓库或 worktree 根时才注入。用于管理多个仓库的非 Git 父目录仍可显式运行 state CLI 和 Project Workflow Index，但它的 ledger 不会被猜测并注入从该父目录启动的每个任务。
+
 另外三个边界工具平时保持休眠：
 
 - **工作区交接**：只校验显式指定的另一根目录和活跃 workflow，取消源 ledger 并留下目标指针；它不会扫描兄弟 worktree，也不能改变当前任务根目录。后续必须在目标目录新建任务或会话并重新核验；
@@ -72,7 +74,7 @@ Lean、Compact 与 Full 的规划产物可以形成确定性的 Review Gate。�
 
 ## 能力边界
 
-Outcome Lock 与 Review Lease 能确定性拒绝来源漂移、已声明 ID 缺失、无效范围状态、不完整 fidelity、过期门禁重放和虚假完成转换；但它们不能强迫模型从自由文本中提取全部语义、阻止同一轮 steering、覆盖最新用户请求、在不检查最新可见对话时推断“无人介入”，也不能让运行中的任务热加载替换后的插件。Codex 中，如果消息必须等当前运行结束再处理，请使用 Queue。
+Outcome Lock 与 Review Lease 能确定性拒绝来源漂移、已声明 ID 缺失、无效范围状态、不完整 fidelity、过期门禁重放和虚假完成转换；但它们不能强迫模型从自由文本中提取全部语义、阻止同一轮 steering、覆盖最新用户请求、在不检查最新可见对话时推断“无人介入”，也不能让运行中的任务热加载替换后的插件。非 Git ledger 根目录不会自动获得 Hook 恢复，应显式调用 state CLI。Codex 中，如果消息必须等当前运行结束再处理，请使用 Queue。
 
 暂停中的 workflow 不会因为普通实现提示而自动恢复；必须先完成显式 `resume`。超过 30 天未更新的 ledger 会标记为按时间过期，需先与当前代码和最新请求核对，再决定是否继续。
 
@@ -116,10 +118,10 @@ Littlepowers 可独立运行。若把它和 Superpowers 同时设为默认 route
 
 ## 安装到 Codex
 
-按精确 tag 安装稳定版 1.3：
+按精确 tag 安装稳定版 1.3.1：
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v1.3.0
+codex plugin marketplace add clsaa/littlepowers --ref v1.3.1
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -142,10 +144,10 @@ Codex 的 Queue 用于延迟消息，`/side` 或 `/btw` 用于无关问题。Lit
 使用 tag 固定的本地 marketplace 安装精确版本：
 
 ```bash
-git clone --depth 1 --branch v1.3.0 \
+git clone --depth 1 --branch v1.3.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.0
-claude plugin marketplace add /absolute/path/littlepowers-v1.3.0
+  /absolute/path/littlepowers-v1.3.1
+claude plugin marketplace add /absolute/path/littlepowers-v1.3.1
 claude plugin install littlepowers@littlepowers
 ```
 
@@ -178,10 +180,10 @@ Qoder CLI 与 Qoder IDE 共用同一套插件结构。
 使用 tag 固定的本地检出安装精确版本：
 
 ```bash
-git clone --depth 1 --branch v1.3.0 \
+git clone --depth 1 --branch v1.3.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.0
-qodercli plugins install /absolute/path/littlepowers-v1.3.0
+  /absolute/path/littlepowers-v1.3.1
+qodercli plugins install /absolute/path/littlepowers-v1.3.1
 ```
 
 本地检出可用 `qodercli plugins install /path/to/littlepowers` 安装。重启会话或执行 `/skills reload`，并先检查插件 Hook 再信任。Qoder IDE 通过 Marketplace 面板安装，或导入本地插件目录。
@@ -206,7 +208,7 @@ qodercli plugins install /absolute/path/littlepowers-v1.3.0
 
 ```json
 {
-  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.3.0"]
+  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.3.1"]
 }
 ```
 
@@ -296,33 +298,33 @@ schema-4 当前 ledger；若要回退到 1.2，应先取消开放的 Review Gate
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v1.3.0
+codex plugin marketplace add clsaa/littlepowers --ref v1.3.1
 codex plugin add littlepowers@littlepowers
 ```
 
 回滚时把 `--ref` 换成目标旧 tag。Claude Code 使用独立的 tag 检出作为 marketplace：
 
 ```bash
-git clone --depth 1 --branch v1.3.0 \
+git clone --depth 1 --branch v1.3.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.0
+  /absolute/path/littlepowers-v1.3.1
 claude plugin uninstall littlepowers@littlepowers
 claude plugin marketplace remove littlepowers
-claude plugin marketplace add /absolute/path/littlepowers-v1.3.0
+claude plugin marketplace add /absolute/path/littlepowers-v1.3.1
 claude plugin install littlepowers@littlepowers
 ```
 
 Qoder CLI 直接安装同一个 tag 检出：
 
 ```bash
-git clone --depth 1 --branch v1.3.0 \
+git clone --depth 1 --branch v1.3.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.0
+  /absolute/path/littlepowers-v1.3.1
 qodercli plugins uninstall littlepowers
-qodercli plugins install /absolute/path/littlepowers-v1.3.0
+qodercli plugins install /absolute/path/littlepowers-v1.3.1
 ```
 
-OpenCode 把 git 插件 URL 的 `#v1.3.0` 后缀换成目标 tag，必要时强制刷新包缓存并重启。任何宿主更新后都应新建任务/会话，确认 11 个技能并运行管理技能的 `doctor`；插件 reload 不等于 ledger 迁移。
+OpenCode 把 git 插件 URL 的 `#v1.3.1` 后缀换成目标 tag，必要时强制刷新包缓存并重启。任何宿主更新后都应新建任务/会话，确认 11 个技能并运行管理技能的 `doctor`；插件 reload 不等于 ledger 迁移。
 
 ## 隐私与安全
 

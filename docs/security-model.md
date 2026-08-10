@@ -1,8 +1,8 @@
 # Security model
 
-**Reviewed:** 2026-08-01
+**Reviewed:** 2026-08-10
 
-**Release:** 1.3.0
+**Release:** 1.3.1
 
 ## Assets and trust boundary
 
@@ -44,7 +44,15 @@ prompt, artifact content, credential, or model output.
 - `UserPromptSubmit`;
 - `SubagentStart`.
 
-The hook reads event metadata and the ledger. It does not inspect transcript paths or prompt text, write state, call the network, run Git mutations, or start agents. It emits nothing when no unfinished workflow exists. Invalid state produces a fixed stderr diagnostic and exit code 0 so the coding session can continue.
+The hook reads event metadata and, for automatic recovery, the ledger only when
+the already-discovered ledger root has a `.git` directory or regular worktree
+marker file. A non-Git manager root remains addressable by explicit CLI
+commands, but its ledger is not injected into every task launched from that
+directory. This check performs one `lstat`; it does not inspect prompt text or
+transcript paths, scan children/siblings, run Git, write state, call the
+network, or start agents. It emits nothing when no eligible unfinished
+workflow exists. Invalid state produces a fixed stderr diagnostic and exit code
+0 so the coding session can continue.
 
 The OpenCode plugin `.opencode/plugins/littlepowers.js` is read-only and fails open. It registers the plugin's skills directory through the host's config hook and injects the same `hooks/session-start.py` output into in-memory message parts through the host's experimental message-transform hook. It spawns that Python hook with a four-second timeout and a 256 KiB output bound, never writes state or files, never calls the network, and retains only message identifiers (with a bounded prompt-text fallback key) in process memory for injection deduplication. Any error — missing Python, host API drift, or invalid state — results in no injection.
 
@@ -106,7 +114,7 @@ The shared read/write boundary:
 
 Hook context is bounded to 10,000 characters and only includes the ten most recent completed entries. It labels records older than 30 days as stale by age and marks paused records as requiring explicit resume.
 
-Recovery context also includes the canonical workspace root used to load the ledger. This is a local filesystem path already available to the host process; it is included so the model can distinguish a nested project ledger from an unrelated ancestor ledger. The Hook does not discover or list sibling roots.
+Recovery context also includes the canonical workspace root used to load the ledger. This is a local filesystem path already available to the host process; it is included so the model can distinguish roots after injection. Before injection, the Hook requires that ledger root itself to be a Git repository or worktree root. It does not discover or list sibling roots.
 
 The shared explicit-file reader walks workspace directories without following
 links where the operating system supports descriptor-relative access. It

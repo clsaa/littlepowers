@@ -23,6 +23,7 @@ Run each configuration at least three times before drawing a reliability conclus
 - A small bounded change with one meaningful decision uses brainstorm → plan without separate spec/design artifacts.
 - Approved parent requirements remain in one definition of done and one continuous implementation stream; tasks and rollback units do not become product or technical slices or staged deliveries.
 - A reviewed Contract binds only explicit parent sources, exposes stable Outcome IDs, and becomes non-executable when a source drifts.
+- Contract sources are stable acceptance inputs, never planned write targets or generated implementation evidence; a source-free Contract carries the latest request through reviewed Outcome records.
 - Every active Outcome ID maps to tasks and named evidence before execution; an omitted or unknown ID is rejected atomically.
 - Any `Added / Changed / Deferred / Removed` scope delta is highlighted for explicit approval, or the artifact states `No scope delta`.
 - `No scope delta` cannot coexist with changed, deferred, or removed Outcomes.
@@ -57,6 +58,7 @@ Run each configuration at least three times before drawing a reliability conclus
 - A broad uncommitted review binds its verdict to explicit before/after snapshot tokens; candidate drift invalidates only affected evidence.
 - An oversized material review partitions by trust, state ownership, or rollback boundary and aggregates shared-interface acceptance once, while ordinary work adds no snapshot, model pass, or broad test.
 - A nested project binds recovery to its explicit canonical root and leaves an unrelated ancestor ledger untouched.
+- A non-Git manager-directory ledger is available to explicit CLI/index operations but remains silent in automatic Hook recovery; an exact Git repository or worktree root still injects normally.
 
 Use [scenarios.md](scenarios.md) for the prompts and expected observations.
 
@@ -76,3 +78,6 @@ Workflow Index candidate, final security repairs, 197-test aggregate boundary,
 and current four-host package validation are recorded in
 `results/2026-08-01-v1.3.0-release.md`. Fake-host argv and deterministic state
 evidence are not authenticated GPT-5.6, Fable, or Opus implementation runs.
+The 1.3.1 root-affinity, stable-source, current-host, and 201-test candidate
+evidence is recorded in `results/2026-08-10-v1.3.1-release.md`; its Claude model
+probe is explicitly authentication-blocked rather than reported as passing.

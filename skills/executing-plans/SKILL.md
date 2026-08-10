@@ -55,6 +55,13 @@ inherited behavior must change, defer, or disappear, stop that decision path
 and return to the Scope Delta Gate. An external blocker keeps the workflow
 incomplete; it does not shrink the objective.
 
+Do not silence Contract drift by adopting a changed test, fixture, generated
+evidence, or other planned write target as a new parent digest. If such a file
+was bound by mistake, stop executable progress, correct the Contract through
+its required review boundary, and keep the mutable file as implementation
+evidence. Rebinding never turns evidence produced by this work unit into its
+own acceptance authority.
+
 Express `progress` as a named milestone or acceptance-check count such as
 `State gate: 3/5 acceptance checks pass`. Do not invent a percentage from
 elapsed time, file count, or intuition. Keep the approved plan stable unless

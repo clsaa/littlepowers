@@ -40,7 +40,7 @@ Lean, Compact, and Full planning artifacts can become deterministic Review Gates
 
 “End-to-end” alone is not unattended authority. A correction, hold, replacement, unresolved question, proposed scope delta, changed artifact, or drifted Contract stops automatic continuation. Review authority never grants commit, push, PR, publish, deploy, destructive, secret-access, or permission-broadening authority.
 
-All routes bind the latest request and any approved parent PRD, interaction flow, prototype, screenshot set, or contract as the complete outcome. The agent cannot create a smaller product or technical slice on its own. Any `Added / Changed / Deferred / Removed` scope delta is highlighted for explicit approval; otherwise it records `No scope delta`. Implementation runs as one continuous stream under one definition of done. Tasks, checkpoints, rollback units, and small commits control order and safe recovery; they are not staged deliveries. For UI fidelity, implementation-generated screenshots are regression evidence, not substitutes for a user-approved baseline.
+All routes bind the latest request and any approved parent PRD, interaction flow, prototype, screenshot set, or contract as the complete outcome. Contract sources must remain stable acceptance inputs for the workflow: never bind a planned write target, test, fixture, generated screenshot, run card, or implementation evidence that the plan will update. If no stable parent file exists, the reviewed Outcome records carry the latest request. The agent cannot create a smaller product or technical slice on its own. Any `Added / Changed / Deferred / Removed` scope delta is highlighted for explicit approval; otherwise it records `No scope delta`. Implementation runs as one continuous stream under one definition of done. Tasks, checkpoints, rollback units, and small commits control order and safe recovery; they are not staged deliveries. For UI fidelity, implementation-generated screenshots are regression evidence, not substitutes for a user-approved baseline.
 
 Tracked work uses Outcome Lock protocol 1.3. A reviewed Contract records stable `OUT-###` IDs and explicit parent-source digests; a Plan Map must map every active ID to tasks and evidence before execution; a Verification Record keeps work-unit compliance, approved-outcome fidelity, and code quality independent. Schema 4 combines those checks with a persisted Review Lease and blocks execution on drift, incomplete coverage, or an unresolved gate. It cannot infer a requirement that was omitted from the reviewed Contract, so route review still owns semantic completeness.
 
@@ -64,6 +64,8 @@ Three read-only hook boundaries expose that ledger to the host:
 
 The root coordinator is the only ledger writer. A stale revision fails instead of overwriting newer state.
 
+Automatic Hook recovery is root-affine: it injects a ledger only when the discovered ledger root is itself a Git repository or worktree root. A non-Git parent used to manage several repositories can still use explicit state CLI commands and the Project Workflow Index, but its ledger is never guessed into every task launched from that parent.
+
 Three boundary tools stay dormant until explicitly needed:
 
 - **Workspace handoff** verifies a named active workflow in another root, cancels only the source ledger, and leaves a pointer for a new task or session rooted at the target. It never scans sibling worktrees or changes the current task root.
@@ -74,7 +76,7 @@ If a material review is too large for one reliable pass, split it by trust, stat
 
 ## What it cannot guarantee
 
-Outcome Lock and Review Lease deterministically reject drift, missing declared IDs, invalid scope state, incomplete declared fidelity, stale gate replay, and false completion transitions. They cannot force a model to extract every meaning from free-form prose, prevent same-turn steering, override the latest user request, infer silence without inspecting the latest visible conversation, or make an active task hot-load a replacement plugin. In Codex, use Queue when a follow-up must wait for the current run to finish.
+Outcome Lock and Review Lease deterministically reject drift, missing declared IDs, invalid scope state, incomplete declared fidelity, stale gate replay, and false completion transitions. They cannot force a model to extract every meaning from free-form prose, prevent same-turn steering, override the latest user request, infer silence without inspecting the latest visible conversation, or make an active task hot-load a replacement plugin. Automatic Hook recovery is intentionally unavailable for a non-Git ledger root; use the state CLI explicitly there. In Codex, use Queue when a follow-up must wait for the current run to finish.
 
 Hooks may be disabled by trust settings or organization policy. Host wake-up is optional: Codex requires a callable same-task one-shot Scheduled Task capability, Claude Code requires the optional exact-session runner, and Qoder/OpenCode currently resume manually. A lost callback leaves the durable gate intact. The Qoder IDE currently supports only a subset of hook events, so the SessionStart and SubagentStart boundaries stay silent there while UserPromptSubmit reminders still work. Recovery can only return to the last checkpoint that was written. One worktree supports one active top-level workflow; use another worktree for independent concurrent work. In Claude dynamic workflows, keep the approved Littlepowers plan as the sole product-scope authority and use the host workflow only as its execution adapter.
 
@@ -113,10 +115,10 @@ See the [capability matrix](docs/capability-matrix.md) for exact boundaries.
 
 ## Install in Codex
 
-Install the stable 1.3 release by its exact tag:
+Install the stable 1.3.1 release by its exact tag:
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v1.3.0
+codex plugin marketplace add clsaa/littlepowers --ref v1.3.1
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -143,10 +145,10 @@ Codex Queue defers a follow-up; `/side` or `/btw` isolates an unrelated question
 For an exact release, use a tag-pinned local marketplace checkout:
 
 ```bash
-git clone --depth 1 --branch v1.3.0 \
+git clone --depth 1 --branch v1.3.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.0
-claude plugin marketplace add /absolute/path/littlepowers-v1.3.0
+  /absolute/path/littlepowers-v1.3.1
+claude plugin marketplace add /absolute/path/littlepowers-v1.3.1
 claude plugin install littlepowers@littlepowers
 ```
 
@@ -183,10 +185,10 @@ Qoder CLI and the Qoder IDE share the same plugin layout.
 For an exact release, install a tag-pinned checkout:
 
 ```bash
-git clone --depth 1 --branch v1.3.0 \
+git clone --depth 1 --branch v1.3.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.0
-qodercli plugins install /absolute/path/littlepowers-v1.3.0
+  /absolute/path/littlepowers-v1.3.1
+qodercli plugins install /absolute/path/littlepowers-v1.3.1
 ```
 
 For a local checkout, run `qodercli plugins install /path/to/littlepowers` instead. Restart the session or run `/skills reload`, then review the plugin hooks before trusting them. In the Qoder IDE, install through the Marketplace panel or import the local plugin folder.
@@ -211,7 +213,7 @@ Add the plugin to the `plugin` array in `opencode.json` (global or project-level
 
 ```json
 {
-  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.3.0"]
+  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.3.1"]
 }
 ```
 
@@ -306,7 +308,7 @@ from an exact tag and start a new task/session. For Codex:
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v1.3.0
+codex plugin marketplace add clsaa/littlepowers --ref v1.3.1
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -315,26 +317,26 @@ Use the desired earlier tag in the same commands to roll back.
 For Claude Code, use a separate checkout of the desired tag as the marketplace:
 
 ```bash
-git clone --depth 1 --branch v1.3.0 \
+git clone --depth 1 --branch v1.3.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.0
+  /absolute/path/littlepowers-v1.3.1
 claude plugin uninstall littlepowers@littlepowers
 claude plugin marketplace remove littlepowers
-claude plugin marketplace add /absolute/path/littlepowers-v1.3.0
+claude plugin marketplace add /absolute/path/littlepowers-v1.3.1
 claude plugin install littlepowers@littlepowers
 ```
 
 For Qoder CLI, install the same tagged checkout directly:
 
 ```bash
-git clone --depth 1 --branch v1.3.0 \
+git clone --depth 1 --branch v1.3.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.0
+  /absolute/path/littlepowers-v1.3.1
 qodercli plugins uninstall littlepowers
-qodercli plugins install /absolute/path/littlepowers-v1.3.0
+qodercli plugins install /absolute/path/littlepowers-v1.3.1
 ```
 
-For OpenCode, change the `#v1.3.0` suffix in the git plugin URL to the exact
+For OpenCode, change the `#v1.3.1` suffix in the git plugin URL to the exact
 desired tag, force-refresh its package cache if necessary, and restart OpenCode.
 After any host change, open a new task/session, confirm all eleven skills, and
 run the management skill's `doctor`; do not treat plugin reload as ledger

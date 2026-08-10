@@ -4,6 +4,35 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-08-10
+
+### Changed
+
+- Require Contract sources to remain stable acceptance inputs for the workflow.
+  Planned write targets, tests or fixtures updated by the plan, generated
+  screenshots, run cards, and implementation evidence remain task/evidence
+  paths; reviewed Outcomes carry the latest request when no stable parent file
+  exists.
+- Shorten all three Codex starter prompts to the current 128-character host
+  limit and enforce that bound in manifest regression tests.
+- Refresh current host evidence and CI validation for Codex 0.147.0, Claude
+  Code 2.1.226, and Qoder CLI 1.1.18 without changing model or effort settings.
+
+### Fixed
+
+- Make automatic recovery Git-root-affine. A ledger in a non-Git manager
+  directory is no longer injected into every task launched there, while exact
+  repositories and worktrees retain normal recovery and explicit manager-root
+  CLI/index operations remain available.
+
+### Security and performance
+
+- Add one local `.git` marker `lstat` before automatic Hook ledger loading. The
+  guard adds no Git subprocess, child/sibling scan, prompt or transcript read,
+  network access, state mutation, scheduler, background loop, or model call.
+- Keep schema 4 and protocol 1.3 unchanged; rollback to 1.3.0 requires only an
+  exact-tag plugin replacement at a new task/session boundary.
+
 ## [1.3.0] - 2026-08-01
 
 ### Added
@@ -277,7 +306,8 @@ The first stable release. Multi-host support (Codex, Claude Code, Qoder, OpenCod
 
 - Created the initial Codex plugin and planning workflow.
 
-[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/clsaa/littlepowers/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/clsaa/littlepowers/compare/v1.2.0-alpha.1...v1.3.0
 [1.2.0-alpha.1]: https://github.com/clsaa/littlepowers/compare/v1.1.0-alpha.1...v1.2.0-alpha.1
 [1.1.0-alpha.1]: https://github.com/clsaa/littlepowers/compare/v1.0.0...v1.1.0-alpha.1

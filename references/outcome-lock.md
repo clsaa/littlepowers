@@ -8,6 +8,14 @@ syntax and deterministic transitions.
 
 - Bind only explicit project-relative files. Do not scan the repository,
   sibling worktrees, transcripts, or the network.
+- Bind only stable acceptance inputs for the lifetime of the workflow. Never
+  bind a planned write target: any file that the approved plan is expected to
+  modify. Tests, fixtures, generated screenshots, run cards, and implementation
+  evidence stay outside
+  `sources` when this workflow will update them. If the latest user request has
+  no stable parent file, use an empty source list and express the complete
+  reviewed request through the Outcome records instead of inventing a mutable
+  source.
 - Keep one complete approved outcome. Tasks and checkpoints are implementation
   order and rollback boundaries, not smaller product outcomes or staged
   deliveries.

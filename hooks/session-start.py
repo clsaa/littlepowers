@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import stat
 import sys
 from pathlib import Path
 
@@ -31,12 +32,31 @@ from littlepowers_state import (  # noqa: E402
 )
 
 
+def is_automatic_recovery_root(root: Path) -> bool:
+    """Return whether one discovered ledger root is an exact Git root.
+
+    Hooks have only the host cwd and must not guess a nested project from prompt
+    text or scan sibling directories.  A non-Git manager directory may still be
+    addressed explicitly through the state CLI, but its ledger is not safe to
+    inject automatically into every task launched from that directory.
+    """
+
+    marker = root / ".git"
+    try:
+        mode = marker.lstat().st_mode
+    except OSError:
+        return False
+    return stat.S_ISDIR(mode) or stat.S_ISREG(mode)
+
+
 def main() -> int:
     try:
         event = json.load(sys.stdin)
         if not isinstance(event, dict):
             raise ValueError("hook input must be an object")
         root = discover_root(start=event.get("cwd") or Path.cwd())
+        if not is_automatic_recovery_root(root):
+            return 0
         state = load_state(root, missing_ok=True)
         if not state:
             return 0

@@ -1,8 +1,8 @@
 # Capability matrix
 
-**Reviewed:** 2026-08-01
+**Reviewed:** 2026-08-10
 
-**Release:** 1.3.0
+**Release:** 1.3.1
 
 Littlepowers is checkpoint-assisted recovery. The table separates host events, durable state, and model behavior.
 
@@ -15,7 +15,7 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 | Status or side question | Router guidance plus persisted Review Lease | Answer, then return to the recorded action; an open gate keeps its stored policy and is not silently consumed | Model compliance remains probabilistic |
 | Long-running status | Bounded `progress` plus checkpoints | Report a named milestone or acceptance-check count, then continue | Littlepowers does not infer percentages or replace project-management systems |
 | Small bounded change with one meaningful decision | Lean plan route | Brainstorm, then write the executable plan directly; create no separate spec/design | Escalate to full shaping if material unresolved architecture, security, migration, cross-system, irreversible-state, or costly-rollback choices appear |
-| Approved PRD, prototype, or parent contract | Schema-4 Contract Bind Gate | Bind explicit sources and stable Outcome IDs; record `No scope delta` or distinctly approved `Added / Changed / Deferred / Removed` | IDs and digests protect the reviewed contract; semantic extraction from free-form sources remains a review responsibility |
+| Approved PRD, prototype, or parent contract | Schema-4 Contract Bind Gate | Bind stable acceptance inputs and stable Outcome IDs; record `No scope delta` or distinctly approved `Added / Changed / Deferred / Removed` | Planned write targets, tests/fixtures updated by the plan, and generated evidence stay outside `sources`; with no stable parent file, reviewed Outcomes carry the latest request |
 | Parent source changed or missing | Explicit `check-contract` at lifecycle gates | Record `drifted`, reject executable progress, and require reviewed rebind | Checks read only already bound files; ordinary prompts and Hooks do not refresh digests |
 | Plan covers only part of the parent outcome | Outcome Coverage Gate | Reject execution unless every active Outcome ID maps to tasks and named evidence | Coverage proves declared-ID completeness, not that the reviewed Contract captured every free-form requirement |
 | Implementation ordering | One continuous implementation stream | Use tasks, checkpoints, rollback units, and small commits while retaining one definition of done | A passed rollback unit is incomplete progress, not a product or technical slice |
@@ -33,6 +33,7 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 | Clearly unrelated request | Router guidance | Preserve the ledger and use a side task or separate worktree | One worktree has one active workflow |
 | Parallel independent iterations in one Git project | Opt-in Project Workflow Index | Explicitly register up to 16 same-repository worktrees and read their current branch/ledger summaries with `project-status` | No sibling discovery, member mutation, scheduling, or multiple workflows in one checkout; bad members remain isolated error rows |
 | Nested repository under a task root with another ledger | Explicit `--root` context plus root-bearing Hook snapshot | Bind recovery to the named nested project and leave the ancestor ledger untouched | The router does not scan siblings or change the host task root |
+| Task launched from a non-Git manager directory with its own ledger | Hook root-affinity check | Inject nothing automatically; an exact Git repository or worktree root still recovers normally | Explicit state CLI and Project Workflow Index operations remain available for the manager root |
 | Process crash | Ledger | Resume from the last successful checkpoint | Uncheckpointed tool work may be missing |
 | Two coordinator writes | Revision compare-and-swap | The stale writer exits with conflict code 3 | Reload and reconcile manually |
 | Codex Ultra or Claude dynamic workflow | One approved Littlepowers plan plus a host execution adapter | The Littlepowers plan remains the sole product-scope authority; host workers are read-only and checkpoints occur before launch and after integration | Protocol-compatible but not yet orchestration-certified; host workflows may add planning, token, and wall-clock cost |
@@ -65,6 +66,10 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
   do not alter Sol, xhigh, max, or Ultra settings.
 - A timed callback is armed only for an explicit `windowed` policy and only when
   a same-task one-shot scheduling tool is actually callable. Hooks never schedule work.
+- Automatic Hook recovery checks only the already-discovered root's `.git`
+  marker. The guard adds no Git process, prompt inspection, or child scan and
+  does not inherit a non-Git manager ledger into every task launched there;
+  existing read-only root discovery may still call `git rev-parse`.
 
 ### Claude Code
 

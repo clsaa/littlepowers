@@ -93,6 +93,15 @@ For status requests, `managing-littlepowers` reads the ledger; `using-littlepowe
 
 Before choosing planning depth, identify the highest-authority current sources: the latest user request plus any explicitly approved PRD, specification, interaction flow, prototype, screenshot set, API contract, migration contract, or acceptance list. Record those parent acceptance sources in every planning artifact. Derived artifacts may clarify implementation but cannot silently narrow or override the approved outcome.
 
+Contract files must remain stable throughout the planned implementation. Do
+not bind a source that the current plan is expected to edit, even when it is an
+existing test, fixture, generated screenshot, run card, or prior implementation
+artifact. Those files are implementation or regression evidence, not immutable
+parent authority for the same work unit. When the latest approved request has
+no stable project file, keep `sources` empty and capture the complete request in
+the reviewed Outcome IDs; do not manufacture a temporary requirements file just
+to hash it.
+
 For tracked schema-4 work, read
 [`../../references/outcome-lock.md`](../../references/outcome-lock.md) only in
 the phase that creates, binds, maps, reconciles, or verifies the protocol

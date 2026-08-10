@@ -57,6 +57,6 @@ jobs:
       - name: Validate Claude Code plugin
         run: |
           npm install --prefix "$RUNNER_TEMP/claude-code" \
-            --include=optional @anthropic-ai/claude-code@2.1.212
+            --include=optional @anthropic-ai/claude-code@2.1.226
           node "$RUNNER_TEMP/claude-code/node_modules/@anthropic-ai/claude-code/install.cjs"
           "$RUNNER_TEMP/claude-code/node_modules/.bin/claude" plugin validate --strict .

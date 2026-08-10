@@ -461,3 +461,30 @@ bounded error row while healthy rows remain visible; no entry is pruned,
 resumed, handed off, or scheduled. The discovery request is declined unless the
 user supplies exact roots. Hooks never read `project-index.json`, and independent
 iterations still require separate worktrees and one ledger writer each.
+
+## 54. Non-Git manager-ledger isolation
+
+Create an active ledger at a non-Git parent directory that contains several Git
+repositories. Invoke `SessionStart` and `UserPromptSubmit` from the parent, then
+invoke the same Hook from a nested repository with its own active ledger. Also
+run an explicit state CLI read against the parent root.
+
+Expected: automatic Hook output from the non-Git parent is empty, without
+opening a child ledger, inspecting prompt text, adding a Git command beyond
+existing root discovery, or mutating either state. The nested repository injects only its exact workflow/root, including
+when `.git` is a regular worktree marker file. Explicit parent-root CLI access
+still succeeds, so manager/index usage remains available without ambient
+recovery authority.
+
+## 55. Stable Contract-source authority
+
+Shape a change whose plan will modify a test fixture, generated snapshot, run
+card, and verification record. No immutable PRD or other stable parent file is
+present. Ask the agent to bind the Contract and execute the plan.
+
+Expected: `sources` remains empty and the complete latest request is captured
+in reviewed Outcome records. Planned write targets and generated implementation
+evidence are mapped as task/evidence paths, not promoted to immutable parent
+sources. A real stable PRD or approved baseline, when supplied, remains eligible
+for binding. The agent does not silence legitimate source drift by rebinding a
+changed planned write target.

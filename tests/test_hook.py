@@ -21,6 +21,7 @@ class RecoveryHookTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary_directory = tempfile.TemporaryDirectory()
         self.workspace = Path(self.temporary_directory.name)
+        (self.workspace / ".git").mkdir()
         self.hook = ROOT / "hooks" / "session-start.py"
 
     def tearDown(self) -> None:
@@ -139,6 +140,46 @@ class RecoveryHookTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, "")
         self.assertEqual(result.stderr, "")
+
+    def test_hook_is_silent_for_non_git_manager_root_with_active_state(self) -> None:
+        state = self.start_state()
+        (self.workspace / ".git").rmdir()
+
+        result = self.run_hook(self.event("UserPromptSubmit"))
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "")
+        self.assertEqual(result.stderr, "")
+        self.assertEqual(
+            state_module.load_state(self.workspace)["workflow_id"],
+            state["workflow_id"],
+        )
+
+    def test_hook_accepts_git_worktree_marker_file(self) -> None:
+        state = self.start_state()
+        (self.workspace / ".git").rmdir()
+        (self.workspace / ".git").write_text(
+            "gitdir: /tmp/example-worktree-gitdir\n", encoding="utf-8"
+        )
+
+        result = self.run_hook(self.event("SessionStart"))
+
+        self.assertEqual(result.returncode, 0)
+        self.assertIn(str(state["workflow_id"]), result.stdout)
+
+    def test_hook_discovers_repository_ledger_from_nested_cwd(self) -> None:
+        state = self.start_state()
+        nested = self.workspace / "src" / "feature"
+        nested.mkdir(parents=True)
+
+        result = self.run_hook(
+            json.dumps(
+                {"cwd": str(nested), "hook_event_name": "UserPromptSubmit"}
+            )
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertIn(str(state["workflow_id"]), result.stdout)
 
     def test_session_start_injects_bounded_factual_snapshot(self) -> None:
         state = self.start_state()

@@ -24,7 +24,7 @@ class ManifestTests(unittest.TestCase):
 
         self.assertEqual(codex["name"], "littlepowers")
         self.assertEqual(claude["name"], "littlepowers")
-        self.assertEqual(codex["version"], "1.3.0")
+        self.assertEqual(codex["version"], "1.3.1")
         self.assertEqual(claude["version"], codex["version"])
         self.assertEqual(claude["repository"], codex["repository"])
         self.assertIn("Claude Code", codex["description"])
@@ -36,6 +36,7 @@ class ManifestTests(unittest.TestCase):
         self.assertEqual(codex["interface"]["category"], "Developer Tools")
         prompts = codex["interface"]["defaultPrompt"]
         self.assertLessEqual(len(prompts), 3)
+        self.assertTrue(all(len(prompt) <= 128 for prompt in prompts))
         self.assertTrue(any("rollback scope" in prompt for prompt in prompts))
 
     def test_codex_marketplace_points_to_repository_root(self) -> None:
@@ -103,7 +104,7 @@ class ManifestTests(unittest.TestCase):
     def test_opencode_plugin_registers_skills_and_injects_read_only(self) -> None:
         package = read_json(ROOT / "package.json")
         self.assertEqual(package["name"], "littlepowers")
-        self.assertEqual(package["version"], "1.3.0")
+        self.assertEqual(package["version"], "1.3.1")
         self.assertEqual(package["main"], ".opencode/plugins/littlepowers.js")
         self.assertEqual(package["type"], "module")
         self.assertNotIn("dependencies", package)
@@ -540,6 +541,13 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("Do not invent a percentage", executing)
         self.assertIn("before a likely context compaction", executing)
         self.assertIn("without inventing a percentage", managing)
+        self.assertIn("expected to edit", router)
+        self.assertIn("keep `sources` empty", router)
+        self.assertIn("planned write target", executing)
+        outcome_lock = (ROOT / "references" / "outcome-lock.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("planned write target", outcome_lock)
         phase_progress = {
             "brainstorming": "spec is next",
             "writing-specs": "design is next",
@@ -638,6 +646,7 @@ class ManifestTests(unittest.TestCase):
             "docs/security-model.md",
             "evals/results/2026-07-17-v0.4-alpha.1.md",
             "evals/results/2026-08-01-v1.3.0-release.md",
+            "evals/results/2026-08-10-v1.3.1-release.md",
             ".github/pull_request_template.md",
             ".github/ISSUE_TEMPLATE/bug.yml",
             ".github/ISSUE_TEMPLATE/compatibility.yml",
@@ -652,7 +661,7 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("cannot force a model", readme)
         self.assertIn("UserPromptSubmit", readme)
         self.assertIn("coordinator is the only ledger writer", readme)
-        self.assertIn("v1.3.0", readme)
+        self.assertIn("v1.3.1", readme)
         self.assertIn("Outcome Lock protocol 1.3", readme)
         self.assertIn("Review Lease", readme)
         self.assertIn("one continuous stream", readme)
@@ -676,8 +685,11 @@ class ManifestTests(unittest.TestCase):
         stable_evaluation = (
             ROOT / "evals" / "results" / "2026-08-01-v1.3.0-release.md"
         ).read_text(encoding="utf-8")
+        patch_evaluation = (
+            ROOT / "evals" / "results" / "2026-08-10-v1.3.1-release.md"
+        ).read_text(encoding="utf-8")
 
-        self.assertIn("Release:** 1.3.0", capability)
+        self.assertIn("Release:** 1.3.1", capability)
         self.assertIn("Outcome Coverage Gate", capability)
         self.assertIn("`debugging-systematically`", capability)
         self.assertIn("`verifying-work`", capability)
@@ -699,6 +711,9 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("Candidate: `1.3.0`", stable_evaluation)
         self.assertIn("198/198 passed", stable_evaluation)
         self.assertIn("same-byte path substitution", stable_evaluation)
+        self.assertIn("Candidate:** `1.3.1`", patch_evaluation)
+        self.assertIn("201/201 passed", patch_evaluation)
+        self.assertIn("local OAuth was expired", patch_evaluation)
 
 
 if __name__ == "__main__":

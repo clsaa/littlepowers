@@ -1,6 +1,6 @@
 {
   "name": "littlepowers",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "A proportional planning, Outcome Lock, Review Lease, recovery, debugging, verification, and review protocol for Codex, Claude Code, Qoder, and OpenCode.",
   "author": {
     "name": "clsaa",
@@ -36,8 +36,8 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Use Littlepowers to shape and implement this complete approved outcome at proportional planning depth without splitting it into slices.",
-      "For this bounded change, brainstorm once, write the plan directly, then continue implementation under my fixed implementation mandate.",
+      "Use Littlepowers to shape and implement the complete outcome proportionally, without product or technical slicing.",
+      "For this bounded change, brainstorm once, write the plan, then implement under my fixed mandate.",
       "Resume or diagnose this work, then review and verify it at its actual impact and rollback scope."
     ],
     "websiteURL": "https://github.com/clsaa/littlepowers",
