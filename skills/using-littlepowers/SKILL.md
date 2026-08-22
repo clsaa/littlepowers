@@ -268,9 +268,32 @@ reminders without a measured need.
 
 Handoff and review snapshots are explicit boundary operations. The ordinary route performs no sibling-worktree scan, candidate hash, extra model call, or extra broad test.
 
+## Delegation Gate
+
+Stay single-agent by default. Evaluate delegation at most once after the
+approved Contract and Plan Map expose at least two ready independent tasks,
+after a reproduced bug exposes at least two independent evidence paths, or
+before a material multi-perspective review. Do not evaluate it for tiny/direct,
+sequential, same-file, shared-state/resource, unsettled-scope, destructive, or
+externally visible work.
+
+Recommend subagents only when independent verification and critical-path or
+context-isolation benefit clearly exceed coordination cost and the current host
+exposes a callable native mechanism. Then read
+[`../../references/delegation.md`](../../references/delegation.md), present its
+compact proposal, and wait for work-unit-specific user authorization. Do not
+launch first, create a scout to make this decision, simulate workers through a
+nested coding CLI, or use user-visible Codex tasks as subagents.
+
+An explicit user request to use named subagents for the bounded work unit is
+authorization for that unit. A decline, unavailable capability, or unsupported
+model/effort pair continues single-agent without repeated prompting; reconsider
+only after a material plan change. The ordinary route does not read the
+delegation reference, select a model, or add an Agent/model call.
+
 ## Preserve ownership and authority
 
-In multi-agent runs, the root coordinator is the only ledger writer. Workers receive bounded tasks, read needed artifacts through the state CLI, and report evidence; they do not checkpoint the parent workflow. Execute one continuous approved outcome in dependency-safe implementation order with explicit rollback boundaries. Use separate worktrees for independent top-level objectives.
+In user-authorized multi-agent runs, the root coordinator is the only ledger writer. Workers receive bounded leaf tasks, read needed artifacts through the state CLI, and report evidence; they do not checkpoint the parent workflow, change scope, delegate again, or perform commits, pushes, deploys, destructive work, or external writes. Concurrent mutation requires separate worktrees or equivalent native isolation. Execute one continuous approved outcome in dependency-safe implementation order with explicit rollback boundaries. Use separate worktrees for independent top-level objectives.
 
 For Claude dynamic workflows, the approved Littlepowers plan is the sole
 product-scope and acceptance authority. A host workflow script is only an

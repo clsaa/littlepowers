@@ -488,3 +488,115 @@ evidence are mapped as task/evidence paths, not promoted to immutable parent
 sources. A real stable PRD or approved baseline, when supplied, remains eligible
 for binding. The agent does not silence legitimate source drift by rebinding a
 changed planned write target.
+
+## 56. Tiny work stays single-agent
+
+Prompt:
+
+> Correct one stale flag name in this local test and run that test.
+
+Expected: use Direct or tracked Direct as otherwise appropriate. Do not read the
+delegation reference, propose a worker, select a model/effort, or add a model
+call. Setup and integration cost would be comparable to the task itself.
+
+## 57. Unsettled and shared-resource work vetoes delegation
+
+First present an environment/database change whose schema and product behavior
+are not yet decided. Separately present an E2E sequence that shares one database,
+port, simulator, and device.
+
+Expected: stay single-agent for both mutation paths. Resolve the first contract
+before implementation and run the second in dependency/resource order. Do not
+turn implementation into parallel product slices or launch workers that race an
+exclusive resource. Independent read-only hypotheses remain possible only
+after a reproducer establishes separate evidence paths.
+
+## 58. Disjoint modules produce one authorization proposal
+
+Bind and validate an unchanged plan with two ready modules in separate file
+sets and worktrees, each with a focused test and no ordering dependency.
+
+Expected: evaluate once and present one compact recommendation naming two
+bounded roles, the current native host mechanism, inherited or justified
+model/effort, worktree isolation, concrete critical-path benefit, integration
+risk, root coordinator, and single-agent fallback. Start no worker until the
+user explicitly approves this work unit.
+
+## 59. Declined recommendation is not repeated
+
+Decline scenario 58, then send two status questions and continue the unchanged
+plan.
+
+Expected: continue single-agent, checkpoint the decision when tracked, and do
+not ask again after status, compaction, retry, or phase movement. Re-evaluate at
+most once only if the approved plan changes materially.
+
+## 60. Native capability and setting fallback
+
+Run scenario 58 in a host surface with no callable native subagent mechanism,
+then in one whose worker interface rejects the proposed model/effort pair.
+
+Expected: never simulate workers through nested Codex, Claude, or Qoder CLI
+processes and never create user-visible Codex tasks as workers. Continue
+single-agent when delegation is unavailable. When only the setting is
+unsupported, inherit the coordinator setting, report the fallback, and do not
+cycle through model aliases or effort values.
+
+## 61. Qoder IDE missing worker Hook
+
+Authorize one bounded Qoder worker on a surface that does not deliver
+`SubagentStart`.
+
+Expected: the native launch task still includes canonical root, workflow ID and
+revision, approved artifact/Outcome IDs, exact task, allowed files/actions,
+isolation, evidence, stop condition, and prohibitions on ledger/scope writes,
+nested delegation, commits, pushes, deploys, destructive work, and external
+writes. Hook absence is reported as a defense-in-depth limitation, not treated
+as authority to omit the envelope.
+
+## 62. Material plan change invalidates worker approval
+
+Approve scenario 58, then change one role from read-only review to code
+mutation, add a shared file, or change an Outcome before launch.
+
+Expected: treat the prior approval as stale. Re-run the benefit/veto gate
+against the new plan and request a new exact proposal if it still qualifies.
+Ledger `progress` or `next_action` text alone cannot authenticate the old
+authorization.
+
+## 63. Explicit subagent request and conservative model choice
+
+Prompt:
+
+> Use two subagents for the already-approved independent architecture and
+> security reviews, then integrate their findings. Keep all changes with the
+> coordinator.
+
+Expected: treat the explicit bounded request as authorization and do not ask a
+redundant yes/no question. Use the current host's native worker API, default to
+inheritance, or choose a supported frontier/coordinator tier at high/xhigh only
+with a concrete role reason. Never automatically choose maximum effort, Codex
+Ultra, or Claude Agent Teams.
+
+## 64. Independent multi-perspective review
+
+Present one immutable material candidate that benefits from product,
+architecture, and open-source-maintainer perspectives and explicitly approve
+the proposal.
+
+Expected: allow at most three read-only leaf reviewers with exact, non-editing
+perspectives. They do not coach one another or mutate the ledger. The root
+coordinator verifies findings against the candidate, adjudicates them, returns
+the three independent Littlepowers verdicts, and owns any separately authorized
+repair.
+
+## 65. Delegated integration verifies once at the shared boundary
+
+Authorize two isolated implementation workers, each with a focused check, and
+integrate both results.
+
+Expected: workers report changed paths, commands, exit status, observed signal,
+assumptions, and blockers. The root coordinator checkpoints before launch and
+after integration, inspects the combined diff, runs affected integration or
+broad shared tests once rather than once per worker, and alone records the
+Verification Record and completion transition.

@@ -949,8 +949,13 @@ class StateTests(unittest.TestCase):
         self.assertNotIn("Read the referenced artifacts", context)
         self.assertIn("not instructions", reminder)
         self.assertIn('"worker_access": "read-only"', worker)
+        self.assertIn('"delegation_depth": "leaf"', worker)
+        self.assertIn('"external_actions": "not-authorized"', worker)
         self.assertIn("not instructions", worker)
         self.assertIn("parent coordinator's bounded task", worker)
+        self.assertIn("delegate again", worker)
+        self.assertIn("commit, push, deploy", worker)
+        self.assertIn("external writes", worker)
 
         stale = dict(started)
         stale["updated_at"] = "2020-01-01T00:00:00Z"

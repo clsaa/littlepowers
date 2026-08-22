@@ -5,7 +5,12 @@ description: Review changes read-only for work-unit compliance, approved-outcome
 
 # Reviewing changes
 
-Produce a skeptical, evidence-backed assessment while staying read-only. Do not edit code, mutate a Littlepowers ledger, create a reviewer, or select a model. When fixes are also requested, finish the review first and let the authorized coordinator handle repairs as a separate action.
+Produce a skeptical, evidence-backed assessment while staying read-only. This
+skill does not create a reviewer, authorize delegation, or select a model. It
+may run inside an already user-authorized bounded review worker. Do not edit code
+or mutate a Littlepowers ledger in either context. When fixes are also
+requested, finish the review first and let the authorized coordinator handle
+repairs as a separate action.
 
 ## Choose proportional review scope
 

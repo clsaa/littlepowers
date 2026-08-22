@@ -6,7 +6,7 @@
 
 [简体中文](README.zh-CN.md)
 
-Littlepowers is a proportional planning, recovery, and engineering-discipline protocol for Codex, Claude Code, Qoder, and OpenCode. It helps an agent shape consequential work before coding, recover the last durable checkpoint after an interruption, debug from evidence, review material changes, and verify completion at the actual impact scope.
+Littlepowers is a proportional planning, recovery, and engineering-discipline protocol for Codex, Claude Code, Qoder, and OpenCode. It helps an agent shape consequential work before coding, recover the last durable checkpoint after an interruption, debug from evidence, review material changes, verify completion at the actual impact scope, and opt into native subagents only when parallel work is likely to pay for itself.
 
 It is inspired by [Superpowers](https://github.com/obra/superpowers), but it is an independent implementation with no runtime dependency or affiliation.
 
@@ -52,7 +52,26 @@ Three complementary skills apply only when their conditions are present:
 - **Proportional verification** gates completion on fresh evidence. Local rollback units get focused checks; shared contracts and releases add the relevant broad checks after integration. A full suite is not the default after every small edit.
 - **Lightweight review** gives separate work-unit compliance, approved-outcome fidelity, and code-quality verdicts for requested reviews, delegated integrations, shared milestones, or material rollback risk. Tiny isolated edits may use focused self-review.
 
-These skills do not create agents, choose models, require mandatory TDD, or expose hidden reasoning. Codex, Claude Code, Qoder, and OpenCode discover the same implementation.
+These skills do not by themselves create agents, choose models, require
+mandatory TDD, or expose hidden reasoning. Codex, Claude Code, Qoder, and
+OpenCode discover the same implementation.
+
+Delegation is a separate, default-off gate. Littlepowers evaluates it at most
+once after a stable plan, after a reproduced bug yields independent evidence
+paths, or before a material multi-perspective review. It vetoes unsettled,
+sequential, same-file, shared-resource, tiny, destructive, and external-state
+work. When at least two ready packets have independently verifiable outputs and
+clear critical-path or context-isolation value, the coordinator presents one
+proposal with roles, native host mechanism, model/effort policy, isolation,
+benefit, risk, and a single-agent fallback. No worker starts before exact
+work-unit authorization.
+
+Authorized workers are leaf agents. Inheritance is the default model/effort
+choice; maximum effort, Codex Ultra, and Claude Agent Teams are never selected
+automatically. Codex, Claude Code, and Qoder use only controls exposed by the
+current native worker interface. Concurrent mutation requires worktrees or
+equivalent isolation. The root coordinator remains the sole ledger writer,
+integrator, acceptance owner, shared broad-test runner, and final verifier.
 
 All tracked routes use a worktree-local `.littlepowers/state.json` ledger. The schema-4 ledger records protocol identity, the Outcome Lock summary, Review Lease policy and bounded gate audit, objective, phase, current task, optional evidence-based progress, next action, workflow ID, and monotonic revision. A successful planning resolution is bound to its original key, path, bytes, and declared parent-source digests; Contract bind and Plan validation each consume their boundary once, so copied paths or changed sources cannot reuse an old approval. The ledger ignores itself in Git. Progress names a milestone or acceptance-check count; Littlepowers does not infer percentages from time or file count.
 
@@ -72,13 +91,13 @@ Three boundary tools stay dormant until explicitly needed:
 - **Review snapshot** hashes a bounded Git candidate and returns a content-free token so a broad uncommitted review can detect stale input. It runs only when explicitly invoked; hooks never scan Git or hash project files.
 - **Project Workflow Index** records at most 16 explicitly named worktrees from the same Git repository and reads their current branch and ledger summaries only when `project-status` is called. It never discovers, schedules, or writes a member workflow.
 
-If a material review is too large for one reliable pass, split it by trust, state ownership, or rollback boundary and use one acceptance owner to aggregate shared-interface coverage once. Littlepowers does not create reviewers, select models or effort, or add test runs. The ordinary route therefore pays no handoff/snapshot or extra-model cost.
+If a material review is too large for one reliable pass, split it by trust, state ownership, or rollback boundary and use one acceptance owner to aggregate shared-interface coverage once. The review skill does not create reviewers or select models. Only the separate authorized Delegation Gate may do so through the host's native worker interface. The ordinary route therefore pays no handoff/snapshot or extra-model cost.
 
 ## What it cannot guarantee
 
 Outcome Lock and Review Lease deterministically reject drift, missing declared IDs, invalid scope state, incomplete declared fidelity, stale gate replay, and false completion transitions. They cannot force a model to extract every meaning from free-form prose, prevent same-turn steering, override the latest user request, infer silence without inspecting the latest visible conversation, or make an active task hot-load a replacement plugin. Automatic Hook recovery is intentionally unavailable for a non-Git ledger root; use the state CLI explicitly there. In Codex, use Queue when a follow-up must wait for the current run to finish.
 
-Hooks may be disabled by trust settings or organization policy. Host wake-up is optional: Codex requires a callable same-task one-shot Scheduled Task capability, Claude Code requires the optional exact-session runner, and Qoder/OpenCode currently resume manually. A lost callback leaves the durable gate intact. The Qoder IDE currently supports only a subset of hook events, so the SessionStart and SubagentStart boundaries stay silent there while UserPromptSubmit reminders still work. Recovery can only return to the last checkpoint that was written. One worktree supports one active top-level workflow; use another worktree for independent concurrent work. In Claude dynamic workflows, keep the approved Littlepowers plan as the sole product-scope authority and use the host workflow only as its execution adapter.
+Hooks may be disabled by trust settings or organization policy. Host wake-up is optional: Codex requires a callable same-task one-shot Scheduled Task capability, Claude Code requires the optional exact-session runner, and Qoder/OpenCode currently resume manually. A lost callback leaves the durable gate intact. The Qoder IDE currently supports only a subset of hook events, so the SessionStart and SubagentStart boundaries stay silent there while UserPromptSubmit reminders still work; every authorized worker therefore carries its full ownership envelope in the launch task. Recovery can only return to the last checkpoint that was written. One worktree supports one active top-level workflow; use another worktree for independent concurrent work. In Claude dynamic workflows, keep the approved Littlepowers plan as the sole product-scope authority and use the host workflow only as its execution adapter.
 
 ### Parallel worktree overview
 
@@ -265,6 +284,16 @@ After each planning artifact, wait 15 minutes; if I have not intervened, continu
 Complete this unchanged objective unattended. Do not ask me at planning boundaries.
 ```
 
+You can also authorize a bounded delegated unit explicitly:
+
+```text
+Use two native subagents for the independent architecture and security reviews,
+then integrate and verify their findings as the root coordinator.
+```
+
+Otherwise Littlepowers stays single-agent and asks once only when its
+high-benefit gate recommends delegation.
+
 The engineering disciplines can also be invoked directly:
 
 ```text
@@ -353,21 +382,21 @@ migration.
 - Review Lease checks only the explicit planning artifact and declared Outcome Lock files at phase transitions; hooks do not evaluate deadlines, hash artifacts, or schedule work.
 - The optional Claude runner creates one private ignored job, sleeps once without polling, invokes the existing exact session with normal permissions, discards output, and has no retry loop. It is not a daemon.
 - Mutations use a cross-process lock, workflow ID, expected revision, atomic replacement, and an archive before replacement.
-- A Review Lease authorizes only the stored planning transition for the unchanged objective. Littlepowers does not request commits, branches, pushes, pull requests, deployments, publication, visibility changes, destructive actions, secret access, permission changes, or subagents by itself. In Claude dynamic workflows, the approved Littlepowers plan remains the sole product-scope authority and the host workflow is only its execution adapter.
+- A Review Lease authorizes only the stored planning transition for the unchanged objective. Delegation separately requires exact work-unit authorization and never grants commits, branches, pushes, pull requests, deployments, publication, visibility changes, destructive actions, secret access, permission changes, or external writes. In Claude dynamic workflows, the approved Littlepowers plan remains the sole product-scope authority and the host workflow is only its execution adapter.
 
 Read the [security model](docs/security-model.md) before broader deployment. Report vulnerabilities through [the security policy](SECURITY.md).
 
 ## Model compatibility
 
-Littlepowers does not select a model or effort level. Its planning depth follows task risk, not reasoning effort. Its debugging, review, and verification skills ask for observable evidence and concise verdicts, not private chain-of-thought.
+Littlepowers does not select a model or effort level on the ordinary path. Its planning depth follows task risk, not reasoning effort. Its debugging, review, and verification skills ask for observable evidence and concise verdicts, not private chain-of-thought. Only after exact delegation authorization may a role-specific supported worker setting be passed through the current host; inheritance remains the default.
 
-Outcome Lock and Review Lease add local JSON validation and SHA-256 work only at bind, park/resolve, transition, resume/readiness, verification, and completion boundaries. Ordinary routing starts no independent model call, agent, background scan, automatic test run, scheduler, or effort override. Planning gates do add a small number of tool/continuation turns and therefore some wall-clock overhead. Only an explicitly windowed policy may arm one host callback; it resumes the configured host once without selecting a reviewer or model. Runtime work is proportional to explicitly bound files and declared rows, not repository size, so there is no model-parameter conflict with GPT-5.6 Sol xhigh/max/Ultra, Fable 5, or Opus 4.8.
+Outcome Lock and Review Lease add local JSON validation and SHA-256 work only at bind, park/resolve, transition, resume/readiness, verification, and completion boundaries. Ordinary routing starts no independent model call, agent, background scan, automatic test run, scheduler, or effort override, and does not read the detailed delegation reference. Planning gates do add a small number of tool/continuation turns and therefore some wall-clock overhead. Only an explicitly windowed policy may arm one host callback; it resumes the configured host once without selecting a reviewer or model. Runtime work is proportional to explicitly bound files and declared rows, not repository size, so there is no model-parameter conflict with GPT-5.6 Sol xhigh/max/Ultra, Fable 5, or Opus 4.8. An authorized delegated run intentionally adds worker token, latency, and integration cost and is recommended only when its expected benefit is higher.
 
 - GPT-5.6 Sol xhigh passed routing scenarios 1 through 9 in one prerelease evaluation campaign.
 - GPT-5.6 Sol max completed the v0.3 adversarial review with no remaining P0/P1 issue and 43 tests passing.
-- Codex Ultra passed a two-worker coordination scenario. Coordinator ownership remains a cooperative protocol, not operating-system authorization. Ultra is a Codex product mode that adds automatic task delegation beyond the public API's `max` effort; Littlepowers does not select it.
-- Claude Fable 5 and Opus 4.8 have no model-setting conflict. The new disciplines are conditionally selected rather than repeated on every prompt. Claude Code strict validation accepts the plugin, but authenticated v1.3 model and dynamic-workflow orchestration flows have not been recorded. A dynamic workflow may add its own planning, token, and time cost.
-- Qoder CLI, the Qoder IDE, and OpenCode load the same skills, hooks, and state CLI, but no authenticated end-to-end model run has been recorded for these hosts yet.
+- Codex Ultra passed a two-worker coordination scenario. Coordinator ownership remains a cooperative protocol, not operating-system authorization. Ultra is a Codex product mode that adds automatic task delegation beyond the public API's `max` effort; Littlepowers never selects it automatically.
+- Claude Fable 5 and Opus 4.8 have no model-setting conflict. The disciplines and Delegation Gate are conditional rather than repeated on every prompt. Claude Code strict validation accepts the prior stable plugin, but authenticated v1.4 delegated-model and dynamic-workflow orchestration flows have not been recorded. Agent Teams remains a separate experimental, higher-cost choice.
+- Qoder CLI, the Qoder IDE, and OpenCode load the same skills, hooks, and state CLI, but no authenticated v1.4 delegated end-to-end model run has been recorded for these hosts yet. OpenCode remains single-agent until an equivalent native boundary is verified.
 
 Compatibility evidence and untested claims are separated in the dated [model compatibility report](docs/model-compatibility.md).
 

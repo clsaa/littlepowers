@@ -24,7 +24,7 @@ class ManifestTests(unittest.TestCase):
 
         self.assertEqual(codex["name"], "littlepowers")
         self.assertEqual(claude["name"], "littlepowers")
-        self.assertEqual(codex["version"], "1.3.1")
+        self.assertEqual(codex["version"], "1.4.0-alpha.1")
         self.assertEqual(claude["version"], codex["version"])
         self.assertEqual(claude["repository"], codex["repository"])
         self.assertIn("Claude Code", codex["description"])
@@ -104,7 +104,7 @@ class ManifestTests(unittest.TestCase):
     def test_opencode_plugin_registers_skills_and_injects_read_only(self) -> None:
         package = read_json(ROOT / "package.json")
         self.assertEqual(package["name"], "littlepowers")
-        self.assertEqual(package["version"], "1.3.1")
+        self.assertEqual(package["version"], "1.4.0-alpha.1")
         self.assertEqual(package["main"], ".opencode/plugins/littlepowers.js")
         self.assertEqual(package["type"], "module")
         self.assertNotIn("dependencies", package)
@@ -355,6 +355,75 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("bounded rollback", plan)
         self.assertIn("continuous implementation", execution)
 
+    def test_delegation_gate_is_opt_in_native_and_dormant_by_default(self) -> None:
+        router = (
+            ROOT / "skills" / "using-littlepowers" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        executing = (
+            ROOT / "skills" / "executing-plans" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        reviewing = (
+            ROOT / "skills" / "reviewing-changes" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        verification = (
+            ROOT / "skills" / "verifying-work" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        delegation = (ROOT / "references" / "delegation.md").read_text(
+            encoding="utf-8"
+        )
+        scenarios = (ROOT / "evals" / "scenarios.md").read_text(
+            encoding="utf-8"
+        )
+        codex = read_json(ROOT / ".codex-plugin" / "plugin.json")
+
+        self.assertIn("Stay single-agent by default", router)
+        self.assertIn("at most once", router)
+        self.assertIn("work-unit-specific user authorization", router)
+        self.assertIn("ordinary route does not read", router)
+        self.assertIn("../../references/delegation.md", router)
+        self.assertIn("../../references/delegation.md", executing)
+        self.assertIn("immediately before launch", executing)
+        self.assertIn("separate worktrees or equivalent native", executing)
+        self.assertIn("once after integration", executing)
+        self.assertIn("does not create a reviewer", reviewing)
+        self.assertIn("No worker can make", verification)
+
+        self.assertIn("Do not launch before explicit authorization", delegation)
+        self.assertIn("Never replace it with nested shell invocations", delegation)
+        self.assertIn("Do not create or fork", delegation)
+        self.assertIn("Some Codex surfaces expose `ultra`", delegation)
+        self.assertIn("actual spawn schema supports it", delegation)
+        self.assertIn("Agent Teams only after a separate", delegation)
+        self.assertIn("Qoder IDE may omit `SubagentStart`", delegation)
+        self.assertIn("Default to two concurrent workers", delegation)
+        self.assertIn("Delegation depth is one", delegation)
+        self.assertIn("select maximum effort", delegation)
+        self.assertIn("Require at least three comparable runs", delegation)
+
+        linked_skills = {
+            path.parent.name
+            for path in (ROOT / "skills").glob("*/SKILL.md")
+            if "../../references/delegation.md" in path.read_text(encoding="utf-8")
+        }
+        self.assertEqual(linked_skills, {"using-littlepowers", "executing-plans"})
+        self.assertFalse((ROOT / "agents").exists())
+        self.assertNotIn("agents", codex)
+        self.assertIn("opt-in delegation", codex["description"])
+
+        for expected in (
+            "Tiny work stays single-agent",
+            "Unsettled and shared-resource work vetoes delegation",
+            "Disjoint modules produce one authorization proposal",
+            "Declined recommendation is not repeated",
+            "Native capability and setting fallback",
+            "Qoder IDE missing worker Hook",
+            "Material plan change invalidates worker approval",
+            "Explicit subagent request and conservative model choice",
+            "Independent multi-perspective review",
+            "Delegated integration verifies once at the shared boundary",
+        ):
+            self.assertIn(expected, scenarios)
+
     def test_visual_baseline_and_dual_acceptance_verdicts_are_bound(self) -> None:
         router = (
             ROOT / "skills" / "using-littlepowers" / "SKILL.md"
@@ -457,6 +526,9 @@ class ManifestTests(unittest.TestCase):
             self.assertIn("No scope delta", snippet)
             self.assertIn("approved-outcome fidelity", snippet)
             self.assertIn("one continuous implementation stream", snippet)
+            self.assertIn("single-agent by default", snippet)
+            self.assertIn("exact work-unit user authorization", snippet)
+            self.assertIn("bounded leaf agents", snippet)
             self.assertNotIn("wave", snippet.lower())
 
     def test_internal_phase_skills_gate_direct_invocation(self) -> None:
@@ -589,7 +661,8 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("A changed token invalidates the review verdict", reviewing)
         self.assertIn("trust, state ownership, or rollback boundary", reviewing)
         self.assertIn("one acceptance owner", reviewing)
-        self.assertIn("does not create reviewers or select models", reviewing)
+        self.assertIn("does not create a reviewer", reviewing)
+        self.assertIn("select a model", reviewing)
         self.assertNotIn("create_review_snapshot", hook)
         self.assertNotIn("snapshot", hook)
 
@@ -647,6 +720,7 @@ class ManifestTests(unittest.TestCase):
             "evals/results/2026-07-17-v0.4-alpha.1.md",
             "evals/results/2026-08-01-v1.3.0-release.md",
             "evals/results/2026-08-10-v1.3.1-release.md",
+            "evals/results/2026-08-21-v1.4.0-alpha.1.md",
             ".github/pull_request_template.md",
             ".github/ISSUE_TEMPLATE/bug.yml",
             ".github/ISSUE_TEMPLATE/compatibility.yml",
@@ -688,8 +762,11 @@ class ManifestTests(unittest.TestCase):
         patch_evaluation = (
             ROOT / "evals" / "results" / "2026-08-10-v1.3.1-release.md"
         ).read_text(encoding="utf-8")
+        delegation_evaluation = (
+            ROOT / "evals" / "results" / "2026-08-21-v1.4.0-alpha.1.md"
+        ).read_text(encoding="utf-8")
 
-        self.assertIn("Release:** 1.3.1", capability)
+        self.assertIn("Release:** 1.4.0-alpha.1 candidate", capability)
         self.assertIn("Outcome Coverage Gate", capability)
         self.assertIn("`debugging-systematically`", capability)
         self.assertIn("`verifying-work`", capability)
@@ -714,6 +791,9 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("Candidate:** `1.3.1`", patch_evaluation)
         self.assertIn("201/201 passed", patch_evaluation)
         self.assertIn("local OAuth was expired", patch_evaluation)
+        self.assertIn("Candidate: `1.4.0-alpha.1`", delegation_evaluation)
+        self.assertIn("202/202 passed", delegation_evaluation)
+        self.assertIn("does not claim an authenticated", delegation_evaluation)
 
 
 if __name__ == "__main__":

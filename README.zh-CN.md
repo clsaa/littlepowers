@@ -6,7 +6,7 @@
 
 [English](README.md)
 
-Littlepowers 是一个同时面向 Codex、Claude Code、Qoder 与 OpenCode 的“按风险规划 + 任务恢复 + 工程纪律”协议。它帮助 Agent 在编码前固定重要决策，在中断后恢复最后一个可靠 checkpoint，并按证据调试、审查重要改动、按实际影响面完成验证。
+Littlepowers 是一个同时面向 Codex、Claude Code、Qoder 与 OpenCode 的“按风险规划 + 任务恢复 + 工程纪律”协议。它帮助 Agent 在编码前固定重要决策，在中断后恢复最后一个可靠 checkpoint，并按证据调试、审查重要改动、按实际影响面完成验证；只有并行收益足以覆盖协调成本时，才会建议选择性启用宿主原生子 Agent。
 
 它受 [Superpowers](https://github.com/obra/superpowers) 启发，但不是 fork、没有运行时依赖，也不隶属于 Superpowers 或 obra。
 
@@ -52,7 +52,11 @@ Lean、Compact 与 Full 的规划产物可以形成确定性的 Review Gate。�
 - **按影响面验证**：完成声明必须有最新证据；局部回滚单元只跑 focused checks，共享契约或发布边界才补 broad checks，不因小改动默认跑全量测试；
 - **轻量审查**：在用户要求、集成 worker 结果、共享行为里程碑或高回滚成本时，分别给出工作单元符合性、完整目标一致性与代码质量结论；孤立小改动可只做结构化自审。
 
-这些能力不会自动创建 Agent、选择模型、强制 TDD 或要求输出隐藏推理；Codex、Claude Code、Qoder 与 OpenCode 使用同一份实现。
+这些能力本身不会创建 Agent、选择模型、强制 TDD 或要求输出隐藏推理；Codex、Claude Code、Qoder 与 OpenCode 使用同一份实现。
+
+子 Agent 是一项独立且默认关闭的门禁。Littlepowers 最多在计划稳定后、故障已复现且出现独立证据路径后，或重要多视角审查前评估一次；未决范围、顺序依赖、同文件/共享资源、小任务、破坏性操作和外部状态都会否决并行。只有至少两个已就绪工作包能独立验收，且关键路径或上下文隔离收益明确高于启动、冲突、集成与复核成本时，协调 Agent 才会提出一次建议，列明角色、当前宿主原生机制、模型/effort、隔离方式、收益、风险和单 Agent 退路。获得当前工作单元的明确授权前，不会启动 worker。
+
+获授权的 worker 都是 leaf Agent。模型与 effort 默认继承；不会自动选择最大 effort、Codex Ultra 或 Claude Agent Teams。Codex、Claude Code 与 Qoder 只使用当前原生 worker 接口实际暴露的控制；并发修改必须使用 worktree 或同等级隔离。根协调 Agent 始终独占 ledger 写入、集成、验收、共享 broad test 和最终完成声明。
 
 被追踪的任务会写入当前 worktree 下的 `.littlepowers/state.json`。Schema 4 状态包含协议版本、Outcome Lock 摘要、Review Lease 策略及有界门禁审计、workflow ID、单调递增 revision，以及可选的、基于证据的进度。成功的规划 resolution 会绑定原始 key、路径、字节和声明的父来源摘要；Contract bind 与 Plan validation 各自只消费对应边界一次，因此复制到新路径或修改来源都不能复用旧批准。进度应写成里程碑或验收项计数，不能根据时间和文件数量猜百分比。旧 revision 写入会失败，不会覆盖新进度。
 
@@ -70,7 +74,7 @@ Lean、Compact 与 Full 的规划产物可以形成确定性的 Review Gate。�
 - **评审快照**：仅在“广泛且未提交”的候选改动需要防止评审对象漂移时显式运行，返回不含文件内容的有界哈希 token。Hook 不扫描 Git、不哈希项目文件。
 - **Project Workflow Index**：最多登记 16 个显式指定、属于同一 Git 仓库的 worktree；只有调用 `project-status` 时才读取其当前分支和 ledger 摘要，不发现、不调度、也不写入成员 workflow。
 
-过大的重要评审可以按信任边界、状态所有权或回滚边界分区，再由一个验收负责人统一汇总共享接口证据一次。Littlepowers 不创建 reviewer、不选择模型或 effort，也不会因此增加测试轮次；普通路径没有交接、快照或额外模型调用成本。
+过大的重要评审可以按信任边界、状态所有权或回滚边界分区，再由一个验收负责人统一汇总共享接口证据一次。评审技能本身不创建 reviewer、不选择模型；只有独立的 Delegation Gate 获得授权后，才可通过宿主原生 worker 接口执行。普通路径没有交接、快照或额外模型调用成本。
 
 ## 能力边界
 
@@ -78,7 +82,7 @@ Outcome Lock 与 Review Lease 能确定性拒绝来源漂移、已声明 ID 缺�
 
 暂停中的 workflow 不会因为普通实现提示而自动恢复；必须先完成显式 `resume`。超过 30 天未更新的 ledger 会标记为按时间过期，需先与当前代码和最新请求核对，再决定是否继续。
 
-宿主唤醒是可选能力：Codex 需要可调用的同任务一次性 Scheduled Task；Claude Code 需要可选的精确会话 runner；Qoder/OpenCode 当前手动恢复。callback 丢失不会丢失持久门禁。Qoder IDE 目前只支持部分 Hook 事件，因此 SessionStart 快照和 SubagentStart 标记在 IDE 中不会触发，UserPromptSubmit 提醒仍可用。
+宿主唤醒是可选能力：Codex 需要可调用的同任务一次性 Scheduled Task；Claude Code 需要可选的精确会话 runner；Qoder/OpenCode 当前手动恢复。callback 丢失不会丢失持久门禁。Qoder IDE 目前只支持部分 Hook 事件，因此 SessionStart 快照和 SubagentStart 标记在 IDE 中不会触发，UserPromptSubmit 提醒仍可用；每个获授权 worker 的启动任务仍必须携带完整所有权边界。
 
 一个 worktree 只支持一个活跃的顶层 workflow。并行的独立目标应使用不同 worktree。Ultra 或 Claude dynamic workflows 中，只有根协调 Agent 写 ledger；worker 返回证据。Claude dynamic workflow 只能作为已批准 Littlepowers plan 的执行适配器，不能成为第二个产品范围或验收权威。
 
@@ -260,6 +264,14 @@ qodercli plugins install /absolute/path/littlepowers-v1.3.1
 无人值守完成这个未变目标；不要在规划边界询问我。
 ```
 
+也可以显式授权一个边界明确的委派单元：
+
+```text
+使用两个宿主原生子 Agent，分别做独立的架构审查和安全审查；然后由根协调 Agent 集成并验证结论。
+```
+
+否则 Littlepowers 保持单 Agent；只有高收益门禁通过时才会询问一次。
+
 工程纪律能力也可以单独调用：
 
 ```text
@@ -337,21 +349,21 @@ OpenCode 把 git 插件 URL 的 `#v1.3.1` 后缀换成目标 tag，必要时强�
 - Review Lease 只在阶段转换时检查显式规划产物与已声明的 Outcome Lock 文件；Hook 不计算截止时间、不哈希产物，也不调度工作；
 - 可选 Claude runner 只创建一个被忽略的私有 job，单次 sleep、无轮询，以正常权限唤醒精确会话，丢弃输出且不重试；它不是 daemon；
 - 写入使用跨进程锁、workflow ID、预期 revision、原子替换和替换前归档；
-- Review Lease 只授权未变目标的持久化规划转换；Littlepowers 本身不会请求 commit、push、PR、部署、发布、公开仓库、破坏性操作、秘密访问、权限变更或启动 subagent。Claude dynamic workflow 中，已批准的 Littlepowers plan 是唯一产品范围权威，宿主 workflow 只能作为它的执行适配器。
+- Review Lease 只授权未变目标的持久化规划转换。启动子 Agent 另需当前工作单元的明确授权，而且绝不因此获得 commit、push、PR、部署、发布、公开仓库、破坏性操作、秘密访问、权限变更或外部写入权限。Claude dynamic workflow 中，已批准的 Littlepowers plan 是唯一产品范围权威，宿主 workflow 只能作为它的执行适配器。
 
 详见[安全模型](docs/security-model.md)和[模型兼容报告](docs/model-compatibility.md)。通过[安全政策](SECURITY.md)报告漏洞。
 
 ## 模型兼容性
 
-Littlepowers 不选择模型或 effort。调试、审查与验证只要求可观察证据和简洁结论，不要求输出 chain-of-thought；它们按条件触发，不会在每个提示里重复整套流程。
+Littlepowers 在普通路径不选择模型或 effort。调试、审查与验证只要求可观察证据和简洁结论，不要求输出 chain-of-thought；它们按条件触发，不会在每个提示里重复整套流程。只有子 Agent 获得精确授权后，协调 Agent 才可通过当前宿主接口传入该角色所需且受支持的 worker 配置；默认仍为继承。
 
-Outcome Lock 与 Review Lease 只在 bind、park/resolve、阶段转换、resume/readiness、verification 与 completion 边界增加本地 JSON 校验和 SHA-256。普通路由不会启动独立模型调用、Agent、后台扫描、自动测试、scheduler 或 effort 覆盖；规划门禁会增加少量工具/续写轮次，因此存在有限的墙钟开销。只有显式 `windowed` 策略可能唤醒一次已配置宿主，它不会选择 reviewer 或模型。运行成本与显式绑定文件和声明行数成正比，与仓库大小无关，因此不会与 GPT-5.6 Sol xhigh/max/Ultra、Fable 5 或 Opus 4.8 发生模型参数冲突。
+Outcome Lock 与 Review Lease 只在 bind、park/resolve、阶段转换、resume/readiness、verification 与 completion 边界增加本地 JSON 校验和 SHA-256。普通路由不会启动独立模型调用、Agent、后台扫描、自动测试、scheduler 或 effort 覆盖，也不会读取详细 delegation reference；规划门禁会增加少量工具/续写轮次，因此存在有限的墙钟开销。只有显式 `windowed` 策略可能唤醒一次已配置宿主，它不会选择 reviewer 或模型。运行成本与显式绑定文件和声明行数成正比，与仓库大小无关，因此不会与 GPT-5.6 Sol xhigh/max/Ultra、Fable 5 或 Opus 4.8 发生模型参数冲突。获授权的并行执行会有意增加 worker token、延迟和集成成本，只有预期收益更高时才建议使用。
 
 - GPT-5.6 Sol xhigh 在一轮预发行评估中通过了场景 1 至 9；这还不是三轮重复运行后的可靠性结论；
 - GPT-5.6 Sol max 完成 v0.3 对抗审查，43 项测试通过，没有遗留 P0/P1；
-- Codex Ultra 通过根协调 Agent 加两个只读 worker 的并发场景，但 coordinator-only 仍是协作协议，不是操作系统权限隔离；
-- Claude Fable 5 与 Opus 4.8 没有模型参数冲突，Claude Code 严格插件校验通过；尚未记录认证后的 v1.3 模型端到端和 dynamic-workflow 编排运行，后者还可能增加宿主自己的规划、token 与耗时；
-- Qoder CLI、Qoder IDE 与 OpenCode 加载同一套技能、Hook 与 state CLI，但这三个宿主尚未记录认证后的端到端模型运行。
+- Codex Ultra 通过根协调 Agent 加两个只读 worker 的并发场景，但 coordinator-only 仍是协作协议，不是操作系统权限隔离；Littlepowers 不会自动选择 Ultra；
+- Claude Fable 5 与 Opus 4.8 没有模型参数冲突；尚未记录认证后的 v1.4 委派模型端到端和 dynamic-workflow 编排运行，Agent Teams 仍是需要单独批准的实验性高成本选择；
+- Qoder CLI、Qoder IDE 与 OpenCode 加载同一套技能、Hook 与 state CLI，但尚未记录认证后的 v1.4 委派模型端到端运行；在等价原生边界得到验证前，OpenCode 保持单 Agent。
 
 ## 故障排查
 

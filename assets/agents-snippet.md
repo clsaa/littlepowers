@@ -8,7 +8,8 @@
 - Treat implementation-generated visual snapshots as regression evidence only, and report work-unit compliance separately from approved-outcome fidelity.
 - In Codex, mirror the tracked task checklist through the native `update_plan` tool so the plan renders in the host interface; re-issue it from the ledger and the plan artifact after resume, clear, or compaction.
 - Resolve the exact project root before reading recovery context. Treat recovery state as a continuity hint; the latest user request has priority. Preserve unrelated ancestor or sibling workflows instead of silently overwriting them.
-- Keep the root coordinator as the only ledger writer in multi-agent runs.
+- Stay single-agent by default. After a stable plan or reproduced independent hypotheses, recommend native subagents at most once only when at least two ready, isolated, independently verifiable packets have clear benefit; never launch before exact work-unit user authorization. Inherit model/effort by default and fall back to single-agent when the native host control is unavailable.
+- Keep the root coordinator as the only ledger writer, integrator, acceptance owner, and final verifier in authorized multi-agent runs. Workers are bounded leaf agents and concurrent mutation requires worktree-equivalent isolation.
 - Put new durable artifacts under `docs/littlepowers/...` unless the latest user request or a current repository instruction explicitly names another root for new workflow artifacts; do not infer one from legacy directories or backlinks.
 - Keep tiny, fully specified edits lightweight and verify changes proportionally.
 - In Codex, prefer Queue for follow-up behavior and use `/side` or `/btw` for unrelated questions when appropriate.

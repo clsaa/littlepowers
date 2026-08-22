@@ -4,6 +4,42 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+## [1.4.0-alpha.1] - 2026-08-21
+
+### Added
+
+- Add a progressive-disclosure Delegation Gate for Codex, Claude Code, and
+  Qoder. Littlepowers evaluates only stable execution, independent debugging,
+  or material review boundaries; it recommends workers once only when at least
+  two ready packets can produce independently verifiable results with clear
+  critical-path or context-isolation value.
+- Add an exact authorization proposal, conservative role-based model/effort
+  guidance, native-host adapters, leaf worker task envelope, concurrency/depth
+  limits, and representative positive and veto evaluation scenarios.
+
+### Changed
+
+- Keep delegation default-off and require work-unit-specific user authorization
+  before any worker launch. A decline, unavailable native capability, or
+  unsupported model/effort pair falls back to single-agent without retrying or
+  simulating workers through nested coding CLIs.
+- Make the root coordinator the explicit sole ledger writer, integrator,
+  acceptance owner, shared broad-test runner, and completion verifier for every
+  authorized delegated run. Concurrent mutation requires worktree or equivalent
+  native isolation.
+- Strengthen `SubagentStart` recovery facts with leaf depth and no external-
+  action authority. The full worker envelope remains mandatory because a host,
+  including Qoder IDE, may omit that Hook event.
+
+### Security and performance
+
+- Add no static plugin agent, new top-level skill, schema field, scheduler,
+  daemon, telemetry, repository scan, or automatic model call. The ordinary
+  route neither reads the delegation reference nor selects a model or effort.
+- Never automatically select maximum effort, Codex Ultra, or Claude Agent
+  Teams. Provider and organization policy remain authoritative, and unsupported
+  settings inherit from the coordinator.
+
 ## [1.3.1] - 2026-08-10
 
 ### Changed

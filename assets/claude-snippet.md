@@ -7,7 +7,8 @@
 - Bind the latest request and approved parent PRD/spec/prototype/baseline as one complete outcome. Do not create product or technical slices or staged deliveries; use one continuous implementation stream with tasks, checkpoints, rollback units, and small commits for safe ordering. Highlight `Added / Changed / Deferred / Removed` for explicit approval, or state `No scope delta`.
 - Treat implementation-generated visual snapshots as regression evidence only, and report work-unit compliance separately from approved-outcome fidelity.
 - Resolve the exact project root before reading recovery context. Treat recovery state as a continuity hint; the latest user request has priority. Preserve unrelated ancestor or sibling workflows instead of silently overwriting them.
-- Keep the root coordinator as the only ledger writer in multi-agent runs.
+- Stay single-agent by default. After a stable plan or reproduced independent hypotheses, recommend native subagents at most once only when at least two ready, isolated, independently verifiable packets have clear benefit; never launch before exact work-unit user authorization. Prefer ordinary Claude subagents, inherit model/effort by default, and require a separate explicit decision for Agent Teams.
+- Keep the root coordinator as the only ledger writer, integrator, acceptance owner, and final verifier in authorized multi-agent runs. Workers are bounded leaf agents and concurrent mutation requires worktree-equivalent isolation.
 - Put new durable artifacts under `docs/littlepowers/...` unless the latest user request or a current repository instruction explicitly names another root for new workflow artifacts; do not infer one from legacy directories or backlinks.
 - Keep tiny, fully specified edits lightweight and verify changes proportionally.
 - On prompt, resume, clear, or compaction boundaries, reconcile restored ledger facts with the latest request.

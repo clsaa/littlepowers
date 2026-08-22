@@ -37,6 +37,16 @@ not bypass the gate.
 
 The root coordinator owns ledger writes. Delegated workers receive bounded tasks and return diffs, findings, and test evidence without mutating the parent ledger.
 
+Only launch workers after the `using-littlepowers` Delegation Gate establishes
+current work-unit-specific user authorization. Then read
+[`../../references/delegation.md`](../../references/delegation.md), checkpoint
+immediately before launch, and include its complete leaf worker envelope in
+every native host task. Do not rely on `SubagentStart`, select unsupported
+model/effort values, use nested coding CLIs, or permit nested delegation.
+Concurrent mutation requires separate worktrees or equivalent native
+isolation; otherwise delegate only read-only investigation/review or continue
+single-agent.
+
 For each task or meaningful rollback boundary in the continuous implementation
 stream:
 
@@ -102,7 +112,7 @@ original reproducer or focused checks, connected work adds checks for affected
 boundaries, and broad shared or release work adds the relevant broad suite once
 after integration. A full suite is not the default after every small edit.
 
-Compare fresh results with every immediate and inherited acceptance criterion and the approved baseline; inspect the full diff for regressions, debug artifacts, and unintended files. Record each command or inspection, scope rationale, exit status or equivalent result, and relevant observed signal. Worker reports are inputs; the coordinator verifies the integrated tree. Resolve any blocking review findings and rerun evidence invalidated by repairs. Record unavailable or partial evidence honestly.
+Compare fresh results with every immediate and inherited acceptance criterion and the approved baseline; inspect the full diff for regressions, debug artifacts, and unintended files. Record each command or inspection, scope rationale, exit status or equivalent result, and relevant observed signal. Worker reports are inputs; the coordinator verifies the integrated tree. The coordinator also runs affected integration or broad shared suites once after integration instead of duplicating them in every worker, checkpoints the integrated result, and remains the only completion owner. Resolve any blocking review findings and rerun evidence invalidated by repairs. Record unavailable or partial evidence honestly.
 
 Create and record the Verification Record described by
 [`../../references/outcome-lock.md`](../../references/outcome-lock.md). Only

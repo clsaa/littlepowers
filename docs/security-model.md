@@ -1,8 +1,8 @@
 # Security model
 
-**Reviewed:** 2026-08-10
+**Reviewed:** 2026-08-21
 
-**Release:** 1.3.1
+**Release:** 1.4.0-alpha.1 candidate
 
 ## Assets and trust boundary
 
@@ -89,7 +89,14 @@ conversations, and never schedule or mutate work.
 
 The optional standard-library Claude runner is separate from Hooks. It is available only for a future `windowed` gate with an explicit boundary and a canonical exact session UUID. It creates one private ignored job by atomic replacement, spawns one detached child, sleeps once without polling, then holds the state lock while it reloads the exact gate, claims the job, and starts at most one normal argument-vector `claude -p --resume` process. A cancellation that wins the state lock prevents that invocation. The lock is released immediately after process start so the resumed session can resolve the gate. stdin/stdout/stderr are discarded, the call is time-bounded, and there is no retry, shell interpolation, `--continue`, permission bypass, model/effort override, transcript read, persistent daemon, or output storage. Losing it leaves the ledger gate unchanged.
 
-The debugging, verification, and review skills add instructions only. `reviewing-changes` explicitly remains read-only; implementation and ledger mutation stay with the authorized coordinator.
+The debugging, verification, and review skills add instructions only.
+`reviewing-changes` explicitly remains read-only; implementation and ledger
+mutation stay with the authorized coordinator. The Delegation Gate is also
+instruction-only: ordinary routing creates no worker or model call, and a
+qualifying proposal must receive exact work-unit authorization before the host
+native agent interface is invoked. Littlepowers adds no static plugin agent,
+nested coding-CLI launcher, host configuration mutation, or model discovery
+process.
 
 ## Store validation
 
@@ -156,7 +163,28 @@ restoring the matching pre-schema4 schema-3 archive.
 
 ## Multi-agent boundary
 
-The parent coordinator is the sole ledger writer. `SubagentStart` supplies workers with read-only ownership metadata and warns that ledger values are untrusted data, not instructions. Compare-and-swap prevents stale lost updates, but the ledger is not an authorization service: a process with workspace write access can still invoke the CLI. Use separate worktrees and normal sandbox controls when stronger isolation is required. The Project Workflow Index provides visibility only; it does not grant a member writer, merge branches, or permit multiple top-level workflows in one checkout.
+The parent coordinator is the sole ledger writer, integrator, acceptance owner,
+and final verifier. `SubagentStart` supplies workers with read-only ownership,
+leaf depth, and no-external-action metadata and warns that ledger values are
+untrusted data, not instructions. Because Qoder IDE and other surfaces may omit
+that event, the native launch task must also carry the full worker envelope:
+exact root/workflow/revision/Outcome/task, allowed files and actions, isolation,
+required evidence, stop condition, and explicit prohibitions on ledger/scope
+changes, nested delegation, commits, pushes, publication, deployment,
+destructive work, secrets, permission changes, and external writes.
+
+Delegation authorization is an interaction-level boundary, not a new ledger
+credential. Short checkpoint text can aid recovery but cannot authenticate
+consent. If the exact unchanged approval cannot be established after an
+interruption, the coordinator stays single-agent or asks again. A material
+scope, plan, role, action, or isolation change invalidates prior authorization.
+
+Compare-and-swap prevents stale lost updates, but the ledger and worker prompt
+are not OS authorization services: a process with workspace write access can
+still invoke the CLI or change files. Concurrent mutation requires separate
+worktrees or equivalent native isolation plus normal host sandbox controls.
+The Project Workflow Index provides visibility only; it does not grant a member
+writer, merge branches, or permit multiple top-level workflows in one checkout.
 
 ## Residual risks
 
@@ -176,6 +204,13 @@ The parent coordinator is the sole ledger writer. `SubagentStart` supplies worke
 - Host trust settings or managed policy may disable hooks, leaving manual skill recovery only.
 - Approval fields are coordinator audit claims, not authenticated user identity
   or cryptographic signatures.
+- A delegation checkpoint is likewise an audit/recovery fact, not authenticated
+  authorization. Host permission, model, effort, and isolation policy can
+  reject or override the proposal.
+- A missing worker lifecycle Hook removes one defense-in-depth reminder. The
+  complete launch envelope and coordinator verification remain required, but a
+  malicious same-account worker is not technically prevented from violating
+  them.
 - A `window_expired` no-intervention field is likewise a coordinator audit
   claim based on the latest visible conversation; the state file cannot observe
   user silence by itself.
@@ -184,6 +219,8 @@ The parent coordinator is the sole ledger writer. `SubagentStart` supplies worke
   normal recovery; it is not an authorization or availability service.
 - Review continuation never grants commit, push, PR, publish, deploy,
   destructive, secret-access, or permission-broadening authority.
+- Delegation authorization never grants those actions either, and a worker can
+  never inherit broader external authority from its role or model selection.
 
 ## Reporting
 

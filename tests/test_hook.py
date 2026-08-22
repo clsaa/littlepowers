@@ -239,6 +239,10 @@ class RecoveryHookTests(unittest.TestCase):
         self.assertEqual(output["hookSpecificOutput"]["hookEventName"], "SubagentStart")
         self.assertIn('"ledger_owner": "parent coordinator"', context)
         self.assertIn('"worker_access": "read-only"', context)
+        self.assertIn('"delegation_depth": "leaf"', context)
+        self.assertIn('"external_actions": "not-authorized"', context)
+        self.assertIn("delegate again", context)
+        self.assertIn("commit, push, deploy", context)
 
     def test_hook_resolves_all_native_plugin_root_variables(self) -> None:
         self.start_state()

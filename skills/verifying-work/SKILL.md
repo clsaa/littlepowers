@@ -36,7 +36,11 @@ For each claim, record:
 
 For a bug fix, rerun the original reproducer after the latest edit and run regression coverage for the affected behavior. Do not substitute an unrelated passing suite for the symptom that was fixed.
 
-Treat delegated worker reports as inputs, not final proof. The coordinator inspects the integrated tree and reruns the checks needed to support its own completion claim.
+Treat delegated worker reports as inputs, not final proof. No worker can make
+the product completion claim. The root coordinator inspects the integrated
+tree and reruns the checks needed to support its own completion claim; affected
+integration or broad shared suites run once after integration rather than once
+per worker.
 
 For visual, interaction, output-format, or compatibility claims, compare against the approved baseline named by the user or parent contract. An implementation-generated screenshot, fixture, or snapshot may detect regression but cannot prove fidelity. Passing a narrower work-unit check does not satisfy omitted parent acceptance criteria.
 
