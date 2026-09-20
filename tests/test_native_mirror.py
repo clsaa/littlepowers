@@ -153,7 +153,7 @@ class NativeMirrorTests(unittest.TestCase):
 
     def test_all_applicable_routes_link_shared_reference(self):
         for skill in ("using-littlepowers", "writing-plans", "compact-shaping", "executing-plans"):
-            body = (ROOT / "skills" / skill / "SKILL.md").read_text()
+            body = (ROOT / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
             self.assertIn("../../references/native-task-mirror.md", body)
         reference = ROOT / "references" / "native-task-mirror.md"
         self.assertTrue(reference.is_file())
