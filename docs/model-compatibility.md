@@ -1,183 +1,197 @@
 # Model compatibility
 
-**Reviewed:** 2026-08-21
+**Reviewed:** 2026-09-20
 
-**Release:** 1.4.0-alpha.1 candidate
+**Release:** 1.4.0
+
+**Refresh trigger:** Recheck before release when any supported host version,
+model alias, worker schema, or Hook contract changes; otherwise recheck after
+30 days.
 
 Littlepowers does not choose a model, reasoning effort, context window, or
-worker on the ordinary path. Planning depth follows task risk and unresolved
-decisions. Only after the opt-in Delegation Gate and exact user authorization
-may the coordinator pass a role-appropriate model/effort choice through a
-callable native worker interface; inheritance remains the default.
+worker on the ordinary path. Planning depth follows risk and unresolved
+decisions. Only after the opt-in Delegation Gate finds a high-benefit candidate
+does the coordinator inspect the current native interface, validate one Host
+Capability Snapshot, and present the exact work unit for authorization.
+Inheritance remains the default.
 
-This report covers model and host compatibility, not simultaneous orchestration with another workflow plugin. Littlepowers and Superpowers can expose namespaced skills, but enabling both as default routers may duplicate or contradict process instructions; evaluate one default router at a time.
+This report covers model and host compatibility, not simultaneous
+orchestration with another workflow plugin. Littlepowers and Superpowers can
+expose namespaced skills, but enabling both as default routers may duplicate or
+contradict process instructions; evaluate one default router at a time.
 
-## Compatibility summary
+## Dated compatibility boundary
 
-| Host and model | Status | Evidence | Main caveat |
-| --- | --- | --- | --- |
-| Codex, GPT-5.6 Sol, xhigh | Earlier prerelease routing evaluation passed; v1.3.1 level-3 probe used `low`, not xhigh | Independent routing evaluation passed scenarios 1 through 9; Codex 0.147.0 delivered the current Hook to an authenticated `gpt-5.6-sol` probe and the model returned the exact workflow ID | The current probe proves delivery/routing, not a full implementation flow or xhigh reliability |
-| Codex, GPT-5.6 Sol, max | Prerelease adversarial review passed | Independent review found no remaining P0/P1 issue; 43 state, Hook, and manifest tests passed | Max may add latency, token use, and overplanning; use only when measured value justifies it |
-| Codex, GPT-5.6 Sol, Ultra | Prerelease coordination evaluation passed, with a protocol caveat | A root coordinator and two workers preserved sole-writer ownership; a stale write conflicted instead of overwriting | Worker read-only ownership is a protocol, not OS access control |
-| Claude Code, Fable 5 | Compatible by design; current live probe blocked before model execution | Claude Code 2.1.227 is the current local validation host; the earlier 2.1.226 source-plugin probe reached the local host but expired OAuth could not refresh, returned cost 0, and provided no model evidence | Reauthenticate before claiming authenticated routing, delegated selection, or implementation behavior; Fable prefers outcome-focused prompts |
-| Claude Code, Opus 4.8 | Compatible by design; authenticated v1.4 flow not yet recorded | Existing host/model review plus strict plugin validation; fake-host runner tests prove argv/control behavior only | Higher effort can overthink fixed ceremony; the ordinary path does not select it |
-| Qoder CLI / Qoder IDE, any model | Qoder CLI level-3 Hook routing probe passed on the prior release; IDE remains structurally validated only | Qoder CLI 1.1.19 is the current local validation host; the earlier 1.1.18 probe loaded the source plugin in an isolated project-settings run and returned the exact temporary workflow ID | No authenticated delegated-model flow is claimed; the IDE fires only a subset of events and does not document `QODER_PLUGIN_ROOT` injection |
-| OpenCode, any model | Loads the same skills and state CLI; authenticated flow not yet recorded | Source-level verification of the config and message-transform hooks against OpenCode v1.18.4, plus stubbed plugin behavior tests | Relies on two hooks OpenCode's docs do not document; no live end-to-end run recorded |
+| Host | Local binary inspected | Registry target checked | Current model/capability evidence | Certification boundary |
+| --- | --- | --- | --- | --- |
+| Codex | 0.147.0 | 0.155.1 | Official GPT-6 Astra and GPT-5.6 family guidance; current native subagent schema documentation | Historical GPT-5.6 routing/coordination evidence exists; no authenticated 0.155.1 + Astra implementation run is claimed |
+| Claude Code | 2.1.227 | 2.1.278 | Fable 5.1/Fable 5, Opus 5, Sonnet 5 and Opus 4.8; fresh subagents, conversation forks, and Agent Teams | Current behavior is documentation/structural evidence; the earlier authenticated probe stopped before model execution because local OAuth had expired |
+| Qoder CLI / IDE | 1.1.19 | 1.1.58 | The local account's current server list returned Auto, Ultimate, Performance, Efficient and rolling Qwen, Kimi, GLM, DeepSeek, and MiniMax entries; current Hook/Subagent/Agent Teams documentation | Earlier Qoder Hook routing passed on 1.1.18; no authenticated delegated implementation run on 1.1.58 is claimed |
+| OpenCode | 1.18.4 historical boundary | Not refreshed in this work unit | Existing skill/state CLI and message-transform integration | Remains structurally supported and single-agent until an equivalent native worker boundary is verified |
 
-“Compatible by design” means the plugin uses supported hooks and skills and does not set conflicting model parameters. It does not mean every scenario has passed an authenticated live-model evaluation.
+Registry targets are observations from 2026-09-20, not minimum-version
+guarantees. Model availability is account, provider, policy, and region
+dependent. The active host's model picker or list command and callable worker
+schema remain authoritative.
 
-The 2026-08-21 local candidate boundary uses Codex 0.147.0, Claude Code
-2.1.227, and Qoder CLI 1.1.19. The prior 1.3.1 package passed all three host
-validators; an authenticated Qoder CLI probe returned the exact Hook workflow
-ID, while the Claude model probe was blocked by expired local OAuth. Candidate
-validation is reported separately rather than silently promoting prior results.
-Codex 0.147.0 also enforces 128 characters per starter
-prompt; 1.3.1 shortens all three and adds a regression for that host limit.
-These are dated compatibility observations, not permanent minimum-version
-guarantees.
+“Compatible by design” means the plugin uses supported skills, Hooks, and
+native boundaries without writing model configuration. It does not mean every
+model/effort combination has passed an authenticated end-to-end run.
 
-## Engineering-discipline compatibility
+## Current host implications
 
-v0.4 adds native skills for systematic debugging, verification, and review.
-Those skills do not by themselves select a model, effort, context window,
-reviewer, or subagent count. They request observable summaries—reproducer
-results, commands, exit status, verdicts, and file locations—not hidden
-reasoning or chain-of-thought. The 1.4 Delegation Gate is a separate opt-in
-coordinator decision around those skills, not a second mandatory router.
+The subsequent [1.4.0 local Codex report](../evals/results/2026-09-20-v1.4.0-codex-live.md)
+records authenticated Sol/max tiny-change and interruption/recovery runs,
+including local CLI 0.155.1 cases. A real two-worker run exposed false
+leaf-enforcement labeling, which was repaired and retested. These source-skill
+runs do not certify Astra, a live cache upgrade, or delegated implementation.
 
-The disciplines are conditional rather than a second mandatory router: debugging applies to unexpected behavior, review applies at requested or material boundaries, and verification applies before a success claim. Tiny isolated changes can use focused self-review and direct evidence without a separate reviewer or full suite. This limits repeated ceremony at xhigh/max/high effort while keeping an explicit evidence gate where mistakes are costly.
+### Codex
 
-The lean route reduces fixed ceremony: a small bounded change with one meaningful decision goes from brainstorm directly to plan, skipping separate specification and design artifacts. Outcome Lock protocol 1.3 moves declared scope integrity from prompt-only wording into the local state boundary: stable Outcome IDs, explicit source digests, coverage, fidelity rows, and completion invariants are checked without another reviewer, model call, hidden chain-of-thought request, repository scan, or automatic test run. Review Lease avoids a redundant human stop when the latest request already supplies a fixed implementation mandate or explicit unattended authorization. Implementation remains one continuous stream; tasks and rollback units do not become independently accepted product slices.
+Codex now documents built-in `default`, `worker`, and `explorer` agent roles,
+project/user custom agents, model and reasoning defaults, and per-agent sandbox,
+MCP, and skill configuration. Explicit launch settings, `[agents]` defaults,
+parent inheritance, and an applicable custom definition can participate in the
+effective configuration. Littlepowers therefore records what the current spawn
+interface resolves instead of encoding permanent model IDs or assuming that a
+requested override won.
 
-The additional runtime cost occurs only at explicit lifecycle boundaries.
-Ordinary prompt and Hook paths read the bounded ledger summary and never open
-parent or evidence files. Bind, park/resolve, transition, resume/readiness, verification, and
-completion parse bounded Markdown/JSON and hash only explicitly named files
-(16 MiB per file, 64 MiB total). Cost is independent of repository size.
-The ordinary path neither requests hidden reasoning nor starts an independent
-model call, so it has no model-parameter conflict with GPT-5.6 Sol
-xhigh/max/Ultra, Fable 5, or Opus 4.8. It adds small local I/O boundaries plus a
-limited number of planning-gate tool/continuation turns, which can add
-wall-clock time. An authorized delegated run intentionally adds worker token,
-latency, and integration cost; Littlepowers recommends it only when the
-expected critical-path or context-isolation gain is higher.
-The 1.3.1 root-affinity guard adds one local `.git` marker `lstat` before Hook
-ledger loading and no Git process, repository scan, prompt read, model turn, or
-network call.
+GPT-6 Astra is the current flagship and supports `low`, `medium`, `high`,
+`xhigh`, and `max` reasoning effort. Official guidance says it maintains long
+task coherence better, supports mid-turn steering, can be more sensitive to
+conflicting skill/`AGENTS.md` instructions, may delegate less unless the harness
+states when to do so, and may test too broadly for small tasks. Littlepowers'
+progressive disclosure, single delegation decision, and impact-scaled testing
+remain appropriate: do not duplicate the delegation policy in every skill and
+do not repeat or broaden passing tests without a new risk signal.
 
-Ordinary routes do not run a scheduler. Only an explicitly `windowed` Review
-Lease may arm one host callback: Codex only when a same-task one-shot scheduling
-capability is actually callable, or Claude Code through the optional exact-
-session runner. The callback resumes the configured host/model once; it neither
-selects another model nor adds a reviewer. Qoder and OpenCode continue manually.
+Official sources: [GPT-6 Astra model guidance](https://developers.openai.com/api/docs/guides/latest-model),
+[GPT-6 Astra model page](https://developers.openai.com/api/docs/models/gpt-6-astra),
+and [Codex subagents](https://developers.openai.com/zh-Hans/docs/agent-configuration/subagents).
 
-Claude dynamic workflows need a stricter authority boundary because the host
-workflow script can own an execution plan and may launch additional workflows.
-The approved Littlepowers plan remains the sole product-scope and acceptance
-authority; the host script is an execution adapter derived from it. Checkpoint
-before launch and after integration, and keep background workers ledger-read-
-only. This is protocol-compatible, but no authenticated representative dynamic-
-workflow run has certified orchestration behavior. Host workflows can add their
-own planning, token, and wall-clock cost. See [Claude Code dynamic
-workflows](https://code.claude.com/docs/en/workflows).
+### Claude Code
 
-Handoff and review-evidence additions are dormant commands, not a second execution loop. Ordinary routing and hooks do not scan sibling worktrees, hash review candidates, create reviewers, select models, add a model turn, or add a test run. A broad uncommitted review opts into one bounded snapshot before review and one comparison before verdict acceptance; an oversized review may be partitioned, but one acceptance owner aggregates shared-boundary evidence once.
+Current Claude Code separates three materially different mechanisms:
 
-Littlepowers does not call Superpowers or depend on its runtime. Both can expose namespaced skills, but making both default workflow authorities can still create process-level duplication even though neither creates a model-parameter conflict.
+- a normal subagent starts with a fresh context and its agent definition;
+- a conversation fork inherits the parent history, prompt, tools, model, and
+  prompt cache, making it useful only when rebuilding context would dominate;
+- Agent Teams provide peer communication but remain experimental and
+  session-scoped. In-process teammates do not survive session resume, task
+  status can lag, and nested teams are unavailable.
+
+Current agent definitions support model, effort, background execution,
+`omitClaudeMd`, tool restrictions, and worktree isolation. Background workers
+surface permission requests in the main session. Plugin-provided agent
+definitions do not retain every permission, Hook, or MCP field, so
+Littlepowers does not ship static agents or treat frontmatter as stronger than
+the effective native boundary.
+
+The `fable` alias resolves to Fable 5.1 on current Anthropic API paths, with a
+documented Claude-apps-gateway exception that still resolves to Fable 5. Opus 5
+and Sonnet 5 are current choices; Fable 5.1, Fable 5, Opus 5, Sonnet 5, and
+Opus 4.8 support `low` through `max` when the provider and organization expose
+them. Aliases evolve, so a version-specific evaluation pins a full model name
+and the ordinary path continues to inherit.
+
+Official sources: [Claude Code model configuration](https://code.claude.com/docs/en/model-config),
+[Claude Code subagents](https://code.claude.com/docs/en/sub-agents), and
+[Claude Code Agent Teams](https://code.claude.com/docs/en/agent-teams).
+
+### Qoder
+
+Qoder's catalog is server-driven. `/model` or `--list-models` is the source of
+truth; Littlepowers uses host-relative Efficient, Performance, Ultimate, or
+Auto/inherited tiers and never bakes the rolling provider list into the
+protocol.
+
+An ordinary Subagent has a fresh bounded context. `/subtask` is the
+inherited-session-context option for a background side task. Agent Teams is a
+beta, opt-in, session-only peer mechanism. Qoder Subagents expose model, effort,
+background execution, tool allow/deny lists, maximum turns, timeout, worktree
+isolation, and permission mode. Because a permissive parent can prevent a
+Subagent from becoming stricter through `permissionMode`, Littlepowers enforces
+read-only work with a tool boundary and leaf depth with an `Agent` deny rule.
+
+Current Qoder documentation also defines `QODER_PLUGIN_ROOT` for plugin Hook
+processes and lists `SessionStart`, `UserPromptSubmit`, and `SubagentStart`.
+The complete worker envelope remains mandatory because Hook trust or policy may
+disable delivery; Hook context is defense in depth, not launch authority.
+
+Official sources: [Qoder models](https://docs.qoder.com/cli/model),
+[Qoder Subagents](https://docs.qoder.com/cli/subagent),
+[Qoder Agent Teams](https://docs.qoder.com/cli/agent-teams), and
+[Qoder Hooks](https://docs.qoder.com/cli/hooks).
+
+## Engineering-discipline and performance compatibility
+
+The debugging, verification, and review skills request observable summaries—
+reproducer results, commands, exit status, verdicts, and file locations—not
+hidden reasoning or chain-of-thought. They do not select a model, effort,
+context window, reviewer, or worker count.
+
+Ordinary routing does not read the detailed delegation reference or run the
+capability validator. Hooks read only the bounded ledger summary. Outcome Lock
+and Review Lease parse bounded Markdown/JSON and hash explicitly named files at
+lifecycle boundaries; they do not scan the repository or call a model. The
+Host Capability Snapshot helper accepts explicit command-line facts only and
+does not inspect host configuration, environment, project files, ledger,
+transcript, or network.
+
+This keeps the ordinary path free of extra Agent/model calls, background work,
+capability probes, effort overrides, or broad tests. Planning gates add a small
+number of local tool/continuation turns. An authorized delegated run
+intentionally adds worker tokens, latency, and integration work and is proposed
+only when the measured critical-path or context-isolation benefit is likely to
+be higher.
+
+Testing stays proportional. Tiny isolated changes get focused checks;
+connected behavior gets affected-boundary checks; broad shared or release
+boundaries run the relevant broad suite once after integration. This matches
+current model guidance and prevents a capable high-effort model from converting
+every small edit into repeated full-suite work.
+
+Littlepowers does not call Superpowers or depend on its runtime. Both can expose
+namespaced skills, but making both default workflow authorities can still
+create process-level duplication even though neither creates a model-parameter
+conflict.
 
 ## Opt-in delegated model controls
 
-The Delegation Gate is default-off and evaluated at most once after a stable
-plan, after a reproduced bug yields independent evidence paths, or before a
-material multi-perspective review. It vetoes unsettled, sequential, same-file,
-shared-resource, tiny, destructive, or external-state work. A qualifying
-proposal names roles, current native mechanism, model/effort policy, isolation,
-benefit, risk, and single-agent fallback; no worker starts before exact
-work-unit authorization.
+Selection remains host-relative:
 
-Selection is host-relative rather than tied to permanent model IDs:
-
-- search, inventory, and log scouts prefer an efficient tier at medium effort;
-- bounded independent implementation prefers a balanced tier or inheritance at
-  medium/high effort;
+- search, inventory, logs, and bounded scouting prefer an efficient current
+  tier at medium effort;
+- bounded independent implementation prefers a balanced current tier or
+  inheritance at medium/high effort;
 - architecture, security, migration, and adversarial review prefer the current
   frontier/coordinator tier at high or xhigh when supported.
 
-Maximum effort, Codex Ultra, and Claude Agent Teams are never automatic.
-Unsupported pairs inherit without retry loops. Codex uses only its current
-native spawn schema and never user-visible tasks or nested CLIs. Claude uses
-ordinary subagents first; Agent Teams requires a separate explicit decision
-because it is experimental and materially more expensive. Qoder uses only the
-current native Agent/Subagent controls and carries the full task envelope even
-when the IDE omits `SubagentStart`. OpenCode stays single-agent until an
-equivalent native boundary is verified.
+Every proposal includes a validated Host Capability Snapshot. Maximum effort,
+Codex Ultra, Qoder Ultimate, Claude Agent Teams, and Qoder Agent Teams are never
+automatic. Unsupported settings fall back to inheritance without cycling model
+aliases. The user authorizes one exact work unit; model selection never expands
+commit, push, PR, publish, deployment, destructive, secret, permission, or
+external-write authority.
 
-Host delegation sources: [Claude Code subagents](https://code.claude.com/docs/en/sub-agents),
-[Claude Code agent teams](https://code.claude.com/docs/en/agent-teams), and
-[Qoder CLI subagents](https://docs.qoder.com/cli/subagent).
-
-Historical routing and coordination evidence is recorded in [the v0.3 alpha evaluation report](../evals/results/2026-07-17-v0.3-alpha.1.md). The three v0.4 discipline checks and their limits are recorded separately in [the v0.4 alpha evaluation report](../evals/results/2026-07-17-v0.4-alpha.1.md), while [the 2026-07-18 static/runtime report](../evals/results/2026-07-18-lightweight-handoff-review-evidence.md) covers explicit handoff, snapshot timing, Hook cost, and model non-selection. The project requires three runs per configuration before making a reliability claim; this release reports only the narrower outcomes actually observed.
-
-The current candidate evidence is in [the 1.4.0-alpha.1 delegation verification
-report](../evals/results/2026-08-21-v1.4.0-alpha.1.md). It separates fresh
-static/package validation from the prior 1.3.1 Codex/Qoder routing probes and
-authentication-blocked Claude probe.
-
-## GPT-5.6
-
-OpenAI's current model guidance lists `gpt-5.6-sol` as the frontier model and supports API reasoning efforts `none`, `low`, `medium`, `high`, `xhigh`, and `max`. It recommends reserving max for the hardest quality-first work and comparing it with xhigh.
-
-Codex Ultra is a product-level mode that adds automatic subagent delegation to
-the highest Codex reasoning choice. It is not a public Responses API
-`reasoning.effort` value: GPT-5.6's API efforts currently stop at `max`.
-Littlepowers does not write model configuration, change the coordinator's
-`reasoning.effort`, or select Ultra. Codex's model picker/configuration remains
-the authority for Sol and xhigh/max, while the host remains the authority for
-Ultra delegation. A current Codex native spawn tool may still expose `ultra` as
-a host-specific worker reasoning value. After exact authorization, the
-coordinator may pass one value that the actual spawn schema supports; Ultra or
-maximum effort must be named in the proposal and explicitly authorized rather
-than selected automatically. Otherwise the worker inherits.
-
-GPT-5.6 guidance also recommends lean prompts, single-stated rules, outcome-focused autonomy boundaries, and representative evaluation. Littlepowers responds by:
-
-- keeping static behavior in the router instead of Hook context;
-- reducing repeated policy in phase skills;
-- routing direct, lean-plan, compact, or full work by risk;
-- keeping the host in charge of delegation;
-- using factual bounded recovery snapshots;
-- selecting debugging and review only at applicable boundaries;
-- tying completion claims to observable evidence without requesting private reasoning.
-
-Official sources: [GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/model-guidance?model=gpt-5.6), [Codex models](https://developers.openai.com/codex/models), and [Codex hooks](https://developers.openai.com/codex/hooks).
-
-## Claude Fable 5 and Opus 4.8
-
-Claude Code exposes `fable` for Claude Fable 5. The evolving `opus` alias maps
-to Opus 5 on current Anthropic API releases, so an Opus 4.8 evaluation must use
-its full model name or an explicit provider pin rather than assuming the alias.
-The documented minimums are Claude Code 2.1.170 for Fable 5 and 2.1.154 for
-Opus 4.8; the local validation host is 2.1.227.
-
-Fable 5 is designed for long autonomous work. Anthropic recommends describing outcomes rather than prescribing every step and says repeated verification reminders are usually unnecessary. Opus 4.8 supports higher effort for difficult or asynchronous work, but max should be evaluated for diminishing returns.
-
-Littlepowers does not request hidden reasoning or chain-of-thought. Artifacts record a reviewable decision rationale. The ordinary path does not override effort or model aliases. An authorized native subagent may receive a supported model/effort selection, but environment, allowlist, provider, and organization rules remain authoritative and unsupported choices fall back to inheritance. Its verification reminder appears at a completion boundary instead of repeating the whole workflow on every prompt, and proportional scope avoids forcing broad checks or separate review onto tiny work. Current Claude Code can route Fable 5 cybersecurity flags to Opus 4.8 and biology flags to Opus 5; provider and organization settings can alter availability. That host behavior does not change the ledger schema.
-
-Official sources: [Claude Code model configuration](https://code.claude.com/docs/en/model-config), [Claude Code subagents](https://code.claude.com/docs/en/sub-agents), [Claude Code agent teams](https://code.claude.com/docs/en/agent-teams), [Claude Fable 5](https://www.anthropic.com/news/claude-fable-5-mythos-5), [Claude Opus 4.8](https://www.anthropic.com/news/claude-opus-4-8), and [Claude Code hooks](https://code.claude.com/docs/en/hooks).
+Historical routing and coordination evidence remains in
+[the v0.3 alpha report](../evals/results/2026-07-17-v0.3-alpha.1.md),
+[the v0.4 discipline report](../evals/results/2026-07-17-v0.4-alpha.1.md), and
+[the 1.4.0-alpha.1 delegation report](../evals/results/2026-08-21-v1.4.0-alpha.1.md).
+Those results are not silently promoted to current-host certification.
 
 ## Validation levels
 
-Release reports should distinguish:
+Release evidence must distinguish:
 
-1. manifest and static skill validation;
+1. manifest, policy-validator, and static skill validation;
 2. Hook delivery without model authentication;
-3. model routing evaluation;
-4. full authenticated implementation and interruption evaluation.
+3. authenticated model routing response;
+4. authenticated implementation, interruption, and delegated integration flow.
 
-This candidate does not claim level 4 for Fable 5 or Opus 4.8, or a reliable
-delegated speed/quality gain on any host. Earlier model results are not silently
-promoted into 1.4 reliability claims. Passing
-schema-4 protocol and fake-host runner tests is model-agnostic evidence; it is not proof that a
-model always builds a semantically complete Contract from free-form sources.
-Add dated results rather than turning a model snapshot into a permanent
-guarantee.
+Before a stable release claims a current-host quality, cost, or speed benefit,
+run at least three comparable cases per host/role combination and record only
+observable data: elapsed time, accepted findings or patches, conflicts,
+duplicate work, rework, exposed token/cost data, and final quality evidence.
+Do not record chain-of-thought. Until those runs exist, report the adapter as
+documentation/structurally compatible rather than orchestration-certified.

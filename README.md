@@ -62,16 +62,21 @@ paths, or before a material multi-perspective review. It vetoes unsettled,
 sequential, same-file, shared-resource, tiny, destructive, and external-state
 work. When at least two ready packets have independently verifiable outputs and
 clear critical-path or context-isolation value, the coordinator presents one
-proposal with roles, native host mechanism, model/effort policy, isolation,
-benefit, risk, and a single-agent fallback. No worker starts before exact
-work-unit authorization.
+proposal with roles plus a Host Capability Snapshot of the runtime-observed
+mechanism, fresh/fork/team context, effective model/effort, isolation,
+permission boundary, durability, and leaf enforcement. It also names benefit,
+risk, and a single-agent fallback. No worker starts before exact work-unit
+authorization.
 
 Authorized workers are leaf agents. Inheritance is the default model/effort
-choice; maximum effort, Codex Ultra, and Claude Agent Teams are never selected
-automatically. Codex, Claude Code, and Qoder use only controls exposed by the
-current native worker interface. Concurrent mutation requires worktrees or
-equivalent isolation. The root coordinator remains the sole ledger writer,
-integrator, acceptance owner, shared broad-test runner, and final verifier.
+choice; maximum effort, Codex Ultra, Qoder Ultimate, Claude Agent Teams, and
+Qoder Agent Teams are never selected automatically. Codex, Claude Code, and
+Qoder use only controls exposed by the current native worker interface.
+Concurrent mutation requires worktrees or equivalent isolation. The root
+coordinator remains the sole ledger writer, integrator, acceptance owner,
+shared broad-test runner, and final verifier. The explicit snapshot validator
+runs only after the benefit gate passes; it performs no discovery, launch,
+network access, or ordinary-path work.
 
 All tracked routes use a worktree-local `.littlepowers/state.json` ledger. The schema-4 ledger records protocol identity, the Outcome Lock summary, Review Lease policy and bounded gate audit, objective, phase, current task, optional evidence-based progress, next action, workflow ID, and monotonic revision. A successful planning resolution is bound to its original key, path, bytes, and declared parent-source digests; Contract bind and Plan validation each consume their boundary once, so copied paths or changed sources cannot reuse an old approval. The ledger ignores itself in Git. Progress names a milestone or acceptance-check count; Littlepowers does not infer percentages from time or file count.
 
@@ -97,7 +102,7 @@ If a material review is too large for one reliable pass, split it by trust, stat
 
 Outcome Lock and Review Lease deterministically reject drift, missing declared IDs, invalid scope state, incomplete declared fidelity, stale gate replay, and false completion transitions. They cannot force a model to extract every meaning from free-form prose, prevent same-turn steering, override the latest user request, infer silence without inspecting the latest visible conversation, or make an active task hot-load a replacement plugin. Automatic Hook recovery is intentionally unavailable for a non-Git ledger root; use the state CLI explicitly there. In Codex, use Queue when a follow-up must wait for the current run to finish.
 
-Hooks may be disabled by trust settings or organization policy. Host wake-up is optional: Codex requires a callable same-task one-shot Scheduled Task capability, Claude Code requires the optional exact-session runner, and Qoder/OpenCode currently resume manually. A lost callback leaves the durable gate intact. The Qoder IDE currently supports only a subset of hook events, so the SessionStart and SubagentStart boundaries stay silent there while UserPromptSubmit reminders still work; every authorized worker therefore carries its full ownership envelope in the launch task. Recovery can only return to the last checkpoint that was written. One worktree supports one active top-level workflow; use another worktree for independent concurrent work. In Claude dynamic workflows, keep the approved Littlepowers plan as the sole product-scope authority and use the host workflow only as its execution adapter.
+Hooks may be disabled by trust settings or organization policy. Host wake-up is optional: Codex requires a callable same-task one-shot Scheduled Task capability, Claude Code requires the optional exact-session runner, and Qoder/OpenCode currently resume manually. A lost callback leaves the durable gate intact. Current Qoder documentation defines `QODER_PLUGIN_ROOT` and the SessionStart, UserPromptSubmit, and SubagentStart events. Every authorized worker still carries its full ownership envelope because Hook delivery is optional defense in depth, not launch authority. Recovery can only return to the last checkpoint that was written. One worktree supports one active top-level workflow; use another worktree for independent concurrent work. In Claude dynamic workflows, keep the approved Littlepowers plan as the sole product-scope authority and use the host workflow only as its execution adapter.
 
 ### Parallel worktree overview
 
@@ -134,10 +139,10 @@ See the [capability matrix](docs/capability-matrix.md) for exact boundaries.
 
 ## Install in Codex
 
-Install the stable 1.3.1 release by its exact tag:
+Install the stable 1.4.0 release by its exact tag:
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v1.3.1
+codex plugin marketplace add clsaa/littlepowers --ref v1.4.0
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -164,10 +169,10 @@ Codex Queue defers a follow-up; `/side` or `/btw` isolates an unrelated question
 For an exact release, use a tag-pinned local marketplace checkout:
 
 ```bash
-git clone --depth 1 --branch v1.3.1 \
+git clone --depth 1 --branch v1.4.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.1
-claude plugin marketplace add /absolute/path/littlepowers-v1.3.1
+  /absolute/path/littlepowers-v1.4.0
+claude plugin marketplace add /absolute/path/littlepowers-v1.4.0
 claude plugin install littlepowers@littlepowers
 ```
 
@@ -204,10 +209,10 @@ Qoder CLI and the Qoder IDE share the same plugin layout.
 For an exact release, install a tag-pinned checkout:
 
 ```bash
-git clone --depth 1 --branch v1.3.1 \
+git clone --depth 1 --branch v1.4.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.1
-qodercli plugins install /absolute/path/littlepowers-v1.3.1
+  /absolute/path/littlepowers-v1.4.0
+qodercli plugins install /absolute/path/littlepowers-v1.4.0
 ```
 
 For a local checkout, run `qodercli plugins install /path/to/littlepowers` instead. Restart the session or run `/skills reload`, then review the plugin hooks before trusting them. In the Qoder IDE, install through the Marketplace panel or import the local plugin folder.
@@ -224,7 +229,7 @@ Inspect recovery state:
 /managing-littlepowers Run doctor and show the active workflow.
 ```
 
-For repository-wide defaults, copy [the optional AGENTS.md snippet](assets/agents-snippet.md) into the project's `AGENTS.md`; Qoder reads it automatically. Qoder currently has no verified exact-session Review Lease scheduler, so an eligible timed gate resumes manually. The Qoder IDE currently fires only a subset of hook events, so SessionStart snapshots and SubagentStart markers do not appear there yet, and it does not document `QODER_PLUGIN_ROOT` injection for plugin hooks, so hook commands may not resolve the plugin root in the IDE until the host provides it.
+For repository-wide defaults, copy [the optional AGENTS.md snippet](assets/agents-snippet.md) into the project's `AGENTS.md`; Qoder reads it automatically. Qoder currently has no verified exact-session Review Lease scheduler, so an eligible timed gate resumes manually. Current Qoder documentation defines `QODER_PLUGIN_ROOT` for plugin Hook subprocesses and documents SessionStart, UserPromptSubmit, and SubagentStart. The full worker ownership envelope remains mandatory when those events are disabled or blocked by trust or organization policy.
 
 ## Install in OpenCode
 
@@ -232,7 +237,7 @@ Add the plugin to the `plugin` array in `opencode.json` (global or project-level
 
 ```json
 {
-  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.3.1"]
+  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.4.0"]
 }
 ```
 
@@ -337,7 +342,7 @@ from an exact tag and start a new task/session. For Codex:
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v1.3.1
+codex plugin marketplace add clsaa/littlepowers --ref v1.4.0
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -346,26 +351,26 @@ Use the desired earlier tag in the same commands to roll back.
 For Claude Code, use a separate checkout of the desired tag as the marketplace:
 
 ```bash
-git clone --depth 1 --branch v1.3.1 \
+git clone --depth 1 --branch v1.4.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.1
+  /absolute/path/littlepowers-v1.4.0
 claude plugin uninstall littlepowers@littlepowers
 claude plugin marketplace remove littlepowers
-claude plugin marketplace add /absolute/path/littlepowers-v1.3.1
+claude plugin marketplace add /absolute/path/littlepowers-v1.4.0
 claude plugin install littlepowers@littlepowers
 ```
 
 For Qoder CLI, install the same tagged checkout directly:
 
 ```bash
-git clone --depth 1 --branch v1.3.1 \
+git clone --depth 1 --branch v1.4.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.1
+  /absolute/path/littlepowers-v1.4.0
 qodercli plugins uninstall littlepowers
-qodercli plugins install /absolute/path/littlepowers-v1.3.1
+qodercli plugins install /absolute/path/littlepowers-v1.4.0
 ```
 
-For OpenCode, change the `#v1.3.1` suffix in the git plugin URL to the exact
+For OpenCode, change the `#v1.4.0` suffix in the git plugin URL to the exact
 desired tag, force-refresh its package cache if necessary, and restart OpenCode.
 After any host change, open a new task/session, confirm all eleven skills, and
 run the management skill's `doctor`; do not treat plugin reload as ledger
@@ -390,15 +395,19 @@ Read the [security model](docs/security-model.md) before broader deployment. Rep
 
 Littlepowers does not select a model or effort level on the ordinary path. Its planning depth follows task risk, not reasoning effort. Its debugging, review, and verification skills ask for observable evidence and concise verdicts, not private chain-of-thought. Only after exact delegation authorization may a role-specific supported worker setting be passed through the current host; inheritance remains the default.
 
-Outcome Lock and Review Lease add local JSON validation and SHA-256 work only at bind, park/resolve, transition, resume/readiness, verification, and completion boundaries. Ordinary routing starts no independent model call, agent, background scan, automatic test run, scheduler, or effort override, and does not read the detailed delegation reference. Planning gates do add a small number of tool/continuation turns and therefore some wall-clock overhead. Only an explicitly windowed policy may arm one host callback; it resumes the configured host once without selecting a reviewer or model. Runtime work is proportional to explicitly bound files and declared rows, not repository size, so there is no model-parameter conflict with GPT-5.6 Sol xhigh/max/Ultra, Fable 5, or Opus 4.8. An authorized delegated run intentionally adds worker token, latency, and integration cost and is recommended only when its expected benefit is higher.
+Outcome Lock and Review Lease add local JSON validation and SHA-256 work only at bind, park/resolve, transition, resume/readiness, verification, and completion boundaries. Ordinary routing starts no independent model call, agent, capability probe, background scan, automatic test run, scheduler, or effort override, and does not read the detailed delegation reference. Planning gates do add a small number of tool/continuation turns and therefore some wall-clock overhead. Only an explicitly windowed policy may arm one host callback; it resumes the configured host once without selecting a reviewer or model. The post-gate Host Capability Snapshot validator accepts explicit facts and performs no discovery or network access. Runtime work is proportional to explicitly bound files and declared rows, not repository size, so it has no model-parameter conflict with current Codex, Claude Code, or Qoder models. An authorized delegated run intentionally adds worker token, latency, and integration cost and is recommended only when its expected benefit is higher.
 
-- GPT-5.6 Sol xhigh passed routing scenarios 1 through 9 in one prerelease evaluation campaign.
-- GPT-5.6 Sol max completed the v0.3 adversarial review with no remaining P0/P1 issue and 43 tests passing.
-- Codex Ultra passed a two-worker coordination scenario. Coordinator ownership remains a cooperative protocol, not operating-system authorization. Ultra is a Codex product mode that adds automatic task delegation beyond the public API's `max` effort; Littlepowers never selects it automatically.
-- Claude Fable 5 and Opus 4.8 have no model-setting conflict. The disciplines and Delegation Gate are conditional rather than repeated on every prompt. Claude Code strict validation accepts the prior stable plugin, but authenticated v1.4 delegated-model and dynamic-workflow orchestration flows have not been recorded. Agent Teams remains a separate experimental, higher-cost choice.
-- Qoder CLI, the Qoder IDE, and OpenCode load the same skills, hooks, and state CLI, but no authenticated v1.4 delegated end-to-end model run has been recorded for these hosts yet. OpenCode remains single-agent until an equivalent native boundary is verified.
+- Codex keeps model and effort inheritance by default. GPT-6 Astra's stronger long-task coherence does not justify duplicating Littlepowers instructions; its documented instruction sensitivity and broad-testing tendency reinforce progressive disclosure and impact-scaled verification.
+- Claude Code distinguishes fresh subagents, full-context forks, and experimental session-scoped Agent Teams. Current aliases include Fable 5.1, Fable 5, Opus 5, Sonnet 5, and Opus 4.8 subject to provider and organization availability.
+- Qoder resolves current models through `/model` or `--list-models`; Littlepowers uses Auto/inheritance or justified host-relative tiers instead of hard-coding its rolling provider catalog.
+- Historical GPT-5.6 Sol and Ultra evidence remains recorded, but this iteration does not claim authenticated latest-host delegated implementation certification.
 
 Compatibility evidence and untested claims are separated in the dated [model compatibility report](docs/model-compatibility.md).
+
+The [1.4.0 candidate's authenticated Codex tests](evals/results/2026-09-20-v1.4.0-codex-live.md)
+cover proportional routing, approval, interruption, and recovery. They also
+found and repaired false leaf-enforcement labeling. On a native worker surface
+without an effective tool/depth boundary, delegation stays single-agent.
 
 ## Troubleshooting
 
@@ -414,7 +423,7 @@ Run the management skill's `doctor` flow first. Common causes:
 - A plugin cache was replaced during an active task; resolve the one enabled installation, reread the current skills, and use a new task boundary for future updates.
 - Claude Code still uses an older cached plugin; update and reload it.
 - In Codex, the plan does not appear in the interface because only the native `update_plan` tool renders there; confirm the plan was mirrored after the artifact was written. The Markdown file alone never shows up in that view.
-- In the Qoder IDE, SessionStart and SubagentStart hooks are not fired by the host; in OpenCode, the plugin entry in `opencode.json` must point at a refreshed install.
+- In Qoder, confirm Hook trust/policy and that the plugin command resolves the documented `QODER_PLUGIN_ROOT`; in OpenCode, confirm the plugin entry in `opencode.json` points at a refreshed install.
 
 The [capability matrix](docs/capability-matrix.md) distinguishes expected limitations from faults.
 

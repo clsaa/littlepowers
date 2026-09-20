@@ -61,9 +61,9 @@ When the gate passes, present one compact proposal and wait for the answer:
 Subagent recommendation
 - Why: <measured or concrete critical-path/context benefit>
 - Workers: <count and bounded roles>
-- Host mechanism: <current callable native mechanism>
-- Model/effort: <inherit or supported role-specific choice>
-- Isolation: <read-only or separate worktrees/files/resources>
+- Host capability: <mechanism, runtime evidence source, fresh|fork|team context>
+- Effective settings: <model and effort, normally inherit>
+- Boundary: <isolation, permission/tool control, durability, leaf enforcement>
 - Integration owner: root coordinator
 - Main risk: <coordination or quality risk>
 - If declined/unavailable: continue single-agent
@@ -88,6 +88,60 @@ If the user declines, the native mechanism is unavailable, or a supported
 model/effort pair cannot be selected, continue single-agent without a retry
 loop. Do not repeat the proposal unless the approved plan changes materially.
 
+## Host Capability Snapshot
+
+Only after the benefit gate passes, collect one short snapshot from the current
+callable host interface. Documentation proves that a capability can exist; it
+does not prove that the current session exposes it. Use one of these evidence
+sources: the actual worker tool schema, a current host capability command, or
+an already approved agent definition loaded by the host.
+
+Record exactly these launch facts:
+
+```text
+Host capability
+- Host/mechanism: <codex|claude|qoder|other> / <native mechanism>
+- Source/context: <tool-schema|host-command|approved-agent-definition> / <fresh|fork|team>
+- Effective model/effort: <inherit or current supported values>
+- Isolation/permission: <read-only|worktree|equivalent> / <enforced tool, sandbox, or host boundary>
+- Durability/leaf: <resumable|session-only|unknown> / nested delegation blocked by <tool-disabled|host-depth-limit>
+```
+
+Validate the explicit facts with the dependency-free helper when it is
+available:
+
+```bash
+<python> <plugin-root>/scripts/littlepowers_delegation.py \
+  --host <host> --mechanism <native-mechanism> \
+  --capability-source <tool-schema|host-command|approved-agent-definition> \
+  --context-mode <fresh|fork|team> \
+  --effective-model <inherit-or-effective-model> \
+  --effective-effort <inherit-or-effective-effort> \
+  --isolation <read-only|worktree|equivalent> \
+  --permission-boundary <tool-restricted|sandbox-read-only|host-policy|worktree> \
+  --durability <resumable|session-only|unknown> \
+  --nested-delegation blocked --leaf-boundary <tool-disabled|host-depth-limit> \
+  [--mutation] [--team-boundary-declared]
+```
+
+The helper normalizes supplied observations and enforces stable Littlepowers
+boundaries. It does not discover a host, inspect configuration, read the
+repository or ledger, select a model, authorize a launch, or create a worker.
+It is never called on the ordinary single-agent path. If the facts cannot form
+a valid snapshot, use a safer supported boundary or continue single-agent; do
+not probe model aliases or weaken isolation in a retry loop.
+Report all rejected boundaries together. A declaration is not enforcement:
+never relabel `available` or `unknown` nested delegation as `blocked`, or a
+prompt-only permission as a tool/sandbox restriction, without new native
+evidence. A failed snapshot ends this attempt unless an already exposed,
+safer mechanism actually changes the observed facts.
+`blocked` requires native evidence that the worker cannot call a delegation
+tool, or that the effective host depth limit prevents another level. A worker
+prompt, role name, or unverified configuration key does not establish this.
+An approved agent definition is evidence only for fields the current host
+actually applies. If enforcement is unavailable, report the limitation and
+continue single-agent; do not silently downgrade this gate to a prompt rule.
+
 ## Host adapters
 
 Use only controls callable in the current runtime. Documentation about a host
@@ -97,10 +151,20 @@ capability is not proof that the current task exposes it.
 
 - Use the current Codex native subagent/spawn tool. Do not create or fork
   user-visible Codex tasks as workers and do not invoke a nested `codex` CLI.
-- Read the actual tool schema before selecting a model or reasoning effort.
-  Prefer inherited settings. Some full-history or host-managed contexts require
-  inheritance; accept that boundary or use a supported bounded-context mode
-  only when the worker has every required input.
+- Prefer a current built-in `explorer` for bounded read-only discovery and a
+  `worker` for isolated mutation when those roles are exposed; otherwise use
+  `default` or an already approved custom agent whose effective tools and
+  sandbox match the task. Never create or edit a persistent agent definition as
+  an incidental delegation step.
+- Read the actual spawn schema before selecting fresh, forked, or peer/team
+  context, a model, reasoning effort, sandbox, or tool boundary. Prefer fresh
+  context for isolation and use a bounded/full-history fork only when
+  recreating the approved context would dominate the task. Use a peer/team
+  context only when the current interface actually exposes it and the separate
+  team proposal is authorized. Inspect the effective setting because explicit
+  launch values, host defaults, inheritance, and custom agent definitions can
+  all participate in resolution. The validator deliberately has no static
+  host-capability catalog; the current callable interface remains authority.
 - Do not select Ultra automatically. Some Codex surfaces expose `ultra` as a
   host-native worker reasoning value even though public API effort values may
   differ. Use it only when the actual spawn schema supports it, the proposal
@@ -109,24 +173,48 @@ capability is not proof that the current task exposes it.
 
 ### Claude Code
 
-- Prefer ordinary native subagents. Use Agent Teams only after a separate
-  explicit proposal when workers need peer-to-peer communication; it is
-  experimental and materially more expensive than ordinary subagents.
+- Prefer an ordinary fresh subagent for context isolation. Use the built-in
+  read-only Explore agent when it fits and is currently exposed. Use a
+  conversation fork only when the worker needs most of the approved parent
+  history: a fork inherits the conversation, system prompt, tools, model, and
+  prompt cache, and it cannot spawn another fork.
+- Use Agent Teams only after a separate explicit proposal when workers need
+  peer-to-peer communication. Treat a team as experimental and session-only:
+  in-process teammates do not resume with the parent session, task status can
+  lag, and only the lead owns integration and completion.
 - Pass a supported model alias/full identifier and effort only through the
   current native Agent interface or an already approved project agent
   definition. Never edit user configuration, environment variables, allowlists,
   or organization policy to make a selection work.
 - Host aliases, environment rules, provider routing, and allowlists may override
   a request. Report the effective limitation and inherit rather than retrying.
+- Require `isolation: worktree` or an equivalent native boundary for mutation.
+  Background permission prompts surface in the main session and are not
+  unattended authority. Plugin-provided Claude agents ignore some permission,
+  Hook, and MCP fields, so use the actual effective tool boundary rather than
+  trusting frontmatter that the host discards.
 
 ### Qoder
 
-- Use the current native Agent/Subagent interface. Use its background,
-  concurrency, worktree, model, or effort controls only when the current
-  surface actually exposes them.
+- Prefer an ordinary fresh Subagent. Use `/subtask` only when the bounded task
+  benefits from inheriting the current session context, and use beta Agent
+  Teams only after a separate explicit proposal for genuine peer coordination;
+  treat a team as session-only.
+- Resolve models and effort from the current `/model` or `--list-models`
+  surface. Prefer `Auto`/inheritance; role-relative Efficient, Performance, or
+  Ultimate tiers may be proposed only when currently exposed and justified.
+  Do not hard-code the rolling provider model catalog into Littlepowers.
+- Enforce leaf depth with the current tool boundary, such as
+  `disallowedTools: [Agent]`. For read-only work, restrict visible tools or
+  deny mutation tools; `permissionMode` alone may not make a worker stricter
+  than an already permissive parent session.
+- Use background, concurrency, worktree, model, or effort controls only when
+  the current native Agent/Subagent interface actually exposes them.
 - For concurrent mutation, require native worktree or equivalent filesystem
-  isolation. Qoder IDE may omit `SubagentStart`; therefore every worker prompt
-  carries the full ownership envelope even when a Hook is configured.
+  isolation. Current Qoder documentation exposes `QODER_PLUGIN_ROOT`,
+  `SessionStart`, and `SubagentStart`; keep the complete worker envelope anyway
+  because Hooks are optional defense in depth and may be disabled by trust or
+  organization policy.
 - Do not add static plugin agents merely to make implicit delegation more
   likely. The gate must remain default-off.
 
@@ -148,9 +236,9 @@ role has a concrete quality/cost reason and the proposal tells the user.
 | Architecture, security, migration, adversarial review | Frontier/current coordinator tier | High or xhigh when supported |
 
 Use Low only for mechanical enumeration with a deterministic output. Never
-select maximum effort, Codex Ultra, or Claude Agent Teams automatically; an
-explicit proposal and user authorization are required even when the host
-offers them.
+select maximum effort, Codex Ultra, Qoder Ultimate, Claude Agent Teams, or
+Qoder Agent Teams automatically; an explicit proposal and user authorization
+are required even when the host offers them.
 Provider model names and aliases change, so resolve them from the current host
 instead of hard-coding one into the protocol. If the requested pair is absent,
 inherit and report the fallback; do not cycle through models.

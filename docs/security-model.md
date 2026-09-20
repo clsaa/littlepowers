@@ -1,8 +1,8 @@
 # Security model
 
-**Reviewed:** 2026-08-21
+**Reviewed:** 2026-09-20
 
-**Release:** 1.4.0-alpha.1 candidate
+**Release:** 1.4.0
 
 ## Assets and trust boundary
 
@@ -98,6 +98,17 @@ native agent interface is invoked. Littlepowers adds no static plugin agent,
 nested coding-CLI launcher, host configuration mutation, or model discovery
 process.
 
+The optional `scripts/littlepowers_delegation.py` helper runs only after that
+benefit gate has found a candidate. It validates explicit coordinator-supplied
+facts and prints normalized JSON. It reads no environment variable, host
+configuration, repository file, ledger, prompt, transcript, or network data;
+it does not select a model, persist a snapshot, authorize work, or launch an
+agent. Invalid or unsafe combinations fail closed before a proposal is shown.
+Leaf enforcement must name a disabled delegation tool or an effective native
+depth limit. These fields remain coordinator audit claims: the helper checks
+their consistency, not the truth of native permissions, and does not intercept
+host spawn calls. A valid snapshot is not proof that the host enforces it.
+
 ## Store validation
 
 The shared read/write boundary:
@@ -166,8 +177,9 @@ restoring the matching pre-schema4 schema-3 archive.
 The parent coordinator is the sole ledger writer, integrator, acceptance owner,
 and final verifier. `SubagentStart` supplies workers with read-only ownership,
 leaf depth, and no-external-action metadata and warns that ledger values are
-untrusted data, not instructions. Because Qoder IDE and other surfaces may omit
-that event, the native launch task must also carry the full worker envelope:
+untrusted data, not instructions. Current Qoder documentation includes that
+event, but any host may disable or omit Hook delivery through trust or policy;
+the native launch task must therefore also carry the full worker envelope:
 exact root/workflow/revision/Outcome/task, allowed files and actions, isolation,
 required evidence, stop condition, and explicit prohibitions on ledger/scope
 changes, nested delegation, commits, pushes, publication, deployment,

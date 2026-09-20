@@ -4,6 +4,47 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-09-20
+
+### Added
+
+- Add a post-gate, dependency-free Host Capability Snapshot validator for
+  explicit runtime observations. It validates fresh/fork/team context,
+  effective model/effort, isolation, permission enforcement, durability, and
+  leaf depth without discovering a host, reading project state, or launching a
+  worker.
+- Add table-driven Codex, Claude Code, and Qoder capability profiles plus
+  fail-closed regressions for documentation-only evidence, unsafe mutation,
+  permission-only read access, nested delegation, and non-session team claims.
+
+### Changed
+
+- Distinguish Codex built-in/custom agents, Claude fresh subagents/forks/Agent
+  Teams, and Qoder Subagents/`/subtask`/Agent Teams while keeping inheritance,
+  one exact authorization, and the single-agent fast path as defaults.
+- Refresh the dated host/model matrix for GPT-6 Astra, current Claude aliases
+  and effort levels, and Qoder's server-driven model tiers without hard-coding
+  rolling provider catalogs into runtime policy.
+
+### Fixed
+
+- Remove obsolete claims that Qoder lacks `QODER_PLUGIN_ROOT`, SessionStart, or
+  SubagentStart support. Add a behavioral Hook regression using the documented
+  Qoder plugin root across all three Littlepowers events.
+- Require an explicit native leaf boundary (`tool-disabled` or
+  `host-depth-limit`). Authenticated Codex testing exposed a coordinator
+  misreporting a worker instruction as blocked nested delegation; prompt-only
+  and unknown enforcement now fail validation explicitly.
+- Report all unsafe snapshot boundaries in one diagnostic, reject mutation
+  paired with a read-only sandbox, and prohibit relabeling observations to
+  bypass a failed snapshot.
+
+### Security and performance
+
+- Keep schema 4 unchanged. The new validator is called only after the existing
+  high-benefit Delegation Gate passes and performs no environment, repository,
+  ledger, transcript, model, or network probe.
+
 ## [1.4.0-alpha.1] - 2026-08-21
 
 ### Added
@@ -342,7 +383,8 @@ The first stable release. Multi-host support (Codex, Claude Code, Qoder, OpenCod
 
 - Created the initial Codex plugin and planning workflow.
 
-[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/clsaa/littlepowers/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/clsaa/littlepowers/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/clsaa/littlepowers/compare/v1.2.0-alpha.1...v1.3.0
 [1.2.0-alpha.1]: https://github.com/clsaa/littlepowers/compare/v1.1.0-alpha.1...v1.2.0-alpha.1

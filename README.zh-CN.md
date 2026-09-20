@@ -54,9 +54,9 @@ Lean、Compact 与 Full 的规划产物可以形成确定性的 Review Gate。�
 
 这些能力本身不会创建 Agent、选择模型、强制 TDD 或要求输出隐藏推理；Codex、Claude Code、Qoder 与 OpenCode 使用同一份实现。
 
-子 Agent 是一项独立且默认关闭的门禁。Littlepowers 最多在计划稳定后、故障已复现且出现独立证据路径后，或重要多视角审查前评估一次；未决范围、顺序依赖、同文件/共享资源、小任务、破坏性操作和外部状态都会否决并行。只有至少两个已就绪工作包能独立验收，且关键路径或上下文隔离收益明确高于启动、冲突、集成与复核成本时，协调 Agent 才会提出一次建议，列明角色、当前宿主原生机制、模型/effort、隔离方式、收益、风险和单 Agent 退路。获得当前工作单元的明确授权前，不会启动 worker。
+子 Agent 是一项独立且默认关闭的门禁。Littlepowers 最多在计划稳定后、故障已复现且出现独立证据路径后，或重要多视角审查前评估一次；未决范围、顺序依赖、同文件/共享资源、小任务、破坏性操作和外部状态都会否决并行。只有至少两个已就绪工作包能独立验收，且关键路径或上下文隔离收益明确高于启动、冲突、集成与复核成本时，协调 Agent 才会提出一次建议。建议包含角色，以及基于当前宿主实际接口的 Host Capability Snapshot：原生机制、fresh/fork/team 上下文、有效模型/effort、隔离、权限/工具边界、可恢复性与 leaf 约束，同时列明收益、风险和单 Agent 退路。获得当前工作单元的明确授权前，不会启动 worker。
 
-获授权的 worker 都是 leaf Agent。模型与 effort 默认继承；不会自动选择最大 effort、Codex Ultra 或 Claude Agent Teams。Codex、Claude Code 与 Qoder 只使用当前原生 worker 接口实际暴露的控制；并发修改必须使用 worktree 或同等级隔离。根协调 Agent 始终独占 ledger 写入、集成、验收、共享 broad test 和最终完成声明。
+获授权的 worker 都是 leaf Agent。模型与 effort 默认继承；不会自动选择最大 effort、Codex Ultra、Qoder Ultimate、Claude Agent Teams 或 Qoder Agent Teams。Codex、Claude Code 与 Qoder 只使用当前原生 worker 接口实际暴露的控制；并发修改必须使用 worktree 或同等级隔离。根协调 Agent 始终独占 ledger 写入、集成、验收、共享 broad test 和最终完成声明。显式 snapshot 校验器只在收益门禁通过后运行，不探测宿主、不启动 Agent、不访问网络，也不给普通路径增加工作。
 
 被追踪的任务会写入当前 worktree 下的 `.littlepowers/state.json`。Schema 4 状态包含协议版本、Outcome Lock 摘要、Review Lease 策略及有界门禁审计、workflow ID、单调递增 revision，以及可选的、基于证据的进度。成功的规划 resolution 会绑定原始 key、路径、字节和声明的父来源摘要；Contract bind 与 Plan validation 各自只消费对应边界一次，因此复制到新路径或修改来源都不能复用旧批准。进度应写成里程碑或验收项计数，不能根据时间和文件数量猜百分比。旧 revision 写入会失败，不会覆盖新进度。
 
@@ -82,7 +82,7 @@ Outcome Lock 与 Review Lease 能确定性拒绝来源漂移、已声明 ID 缺�
 
 暂停中的 workflow 不会因为普通实现提示而自动恢复；必须先完成显式 `resume`。超过 30 天未更新的 ledger 会标记为按时间过期，需先与当前代码和最新请求核对，再决定是否继续。
 
-宿主唤醒是可选能力：Codex 需要可调用的同任务一次性 Scheduled Task；Claude Code 需要可选的精确会话 runner；Qoder/OpenCode 当前手动恢复。callback 丢失不会丢失持久门禁。Qoder IDE 目前只支持部分 Hook 事件，因此 SessionStart 快照和 SubagentStart 标记在 IDE 中不会触发，UserPromptSubmit 提醒仍可用；每个获授权 worker 的启动任务仍必须携带完整所有权边界。
+宿主唤醒是可选能力：Codex 需要可调用的同任务一次性 Scheduled Task；Claude Code 需要可选的精确会话 runner；Qoder/OpenCode 当前手动恢复。callback 丢失不会丢失持久门禁。新版 Qoder 文档已定义 `QODER_PLUGIN_ROOT` 以及 SessionStart、UserPromptSubmit、SubagentStart 事件。每个获授权 worker 仍必须携带完整所有权边界，因为 Hook 可能被信任设置或组织策略禁用，它只是纵深防护，不是启动授权。
 
 一个 worktree 只支持一个活跃的顶层 workflow。并行的独立目标应使用不同 worktree。Ultra 或 Claude dynamic workflows 中，只有根协调 Agent 写 ledger；worker 返回证据。Claude dynamic workflow 只能作为已批准 Littlepowers plan 的执行适配器，不能成为第二个产品范围或验收权威。
 
@@ -122,10 +122,10 @@ Littlepowers 可独立运行。若把它和 Superpowers 同时设为默认 route
 
 ## 安装到 Codex
 
-按精确 tag 安装稳定版 1.3.1：
+按精确 tag 安装稳定版 1.4.0：
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v1.3.1
+codex plugin marketplace add clsaa/littlepowers --ref v1.4.0
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -148,10 +148,10 @@ Codex 的 Queue 用于延迟消息，`/side` 或 `/btw` 用于无关问题。Lit
 使用 tag 固定的本地 marketplace 安装精确版本：
 
 ```bash
-git clone --depth 1 --branch v1.3.1 \
+git clone --depth 1 --branch v1.4.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.1
-claude plugin marketplace add /absolute/path/littlepowers-v1.3.1
+  /absolute/path/littlepowers-v1.4.0
+claude plugin marketplace add /absolute/path/littlepowers-v1.4.0
 claude plugin install littlepowers@littlepowers
 ```
 
@@ -184,10 +184,10 @@ Qoder CLI 与 Qoder IDE 共用同一套插件结构。
 使用 tag 固定的本地检出安装精确版本：
 
 ```bash
-git clone --depth 1 --branch v1.3.1 \
+git clone --depth 1 --branch v1.4.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.1
-qodercli plugins install /absolute/path/littlepowers-v1.3.1
+  /absolute/path/littlepowers-v1.4.0
+qodercli plugins install /absolute/path/littlepowers-v1.4.0
 ```
 
 本地检出可用 `qodercli plugins install /path/to/littlepowers` 安装。重启会话或执行 `/skills reload`，并先检查插件 Hook 再信任。Qoder IDE 通过 Marketplace 面板安装，或导入本地插件目录。
@@ -204,7 +204,7 @@ qodercli plugins install /absolute/path/littlepowers-v1.3.1
 /managing-littlepowers 运行 doctor，并显示当前 workflow。
 ```
 
-仓库级默认规则可复制 [AGENTS.md 片段](assets/agents-snippet.md)，Qoder 会自动读取 `AGENTS.md`。Qoder 当前没有经过验证的精确会话 Review Lease 调度器，因此计时门禁到期后手动恢复。Qoder IDE 目前只触发部分 Hook 事件，SessionStart 快照与 SubagentStart 标记暂不可用；IDE 也未文档化为插件 Hook 注入 `QODER_PLUGIN_ROOT`，因此在宿主提供该变量之前，IDE 中的 Hook 命令可能无法解析插件根目录。
+仓库级默认规则可复制 [AGENTS.md 片段](assets/agents-snippet.md)，Qoder 会自动读取 `AGENTS.md`。Qoder 当前没有经过验证的精确会话 Review Lease 调度器，因此计时门禁到期后手动恢复。新版 Qoder 文档已定义插件 Hook 子进程的 `QODER_PLUGIN_ROOT`，并列出 SessionStart、UserPromptSubmit 与 SubagentStart；当信任设置或组织策略禁用这些事件时，完整 worker 所有权边界仍是必需的。
 
 ## 安装到 OpenCode
 
@@ -212,7 +212,7 @@ qodercli plugins install /absolute/path/littlepowers-v1.3.1
 
 ```json
 {
-  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.3.1"]
+  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.4.0"]
 }
 ```
 
@@ -310,33 +310,33 @@ schema-4 当前 ledger；若要回退到 1.2，应先取消开放的 Review Gate
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v1.3.1
+codex plugin marketplace add clsaa/littlepowers --ref v1.4.0
 codex plugin add littlepowers@littlepowers
 ```
 
 回滚时把 `--ref` 换成目标旧 tag。Claude Code 使用独立的 tag 检出作为 marketplace：
 
 ```bash
-git clone --depth 1 --branch v1.3.1 \
+git clone --depth 1 --branch v1.4.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.1
+  /absolute/path/littlepowers-v1.4.0
 claude plugin uninstall littlepowers@littlepowers
 claude plugin marketplace remove littlepowers
-claude plugin marketplace add /absolute/path/littlepowers-v1.3.1
+claude plugin marketplace add /absolute/path/littlepowers-v1.4.0
 claude plugin install littlepowers@littlepowers
 ```
 
 Qoder CLI 直接安装同一个 tag 检出：
 
 ```bash
-git clone --depth 1 --branch v1.3.1 \
+git clone --depth 1 --branch v1.4.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.3.1
+  /absolute/path/littlepowers-v1.4.0
 qodercli plugins uninstall littlepowers
-qodercli plugins install /absolute/path/littlepowers-v1.3.1
+qodercli plugins install /absolute/path/littlepowers-v1.4.0
 ```
 
-OpenCode 把 git 插件 URL 的 `#v1.3.1` 后缀换成目标 tag，必要时强制刷新包缓存并重启。任何宿主更新后都应新建任务/会话，确认 11 个技能并运行管理技能的 `doctor`；插件 reload 不等于 ledger 迁移。
+OpenCode 把 git 插件 URL 的 `#v1.4.0` 后缀换成目标 tag，必要时强制刷新包缓存并重启。任何宿主更新后都应新建任务/会话，确认 11 个技能并运行管理技能的 `doctor`；插件 reload 不等于 ledger 迁移。
 
 ## 隐私与安全
 
@@ -357,15 +357,16 @@ OpenCode 把 git 插件 URL 的 `#v1.3.1` 后缀换成目标 tag，必要时强�
 
 Littlepowers 在普通路径不选择模型或 effort。调试、审查与验证只要求可观察证据和简洁结论，不要求输出 chain-of-thought；它们按条件触发，不会在每个提示里重复整套流程。只有子 Agent 获得精确授权后，协调 Agent 才可通过当前宿主接口传入该角色所需且受支持的 worker 配置；默认仍为继承。
 
-Outcome Lock 与 Review Lease 只在 bind、park/resolve、阶段转换、resume/readiness、verification 与 completion 边界增加本地 JSON 校验和 SHA-256。普通路由不会启动独立模型调用、Agent、后台扫描、自动测试、scheduler 或 effort 覆盖，也不会读取详细 delegation reference；规划门禁会增加少量工具/续写轮次，因此存在有限的墙钟开销。只有显式 `windowed` 策略可能唤醒一次已配置宿主，它不会选择 reviewer 或模型。运行成本与显式绑定文件和声明行数成正比，与仓库大小无关，因此不会与 GPT-5.6 Sol xhigh/max/Ultra、Fable 5 或 Opus 4.8 发生模型参数冲突。获授权的并行执行会有意增加 worker token、延迟和集成成本，只有预期收益更高时才建议使用。
+Outcome Lock 与 Review Lease 只在 bind、park/resolve、阶段转换、resume/readiness、verification 与 completion 边界增加本地 JSON 校验和 SHA-256。普通路由不会启动独立模型调用、Agent、能力探测、后台扫描、自动测试、scheduler 或 effort 覆盖，也不会读取详细 delegation reference；规划门禁会增加少量工具/续写轮次，因此存在有限的墙钟开销。只有显式 `windowed` 策略可能唤醒一次已配置宿主，它不会选择 reviewer 或模型。收益门禁后的 Host Capability Snapshot 校验器只接受显式事实，不做发现或网络访问。运行成本与显式绑定文件和声明行数成正比，与仓库大小无关，因此不会与当前 Codex、Claude Code 或 Qoder 模型发生模型参数冲突。获授权的并行执行会有意增加 worker token、延迟和集成成本，只有预期收益更高时才建议使用。
 
-- GPT-5.6 Sol xhigh 在一轮预发行评估中通过了场景 1 至 9；这还不是三轮重复运行后的可靠性结论；
-- GPT-5.6 Sol max 完成 v0.3 对抗审查，43 项测试通过，没有遗留 P0/P1；
-- Codex Ultra 通过根协调 Agent 加两个只读 worker 的并发场景，但 coordinator-only 仍是协作协议，不是操作系统权限隔离；Littlepowers 不会自动选择 Ultra；
-- Claude Fable 5 与 Opus 4.8 没有模型参数冲突；尚未记录认证后的 v1.4 委派模型端到端和 dynamic-workflow 编排运行，Agent Teams 仍是需要单独批准的实验性高成本选择；
-- Qoder CLI、Qoder IDE 与 OpenCode 加载同一套技能、Hook 与 state CLI，但尚未记录认证后的 v1.4 委派模型端到端运行；在等价原生边界得到验证前，OpenCode 保持单 Agent。
+- Codex 默认继承模型和 effort。GPT-6 Astra 的长任务一致性更强，但不意味着应该重复 Littlepowers 指令；其对冲突技能更敏感且可能对小任务测试过宽，因此更需要渐进披露和按影响面验证；
+- Claude Code 需区分 fresh 子 Agent、完整上下文 fork 和实验性的 session-scoped Agent Teams；当前模型包括 Fable 5.1/Fable 5、Opus 5、Sonnet 5 与 Opus 4.8，实际可用性由 provider 与组织策略决定；
+- Qoder 通过 `/model` 或 `--list-models` 解析当前模型；Littlepowers 使用 Auto/继承或有理由的宿主相对 tier，不固化滚动 provider 模型列表；
+- 历史 GPT-5.6 Sol 与 Ultra 证据仍保留，但本次迭代不声称已经完成最新宿主上的认证委派实现验证。
 
 ## 故障排查
+
+[1.4.0 候选版真实 Codex 测试](evals/results/2026-09-20-v1.4.0-codex-live.md)覆盖小改动路由、批准门禁、中断与恢复，并修复了把 worker 指令误报为原生 leaf 限制的问题。当前宿主无法提供有效工具禁用或深度限制时，委派会回退为单 Agent。
 
 先运行管理技能的 `doctor` 流程。常见原因：
 
@@ -379,7 +380,7 @@ Outcome Lock 与 Review Lease 只在 bind、park/resolve、阶段转换、resume
 - 活跃任务期间插件缓存被替换——解析唯一启用的安装，重读当前技能，之后的更新换到新任务边界；
 - Claude Code 仍在使用旧缓存的插件——更新并 reload；
 - Codex 中计划没有出现在界面里——计划清单视图只渲染原生 `update_plan` 工具的调用；确认写完 artifact 后已镜像。单独的 Markdown 文件永远不会显示在该视图中；
-- Qoder IDE 不触发 SessionStart 与 SubagentStart Hook；OpenCode 需要确认 `opencode.json` 中的插件条目指向刷新后的安装。
+- Qoder 中应确认 Hook 已被信任/策略允许，并确认插件命令解析文档化的 `QODER_PLUGIN_ROOT`；OpenCode 需要确认 `opencode.json` 中的插件条目指向刷新后的安装。
 
 [能力矩阵](docs/capability-matrix.md)区分预期限制与故障。
 

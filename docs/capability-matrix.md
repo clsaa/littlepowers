@@ -1,8 +1,8 @@
 # Capability matrix
 
-**Reviewed:** 2026-08-21
+**Reviewed:** 2026-09-20
 
-**Release:** 1.4.0-alpha.1 candidate
+**Release:** 1.4.0
 
 Littlepowers is checkpoint-assisted recovery. The table separates host events, durable state, and model behavior.
 
@@ -21,10 +21,10 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 | Implementation ordering | One continuous implementation stream | Use tasks, checkpoints, rollback units, and small commits while retaining one definition of done | A passed rollback unit is incomplete progress, not a product or technical slice |
 | Ordinary execution, debugging, or review | Default-off Delegation Gate | Stay single-agent and add no worker/model call | The detailed delegation reference is not read on the ordinary fast path |
 | Two or more ready independent work packets | Benefit and veto gate | Evaluate once after the plan is stable; recommend only when independent evidence and critical-path/context-isolation benefit exceed setup, conflict, integration, and review cost | Unsettled scope, sequential work, same-file/shared-state mutation, exclusive resources, tiny tasks, destructive work, and external actions veto delegation |
-| High-benefit delegation candidate | Compact authorization proposal | Name roles, native mechanism, model/effort policy, isolation, benefit, risk, and single-agent fallback; launch only after exact work-unit authorization | A general speed preference is not authorization; a material plan/scope/role/action change invalidates it |
+| High-benefit delegation candidate | Explicit Host Capability Snapshot plus compact authorization proposal | Validate runtime-observed mechanism, fresh/fork/team context, effective model/effort, isolation, permission boundary, durability, and leaf enforcement; then name roles, benefit, risk, and single-agent fallback | Documentation alone is not runtime evidence; the validator performs no discovery or launch and is never called on the ordinary path |
 | Authorized delegated work | Native host adapter plus leaf worker envelope | Default to two workers, require isolated mutation, and keep the coordinator as sole ledger writer/integrator/acceptance owner | Up to three workers is reserved for independent read-only review; depth is one and workers never commit, push, deploy, delegate again, or own completion |
 | Declined or unavailable delegation | Single-agent fallback | Continue without retry loops or fake nested coding CLIs | Reconsider only after a material plan change |
-| Worker model and reasoning effort | Host-native role policy | Inherit by default; use supported efficient/balanced/frontier tiers and proportional effort only when the role has a concrete reason | Never automatically select maximum effort, Codex Ultra, or Claude Agent Teams; unsupported pairs inherit and are reported |
+| Worker model and reasoning effort | Host-native role policy | Inherit by default; use current host-relative efficient/balanced/frontier tiers and proportional effort only when the role has a concrete reason | Never automatically select maximum effort, Codex Ultra, Qoder Ultimate, Claude Agent Teams, or Qoder Agent Teams; unsupported pairs inherit and are reported |
 | UI, interaction, output, or compatibility fidelity | Approved Baseline and Fidelity Matrix gates | Bind approved provenance and verify every required surface × action × state comparison | Implementation-generated evidence cannot become its own approved baseline |
 | Completion claim | Verification Record plus Completion Gate | Freshly require current contract, 100% active coverage, valid scope/baseline/fidelity, three passing verdicts, and zero blockers | The gate reports all current failures and leaves state unchanged when any condition fails |
 | Active schema-1/schema-2/schema-3 workflow after upgrade | Legacy Reconciliation Gate | Expose a schema-4 view, then bind/revalidate required Outcome Lock material before executable progress | An already-open task cannot hot-load 1.3; start a new task/session after update |
@@ -67,9 +67,18 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 - Ultra may delegate automatically as a host mode. Littlepowers does not enable
   Ultra; when it initiates workers, it uses only the current callable native
   subagent tool after the Delegation Gate and exact user authorization.
+- When exposed, prefer the built-in `explorer` for bounded read-only discovery
+  and `worker` for isolated mutation. Use `default` or an already approved
+  custom agent only after checking its effective tools and sandbox; do not
+  create persistent agent definitions as an incidental delegation step.
 - Codex worker model and reasoning overrides are used only when the current
   spawn schema supports them and the bounded role justifies them. Inheritance
-  remains the default; full-history modes that require inheritance are honored.
+  remains the default. Prefer fresh context for isolation; use a bounded or
+  full-history fork only when reconstructing approved context would dominate
+  the work, and record the actual effective setting. A peer/team mechanism is
+  eligible only when the current callable interface exposes it and the user
+  authorizes the separate team proposal; Littlepowers does not keep a static
+  host-capability table.
 - User-visible Codex tasks/threads and nested `codex` CLI calls are never used
   as subagent substitutes.
 - The three engineering-discipline skills use native discovery and do not by
@@ -96,11 +105,20 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
   do not by themselves create workers or change Claude model, effort, or
   dynamic-workflow settings.
 - After exact authorization, ordinary Claude Code subagents are preferred.
-  Supported model/effort values may be passed through the native Agent
+  A fresh subagent provides isolation; a conversation fork is reserved for a
+  task that needs most of the approved parent history and inherits the parent
+  prompt, tools, model, and cache. A fork cannot create another fork.
+- Supported model/effort values may be passed through the native Agent
   interface; aliases, environment rules, allowlists, and organization policy
-  remain authoritative. Littlepowers never rewrites them.
+  remain authoritative. Littlepowers never rewrites them. Use native worktree
+  isolation for mutation and an effective tool boundary for read-only work.
 - Agent Teams requires a separate explicit proposal, genuine peer-to-peer need,
-  and acceptance of its experimental and higher-token boundary.
+  and acceptance of its experimental, higher-token, session-only boundary.
+  In-process teammates do not resume with the parent session and task status
+  may lag; the root remains the acceptance owner.
+- Background permission prompts surface in the main session and are not
+  unattended authority. Plugin subagents may ignore permission, Hook, and MCP
+  frontmatter, so inspect the boundary the host actually applies.
 - The same explicit-only boundary policy applies; no background watcher or global worktree registry is installed. The optional manager-root index reads only registered roots when requested.
 - Outcome Lock uses the shared state CLI and does not alter Fable, Opus, effort,
   or dynamic-workflow settings.
@@ -116,14 +134,22 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 
 - Qoder CLI and the Qoder IDE share the plugin layout; install with `qodercli plugins install` or the IDE Marketplace panel.
 - The hooks manifest resolves `${QODER_PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}` so one file serves Claude Code and Qoder.
-- The Qoder IDE currently fires only UserPromptSubmit among the Littlepowers hook events; SessionStart snapshots and SubagentStart markers stay silent there while the state CLI remains available. The IDE does not document `QODER_PLUGIN_ROOT` injection for plugin hooks, so hook commands may not resolve the plugin root there until the host provides it.
+- Current Qoder documentation defines `QODER_PLUGIN_ROOT` for plugin Hook
+  subprocesses and documents `SessionStart`, `UserPromptSubmit`, and
+  `SubagentStart`. Hook delivery still depends on trust and policy, so worker
+  ownership never relies on Hook context alone.
 - The same skills, state CLI, and artifact rules are installed. After exact
-  authorization, the current native Agent/Subagent interface may supply its
-  supported model, effort, background, concurrency, and worktree controls;
-  ordinary routing changes none of them.
-- Every Qoder worker receives the complete task/ownership envelope because the
-  IDE may omit `SubagentStart`. Concurrent mutation still requires worktree or
-  equivalent native isolation.
+  authorization, prefer an ordinary fresh Subagent; use `/subtask` for a
+  bounded inherited-context task and beta Agent Teams only after a separate
+  peer-coordination proposal. Teams are session-only.
+- Resolve current model/effort availability through `/model` or
+  `--list-models`; prefer Auto/inheritance and use exposed Efficient,
+  Performance, or Ultimate tiers only when the role and authorization justify
+  them. Do not encode the rolling provider catalog into the protocol.
+- Every Qoder worker receives the complete task/ownership envelope. Enforce
+  leaf depth with an `Agent` tool deny boundary, restrict tools for read-only
+  work rather than relying on `permissionMode` alone, and require worktree or
+  equivalent isolation for concurrent mutation.
 - Review Lease state is supported, but timed continuation is manual until an exact-session scheduler is verified.
 
 ### OpenCode

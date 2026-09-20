@@ -24,7 +24,7 @@ class ManifestTests(unittest.TestCase):
 
         self.assertEqual(codex["name"], "littlepowers")
         self.assertEqual(claude["name"], "littlepowers")
-        self.assertEqual(codex["version"], "1.4.0-alpha.1")
+        self.assertEqual(codex["version"], "1.4.0")
         self.assertEqual(claude["version"], codex["version"])
         self.assertEqual(claude["repository"], codex["repository"])
         self.assertIn("Claude Code", codex["description"])
@@ -104,7 +104,7 @@ class ManifestTests(unittest.TestCase):
     def test_opencode_plugin_registers_skills_and_injects_read_only(self) -> None:
         package = read_json(ROOT / "package.json")
         self.assertEqual(package["name"], "littlepowers")
-        self.assertEqual(package["version"], "1.4.0-alpha.1")
+        self.assertEqual(package["version"], "1.4.0")
         self.assertEqual(package["main"], ".opencode/plugins/littlepowers.js")
         self.assertEqual(package["type"], "module")
         self.assertNotIn("dependencies", package)
@@ -393,8 +393,6 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("Do not create or fork", delegation)
         self.assertIn("Some Codex surfaces expose `ultra`", delegation)
         self.assertIn("actual spawn schema supports it", delegation)
-        self.assertIn("Agent Teams only after a separate", delegation)
-        self.assertIn("Qoder IDE may omit `SubagentStart`", delegation)
         self.assertIn("Default to two concurrent workers", delegation)
         self.assertIn("Delegation depth is one", delegation)
         self.assertIn("select maximum effort", delegation)
@@ -409,6 +407,7 @@ class ManifestTests(unittest.TestCase):
         self.assertFalse((ROOT / "agents").exists())
         self.assertNotIn("agents", codex)
         self.assertIn("opt-in delegation", codex["description"])
+        self.assertTrue((ROOT / "scripts" / "littlepowers_delegation.py").is_file())
 
         for expected in (
             "Tiny work stays single-agent",
@@ -416,11 +415,13 @@ class ManifestTests(unittest.TestCase):
             "Disjoint modules produce one authorization proposal",
             "Declined recommendation is not repeated",
             "Native capability and setting fallback",
-            "Qoder IDE missing worker Hook",
+            "Current Qoder Hook contract and independent worker envelope",
             "Material plan change invalidates worker approval",
             "Explicit subagent request and conservative model choice",
             "Independent multi-perspective review",
             "Delegated integration verifies once at the shared boundary",
+            "Host Capability Snapshot fails closed",
+            "Fresh, fork, and team contexts stay distinct",
         ):
             self.assertIn(expected, scenarios)
 
@@ -735,7 +736,7 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("cannot force a model", readme)
         self.assertIn("UserPromptSubmit", readme)
         self.assertIn("coordinator is the only ledger writer", readme)
-        self.assertIn("v1.3.1", readme)
+        self.assertIn("v1.4.0", readme)
         self.assertIn("Outcome Lock protocol 1.3", readme)
         self.assertIn("Review Lease", readme)
         self.assertIn("one continuous stream", readme)
@@ -766,7 +767,7 @@ class ManifestTests(unittest.TestCase):
             ROOT / "evals" / "results" / "2026-08-21-v1.4.0-alpha.1.md"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("Release:** 1.4.0-alpha.1 candidate", capability)
+        self.assertIn("Release:** 1.4.0", capability)
         self.assertIn("Outcome Coverage Gate", capability)
         self.assertIn("`debugging-systematically`", capability)
         self.assertIn("`verifying-work`", capability)

@@ -271,6 +271,34 @@ class RecoveryHookTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertIn("Finish the interrupted change", result.stdout)
 
+    def test_qoder_current_events_resolve_documented_plugin_root(self) -> None:
+        self.start_state()
+
+        events = (
+            ("SessionStart", self.event("SessionStart")),
+            ("UserPromptSubmit", self.event("UserPromptSubmit", prompt="continue")),
+            (
+                "SubagentStart",
+                self.event("SubagentStart", agent_type="general-purpose"),
+            ),
+        )
+        for event_name, event in events:
+            with self.subTest(event=event_name):
+                result = self.run_hook(
+                    event,
+                    root_variable="QODER_PLUGIN_ROOT",
+                    extra_environment={
+                        "CLAUDE_PLUGIN_ROOT": "/not/the/qoder/plugin",
+                    },
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                output = json.loads(result.stdout)
+                self.assertEqual(
+                    output["hookSpecificOutput"]["hookEventName"],
+                    event_name,
+                )
+                self.assertTrue(output["hookSpecificOutput"]["additionalContext"])
+
     def test_claude_plugin_root_wins_over_unrelated_generic_variable(self) -> None:
         self.start_state()
 

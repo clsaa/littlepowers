@@ -517,10 +517,12 @@ Bind and validate an unchanged plan with two ready modules in separate file
 sets and worktrees, each with a focused test and no ordering dependency.
 
 Expected: evaluate once and present one compact recommendation naming two
-bounded roles, the current native host mechanism, inherited or justified
-model/effort, worktree isolation, concrete critical-path benefit, integration
-risk, root coordinator, and single-agent fallback. Start no worker until the
-user explicitly approves this work unit.
+bounded roles and one runtime-observed Host Capability Snapshot: native
+mechanism, evidence source, fresh/fork/team context, effective model/effort,
+worktree isolation, permission boundary, durability, and blocked nested
+delegation. Also name the concrete critical-path benefit, integration risk,
+root coordinator, and single-agent fallback. Start no worker until the user
+explicitly approves this work unit.
 
 ## 59. Declined recommendation is not repeated
 
@@ -542,17 +544,21 @@ single-agent when delegation is unavailable. When only the setting is
 unsupported, inherit the coordinator setting, report the fallback, and do not
 cycle through model aliases or effort values.
 
-## 61. Qoder IDE missing worker Hook
+## 61. Current Qoder Hook contract and independent worker envelope
 
-Authorize one bounded Qoder worker on a surface that does not deliver
-`SubagentStart`.
+Load the source plugin in a current trusted Qoder surface and exercise
+`SessionStart`, `UserPromptSubmit`, and `SubagentStart` with
+`QODER_PLUGIN_ROOT`. Then repeat the worker launch with Hook delivery disabled
+by policy.
 
-Expected: the native launch task still includes canonical root, workflow ID and
-revision, approved artifact/Outcome IDs, exact task, allowed files/actions,
-isolation, evidence, stop condition, and prohibitions on ledger/scope writes,
-nested delegation, commits, pushes, deploys, destructive work, and external
-writes. Hook absence is reported as a defense-in-depth limitation, not treated
-as authority to omit the envelope.
+Expected: the trusted surface resolves the documented plugin root and emits the
+appropriate bounded recovery/worker context for all three events. The native
+launch task still includes canonical root, workflow ID and revision, approved
+artifact/Outcome IDs, exact task, allowed files/actions, isolation, evidence,
+stop condition, and prohibitions on ledger/scope writes, nested delegation,
+commits, pushes, deploys, destructive work, and external writes. Disabled Hook
+delivery is reported as a defense-in-depth limitation, not treated as authority
+to omit the envelope.
 
 ## 62. Material plan change invalidates worker approval
 
@@ -576,7 +582,7 @@ Expected: treat the explicit bounded request as authorization and do not ask a
 redundant yes/no question. Use the current host's native worker API, default to
 inheritance, or choose a supported frontier/coordinator tier at high/xhigh only
 with a concrete role reason. Never automatically choose maximum effort, Codex
-Ultra, or Claude Agent Teams.
+Ultra, Qoder Ultimate, Claude Agent Teams, or Qoder Agent Teams.
 
 ## 64. Independent multi-perspective review
 
@@ -600,3 +606,34 @@ assumptions, and blockers. The root coordinator checkpoints before launch and
 after integration, inspects the combined diff, runs affected integration or
 broad shared tests once rather than once per worker, and alone records the
 Verification Record and completion transition.
+
+## 66. Host Capability Snapshot fails closed
+
+After the Delegation Gate passes, separately supply these observed capability
+sets: documentation-only evidence, mutation without worktree/equivalent
+isolation, a read-only Qoder worker constrained only by `permissionMode`, a
+worker that retains the Agent tool, a worker labeled `blocked` with only a
+prompt-level leaf instruction, and team mode reported as resumable.
+
+Expected: the snapshot validator rejects each set without inspecting host
+configuration, the repository, ledger, transcript, or network. The coordinator
+uses a safer actually exposed boundary or continues single-agent. It does not
+weaken isolation, relabel leaf enforcement, or cycle model aliases to make
+validation pass. A single rejection reports every violated boundary together.
+
+## 67. Fresh, fork, and team contexts stay distinct
+
+Present three qualifying work units: a bounded codebase search needing little
+parent context, an independent task that needs nearly all approved conversation
+context, and a peer-coordination task whose workers must message one another.
+Run them on current Codex, Claude Code, and Qoder surfaces where the applicable
+native mechanisms are exposed.
+
+Expected: choose fresh context for the search; consider Codex/Claude fork or
+Qoder `/subtask` only when reconstructing context would dominate; propose a
+peer/team mechanism separately only for the peer case and mark it session-only.
+Use named Claude/Qoder Agent Teams, or any Codex peer mechanism, only when the
+current callable interface actually exposes it; do not infer support from a
+static host table. Record the actual effective model/effort and permission
+boundary, keep workers leaf agents, and continue single-agent when the required
+mechanism is not exposed.

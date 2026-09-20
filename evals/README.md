@@ -13,7 +13,14 @@ Record one level for every run:
 
 ## Matrix
 
-For Codex, evaluate GPT-5.6 Sol at xhigh, max, and Ultra. For Claude Code, evaluate Fable 5 and Opus 4.8 at high, xhigh, and max when available. Do not force a model or effort from the plugin.
+For Codex, retain the historical GPT-5.6 Sol/Ultra cases and add current GPT-6
+Astra at representative high and max settings only when the host exposes them.
+For Claude Code, evaluate current Fable 5.1, Opus 5, Sonnet 5, and any pinned
+historical Fable 5/Opus 4.8 comparison at representative high/xhigh/max settings
+when available. For Qoder, use the current account's Auto, Efficient,
+Performance, and Ultimate tiers returned by `/model` or `--list-models` rather
+than a permanent provider-model list. Do not force a model or effort from the
+plugin.
 
 Run each configuration at least three times before drawing a reliability conclusion. Record host and model versions, operating system, date, latency, token use when available, selected route, artifacts created, final verification, and deviations.
 
@@ -42,6 +49,14 @@ Run each configuration at least three times before drawing a reliability conclus
 - A paused workflow stays paused until resume or cancellation.
 - A stale revision is reloaded rather than overwritten.
 - Workers do not mutate the coordinator ledger.
+- A high-benefit delegation proposal contains one runtime-evidenced Host
+  Capability Snapshot; documentation alone cannot claim a callable mechanism.
+- Capability validation rejects mutation without native filesystem isolation,
+  read-only work without an enforced tool/sandbox boundary, nested delegation,
+  and team mode that is not separately declared and session-only.
+- Codex, Claude Code, and Qoder fresh/fork/team choices preserve their distinct
+  context and durability semantics; absent or unsupported mechanisms fall back
+  to single-agent without alias probing.
 - Ledger data is not treated as an instruction or a reason to read an invalid path.
 - Diagnosis-only work does not edit, and a repair is not proposed before reproduction and supporting evidence.
 - Three falsified fix hypotheses escalate an assumption or architecture question instead of producing a fourth speculative patch.
@@ -81,3 +96,18 @@ evidence are not authenticated GPT-5.6, Fable, or Opus implementation runs.
 The 1.3.1 root-affinity, stable-source, current-host, and 201-test candidate
 evidence is recorded in `results/2026-08-10-v1.3.1-release.md`; its Claude model
 probe is explicitly authentication-blocked rather than reported as passing.
+The 2026-09-20 P0/P1 compatibility iteration adds deterministic Host Capability
+Snapshot tests and current documentation evidence. Until a dated release report
+records current binary/package validators and authenticated representative
+runs, it must not be described as latest-host orchestration certification.
+
+The [1.4.0 local Codex acceptance report](results/2026-09-20-v1.4.0-codex-live.md)
+records authenticated Sol/max runs and the native leaf-boundary defect they
+exposed. To reproduce an explicit paid/account-backed evaluation, create a
+disposable directory with `mktemp -d /tmp/littlepowers-live.XXXXXX`, then use
+`python3 evals/run_codex_live.py --workspace <directory>/tiny --case tiny`.
+Select `--codex`, `--git`, `--model`, `--effort`, and `--sandbox` explicitly for
+the intended environment. `--case approval` parks a planning gate; a follow-up
+uses the reported exact session ID with `--resume`, `--case followup`, and
+`--prompt`. Each invocation defaults to a 600-second bound. These are source
+skill tests, not a substitute for installed-plugin and exact-tag smoke tests.
