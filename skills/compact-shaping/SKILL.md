@@ -27,6 +27,11 @@ observable outcome a stable `OUT-###` ID and map every active ID to a task and
 named evidence. The shape is one artifact, not a reason to add a specification,
 design, or separate plan.
 
+For a meaningful multi-step shape, assign stable task IDs and read
+[native-task-mirror](../../references/native-task-mirror.md) to display the
+execution checklist through available host tools, with all steps pending.
+Displaying tasks does not approve the shape or start execution.
+
 Keep the brief proportional. If shaping exposes material unresolved architecture, security, migration, cross-system, irreversible-state, or costly-rollback choices, switch to the full route before implementation.
 
 Checkpoint with the current workflow ID and revision:

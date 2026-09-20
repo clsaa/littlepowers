@@ -78,7 +78,14 @@ elapsed time, file count, or intuition. Keep the approved plan stable unless
 behavior or acceptance criteria change; live execution truth belongs in the
 ledger.
 
-Keep the host's native plan surface in step with the ledger so the user can follow execution: in Codex refresh `update_plan` at each checkpoint with the current task or rollback boundary as the single `in_progress` item and integrated items as `completed`; in OpenCode update its native todo tool the same way. The host plan surface is ephemeral, so after a resume, clear, or compaction, re-issue it from the ledger and the re-read plan artifact before continuing execution. On any disagreement between the mirror and the ledger, re-issue the mirror from the ledger.
+For meaningful multi-step work, including Direct work, use
+[native-task-mirror](../../references/native-task-mirror.md). Update only on
+changed task status or recovery through the exposed tools (such as Codex
+`update_plan`), not every checkpoint. After resume/clear/compaction, reconcile
+native rows and ownership before deciding to re-issue; never blindly overwrite
+manual edits or recreate missing tasks. Keep the final acceptance item pending
+until verification and successful ledger completion. Missing display tools do
+not block implementation or authorize creating new conversations/subagents.
 
 Write a continuity checkpoint before a likely context compaction, host handoff, plugin replacement, or when one long batch has crossed multiple subsystem boundaries. This is a recovery boundary, not a reason to split implementation or rerun broad tests after every small edit. For a status question on recent active work, answer it and return to the recorded action; checkpoint only when observable progress or the next action changed.
 

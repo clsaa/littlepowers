@@ -122,10 +122,21 @@ Littlepowers 可独立运行。若把它和 Superpowers 同时设为默认 route
 
 ## 安装到 Codex
 
-按精确 tag 安装稳定版 1.4.0：
+1.4.1 新增原生任务清单镜像：有多个实际步骤时，使用当前宿主暴露的
+任务工具展示进度；恢复时按稳定 ID 去重，工具缺失或用户修改导致冲突时明确
+提示。不会创建侧栏新会话、开启子 Agent 或改全局配置，文件和 Outcome Lock
+仍是验收依据。参见[原生清单适配说明](references/native-task-mirror.md)，
+其中包含 Claude 新模型的 `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` 可选启用方式。
+
+Codex CLI 0.152.0 起默认关闭计划工具。需要原生清单时，在 Codex `config.toml`
+根级添加 `tools.update_plan.enabled = true`（已有 `[tools.update_plan]` 表则设置
+其中的 `enabled = true`），随后新建会话；若桌面端仍沿用旧配置，再重启应用。
+这不会更改模型/思考强度或开启子 Agent，Littlepowers 不会未经允许自动修改配置。
+
+按精确 tag 安装稳定版 1.4.1：
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v1.4.0
+codex plugin marketplace add clsaa/littlepowers --ref v1.4.1
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -148,10 +159,10 @@ Codex 的 Queue 用于延迟消息，`/side` 或 `/btw` 用于无关问题。Lit
 使用 tag 固定的本地 marketplace 安装精确版本：
 
 ```bash
-git clone --depth 1 --branch v1.4.0 \
+git clone --depth 1 --branch v1.4.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.0
-claude plugin marketplace add /absolute/path/littlepowers-v1.4.0
+  /absolute/path/littlepowers-v1.4.1
+claude plugin marketplace add /absolute/path/littlepowers-v1.4.1
 claude plugin install littlepowers@littlepowers
 ```
 
@@ -184,10 +195,10 @@ Qoder CLI 与 Qoder IDE 共用同一套插件结构。
 使用 tag 固定的本地检出安装精确版本：
 
 ```bash
-git clone --depth 1 --branch v1.4.0 \
+git clone --depth 1 --branch v1.4.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.0
-qodercli plugins install /absolute/path/littlepowers-v1.4.0
+  /absolute/path/littlepowers-v1.4.1
+qodercli plugins install /absolute/path/littlepowers-v1.4.1
 ```
 
 本地检出可用 `qodercli plugins install /path/to/littlepowers` 安装。重启会话或执行 `/skills reload`，并先检查插件 Hook 再信任。Qoder IDE 通过 Marketplace 面板安装，或导入本地插件目录。
@@ -212,7 +223,7 @@ qodercli plugins install /absolute/path/littlepowers-v1.4.0
 
 ```json
 {
-  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.4.0"]
+  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.4.1"]
 }
 ```
 
@@ -310,33 +321,33 @@ schema-4 当前 ledger；若要回退到 1.2，应先取消开放的 Review Gate
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v1.4.0
+codex plugin marketplace add clsaa/littlepowers --ref v1.4.1
 codex plugin add littlepowers@littlepowers
 ```
 
 回滚时把 `--ref` 换成目标旧 tag。Claude Code 使用独立的 tag 检出作为 marketplace：
 
 ```bash
-git clone --depth 1 --branch v1.4.0 \
+git clone --depth 1 --branch v1.4.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.0
+  /absolute/path/littlepowers-v1.4.1
 claude plugin uninstall littlepowers@littlepowers
 claude plugin marketplace remove littlepowers
-claude plugin marketplace add /absolute/path/littlepowers-v1.4.0
+claude plugin marketplace add /absolute/path/littlepowers-v1.4.1
 claude plugin install littlepowers@littlepowers
 ```
 
 Qoder CLI 直接安装同一个 tag 检出：
 
 ```bash
-git clone --depth 1 --branch v1.4.0 \
+git clone --depth 1 --branch v1.4.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.0
+  /absolute/path/littlepowers-v1.4.1
 qodercli plugins uninstall littlepowers
-qodercli plugins install /absolute/path/littlepowers-v1.4.0
+qodercli plugins install /absolute/path/littlepowers-v1.4.1
 ```
 
-OpenCode 把 git 插件 URL 的 `#v1.4.0` 后缀换成目标 tag，必要时强制刷新包缓存并重启。任何宿主更新后都应新建任务/会话，确认 11 个技能并运行管理技能的 `doctor`；插件 reload 不等于 ledger 迁移。
+OpenCode 把 git 插件 URL 的 `#v1.4.1` 后缀换成目标 tag，必要时强制刷新包缓存并重启。任何宿主更新后都应新建任务/会话，确认 11 个技能并运行管理技能的 `doctor`；插件 reload 不等于 ledger 迁移。
 
 ## 隐私与安全
 
@@ -379,7 +390,7 @@ Outcome Lock 与 Review Lease 只在 bind、park/resolve、阶段转换、resume
 - 计时 callback 没有启动——当前 Codex surface 可能没有同任务一次性调度能力、Claude 会话 UUID 不可用，或 Qoder/OpenCode 需要手动恢复；持久门禁仍可恢复；
 - 活跃任务期间插件缓存被替换——解析唯一启用的安装，重读当前技能，之后的更新换到新任务边界；
 - Claude Code 仍在使用旧缓存的插件——更新并 reload；
-- Codex 中计划没有出现在界面里——计划清单视图只渲染原生 `update_plan` 工具的调用；确认写完 artifact 后已镜像。单独的 Markdown 文件永远不会显示在该视图中；
+- Codex 中计划没有出现在界面里——检查 `tools.update_plan.enabled = true`，新建会话后确认工具已暴露且镜像调用成功。单独写 Markdown 不会生成原生清单；CLI 原生事件与桌面实际显示需要分别验证；
 - Qoder 中应确认 Hook 已被信任/策略允许，并确认插件命令解析文档化的 `QODER_PLUGIN_ROOT`；OpenCode 需要确认 `opencode.json` 中的插件条目指向刷新后的安装。
 
 [能力矩阵](docs/capability-matrix.md)区分预期限制与故障。

@@ -268,6 +268,15 @@ reminders without a measured need.
 
 Handoff and review snapshots are explicit boundary operations. The ordinary route performs no sibling-worktree scan, candidate hash, extra model call, or extra broad test.
 
+## Native task visibility
+
+For meaningful multi-step Direct work, use `executing-plans` and its
+[native-task-mirror](../../references/native-task-mirror.md) reference without
+creating extra planning artifacts. Lean/Full plans and Compact shapes use the
+same mirror. Tiny work skips this reference and helper. Missing native tools
+produce one explicit unavailable notice, not a hidden failure or a new session.
+Display synchronization never enables subagents or changes model/effort.
+
 ## Delegation Gate
 
 Stay single-agent by default. Evaluate delegation at most once after the

@@ -1,5 +1,26 @@
 # Evaluation scenarios
 
+## Native checklist integration
+
+Use a disposable session and the current candidate. Do not infer UI behavior
+from package validation or a mocked adapter.
+
+- Run equivalent two-step Lean, Compact, and tracked Direct work. Observe the
+  actual native tool calls; pending review must not begin execution. Tiny work
+  must not create planning files or a checklist just for the mirror.
+- Exercise Codex `update_plan`, Claude/Qoder Task tools, and Todo fallback only
+  where each runtime actually exposes them. Record native events separately
+  from visual renderer evidence. Test missing tools without changing settings.
+- Resume after a successful task creation. Reconcile by ownership key; no
+  duplicate create. After an ambiguous create failure, re-read before retrying.
+- Edit/delete an owned native task and insert unrelated tasks. Expect a
+  conflict instead of overwrite/recreation; unrelated Task rows remain intact,
+  and a bulk-replacement surface must not erase unrelated rows.
+- Complete a work unit while final acceptance is pending. Its native checkmark
+  must not complete Outcome Lock; pause/cancel must not mark unfinished work done.
+- Confirm unchanged checkpoints produce no mirror writes, no worker launch,
+  no background scan, and no model/effort change.
+
 ## 1. Ephemeral direct
 
 Prompt:

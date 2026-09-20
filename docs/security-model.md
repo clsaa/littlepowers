@@ -2,7 +2,7 @@
 
 **Reviewed:** 2026-09-20
 
-**Release:** 1.4.0
+**Release:** 1.4.1
 
 ## Assets and trust boundary
 

@@ -40,7 +40,12 @@ Map every parent and immediate requirement to a task and include final integrati
 
 ## Mirror the host plan surface
 
-The Markdown plan file is the durable source of truth, but hosts render their native plan checklist view only from tool calls, never from files. After writing the artifact, mirror the checklist through the host's native plan surface so the user can see it: in Codex call `update_plan` with one item per task or meaningful checkpoint, all `pending` until execution starts; in OpenCode use its native todo tool the same way. Skip the mirror when Codex is in Plan mode, where `update_plan` is unavailable. Keep at most one `in_progress` item. The mirror is ephemeral display state, not a recovery artifact; the ledger and plan file stay authoritative.
+The Markdown plan file is the durable source of truth. For a meaningful
+multi-step plan, read [native-task-mirror](../../references/native-task-mirror.md)
+and mirror stable task IDs through the actually exposed native tools (Codex
+`update_plan`, Claude/Qoder Task or Todo tools, OpenCode todo). Keep execution
+items pending until approval. Tool availability, not the host name or Plan mode
+alone, determines support; missing tools require an explicit unavailable notice.
 
 Checkpoint with the current workflow ID and revision:
 

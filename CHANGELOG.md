@@ -4,6 +4,24 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-09-20
+
+### Added
+
+- Add a lightweight, capability-aware native checklist mirror for Codex,
+  Claude Code, Qoder, and OpenCode across planning and multi-step Direct work.
+- Add a pure bounded projection helper with scoped task identities, no-op
+  detection, conflict handling, and protection against unrelated bulk overwrite.
+
+### Fixed
+
+- Document Codex 0.152.0's default-off plan tool and its supported
+  `tools.update_plan.enabled` opt-in; missing tools are not model incompatibility.
+
+- Replace blind checklist replay on recovery with ownership reconciliation;
+  explicitly report missing native tools and document current Claude/Qoder
+  task-tool availability without changing host configuration.
+
 ## [1.4.0] - 2026-09-20
 
 ### Added
@@ -383,7 +401,8 @@ The first stable release. Multi-host support (Codex, Claude Code, Qoder, OpenCod
 
 - Created the initial Codex plugin and planning workflow.
 
-[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/clsaa/littlepowers/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/clsaa/littlepowers/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/clsaa/littlepowers/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/clsaa/littlepowers/compare/v1.2.0-alpha.1...v1.3.0

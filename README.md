@@ -44,7 +44,10 @@ All routes bind the latest request and any approved parent PRD, interaction flow
 
 Tracked work uses Outcome Lock protocol 1.3. A reviewed Contract records stable `OUT-###` IDs and explicit parent-source digests; a Plan Map must map every active ID to tasks and evidence before execution; a Verification Record keeps work-unit compliance, approved-outcome fidelity, and code quality independent. Schema 4 combines those checks with a persisted Review Lease and blocks execution on drift, incomplete coverage, or an unresolved gate. It cannot infer a requirement that was omitted from the reviewed Contract, so route review still owns semantic completeness.
 
-In Codex, the tracked task checklist is mirrored through the native `update_plan` tool (in OpenCode, through its todo tool) so the plan renders in the host interface; the Markdown plan file remains the durable source of truth.
+When the host exposes its native checklist tool, tracked steps can be mirrored
+through it (Codex `update_plan`, or OpenCode's todo tool). Codex 0.152.0+ requires
+the plan-tool opt-in described below. The Markdown plan remains the durable
+source of truth; tool availability and actual UI rendering must be verified.
 
 Three complementary skills apply only when their conditions are present:
 
@@ -139,10 +142,29 @@ See the [capability matrix](docs/capability-matrix.md) for exact boundaries.
 
 ## Install in Codex
 
-Install the stable 1.4.0 release by its exact tag:
+### Native checklist visibility
+
+Meaningful multi-step work can mirror its plan into the current host's native
+checklist. Littlepowers uses only tools actually exposed in that session,
+reconciles owned task IDs on resume, and reports unavailable/conflicting display
+state instead of overwriting unrelated tasks. This does not create sidebar
+conversations or enable subagents. Files and Outcome Lock remain authoritative.
+See [native checklist setup and limits](references/native-task-mirror.md),
+including Claude Code's `CLAUDE_CODE_ENABLE_TODO_TOOLS=1` opt-in for newer models.
+
+Codex CLI 0.152.0+ defaults the planning tool to off. To opt in, add
+`tools.update_plan.enabled = true` at the root of your Codex `config.toml`
+(or set `enabled = true` in an existing `[tools.update_plan]` table), then
+start a new task/session. Restart the desktop host if it retains old settings.
+This does not change model/effort or enable subagents; Littlepowers never
+changes this setting without permission.
+
+### Install the released plugin
+
+Install the stable 1.4.1 release by its exact tag:
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v1.4.0
+codex plugin marketplace add clsaa/littlepowers --ref v1.4.1
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -169,10 +191,10 @@ Codex Queue defers a follow-up; `/side` or `/btw` isolates an unrelated question
 For an exact release, use a tag-pinned local marketplace checkout:
 
 ```bash
-git clone --depth 1 --branch v1.4.0 \
+git clone --depth 1 --branch v1.4.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.0
-claude plugin marketplace add /absolute/path/littlepowers-v1.4.0
+  /absolute/path/littlepowers-v1.4.1
+claude plugin marketplace add /absolute/path/littlepowers-v1.4.1
 claude plugin install littlepowers@littlepowers
 ```
 
@@ -209,10 +231,10 @@ Qoder CLI and the Qoder IDE share the same plugin layout.
 For an exact release, install a tag-pinned checkout:
 
 ```bash
-git clone --depth 1 --branch v1.4.0 \
+git clone --depth 1 --branch v1.4.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.0
-qodercli plugins install /absolute/path/littlepowers-v1.4.0
+  /absolute/path/littlepowers-v1.4.1
+qodercli plugins install /absolute/path/littlepowers-v1.4.1
 ```
 
 For a local checkout, run `qodercli plugins install /path/to/littlepowers` instead. Restart the session or run `/skills reload`, then review the plugin hooks before trusting them. In the Qoder IDE, install through the Marketplace panel or import the local plugin folder.
@@ -237,7 +259,7 @@ Add the plugin to the `plugin` array in `opencode.json` (global or project-level
 
 ```json
 {
-  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.4.0"]
+  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.4.1"]
 }
 ```
 
@@ -342,7 +364,7 @@ from an exact tag and start a new task/session. For Codex:
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v1.4.0
+codex plugin marketplace add clsaa/littlepowers --ref v1.4.1
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -351,26 +373,26 @@ Use the desired earlier tag in the same commands to roll back.
 For Claude Code, use a separate checkout of the desired tag as the marketplace:
 
 ```bash
-git clone --depth 1 --branch v1.4.0 \
+git clone --depth 1 --branch v1.4.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.0
+  /absolute/path/littlepowers-v1.4.1
 claude plugin uninstall littlepowers@littlepowers
 claude plugin marketplace remove littlepowers
-claude plugin marketplace add /absolute/path/littlepowers-v1.4.0
+claude plugin marketplace add /absolute/path/littlepowers-v1.4.1
 claude plugin install littlepowers@littlepowers
 ```
 
 For Qoder CLI, install the same tagged checkout directly:
 
 ```bash
-git clone --depth 1 --branch v1.4.0 \
+git clone --depth 1 --branch v1.4.1 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.0
+  /absolute/path/littlepowers-v1.4.1
 qodercli plugins uninstall littlepowers
-qodercli plugins install /absolute/path/littlepowers-v1.4.0
+qodercli plugins install /absolute/path/littlepowers-v1.4.1
 ```
 
-For OpenCode, change the `#v1.4.0` suffix in the git plugin URL to the exact
+For OpenCode, change the `#v1.4.1` suffix in the git plugin URL to the exact
 desired tag, force-refresh its package cache if necessary, and restart OpenCode.
 After any host change, open a new task/session, confirm all eleven skills, and
 run the management skill's `doctor`; do not treat plugin reload as ledger
@@ -422,7 +444,7 @@ Run the management skill's `doctor` flow first. Common causes:
 - A timed callback was not armed because this Codex surface lacks same-task one-shot scheduling, the Claude session UUID was unavailable, or Qoder/OpenCode requires manual resume. The durable gate remains recoverable.
 - A plugin cache was replaced during an active task; resolve the one enabled installation, reread the current skills, and use a new task boundary for future updates.
 - Claude Code still uses an older cached plugin; update and reload it.
-- In Codex, the plan does not appear in the interface because only the native `update_plan` tool renders there; confirm the plan was mirrored after the artifact was written. The Markdown file alone never shows up in that view.
+- In Codex, check `tools.update_plan.enabled = true` and actual tool exposure in a new session, then confirm a native mirror call succeeded. Writing Markdown alone does not render a checklist. CLI native events and desktop visual verification are separate evidence.
 - In Qoder, confirm Hook trust/policy and that the plugin command resolves the documented `QODER_PLUGIN_ROOT`; in OpenCode, confirm the plugin entry in `opencode.json` points at a refreshed install.
 
 The [capability matrix](docs/capability-matrix.md) distinguishes expected limitations from faults.
