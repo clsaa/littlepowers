@@ -110,3 +110,24 @@ No product-direction question remains. The specification must settle the exact s
 - Completion is rejected until coverage, scope delta, baseline, work-unit, outcome-fidelity, and blocking-evidence conditions pass.
 - Direct tiny work remains free of mandatory artifacts, hooks remain cheap, and all four host validators continue to pass.
 - Focused tests validate each changed rollback unit; the full suite runs once for the integrated candidate.
+
+
+## 2026-09-30 verification integrity amendment (unpublished candidate)
+
+The complete current behavior additionally requires exact consumed Plan/Shape
+approval (original path, UTF-8 bytes and embedded source digests) at recording
+and completion, not only Plan Map semantics. Failed mutations preserve state.
+
+Verification declares a pre-check `inputs` snapshot: nonempty explicit safe
+file paths with SHA-256 or explicit absence, or a justified manual outcome
+without a file candidate. `verification-inputs` captures before checks; the
+unchanged declaration is reobserved at recording, completion and atomic
+completed-state writes. No whole-tree hashing or Hook side effects are added.
+The record excludes itself; scope completeness and real test execution remain
+coordinator responsibilities. Old receipts require recapture, fresh checks
+and re-recording, while historical state remains readable.
+
+See the [current bounded implementation shape](../shapes/2026-09-30-verification-integrity.md)
+and [current protocol and migration](../../../references/outcome-lock.md#verification-input-freshness-142).
+Regression coverage lives in `tests/test_verification_integrity.py`; final
+acceptance includes the full unit suite, validators and integrated review.

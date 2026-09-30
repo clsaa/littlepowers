@@ -96,6 +96,7 @@ class RecoveryHookTests(unittest.TestCase):
         directory = self.workspace / "docs" / "evidence"
         directory.mkdir(parents=True)
         record = {
+            "inputs": {"mode": "manual", "files": [], "manual_reason": "Hook rendering lifecycle fixture; no file implementation outcome."},
             "work_unit": {
                 "status": "pass",
                 "evidence": ["test:direct-work"],

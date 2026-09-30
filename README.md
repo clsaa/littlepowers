@@ -161,10 +161,10 @@ changes this setting without permission.
 
 ### Install the released plugin
 
-Install the stable 1.4.1 release by its exact tag:
+Install the stable 1.4.2 release by its exact tag:
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v1.4.1
+codex plugin marketplace add clsaa/littlepowers --ref v1.4.2
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -191,10 +191,10 @@ Codex Queue defers a follow-up; `/side` or `/btw` isolates an unrelated question
 For an exact release, use a tag-pinned local marketplace checkout:
 
 ```bash
-git clone --depth 1 --branch v1.4.1 \
+git clone --depth 1 --branch v1.4.2 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.1
-claude plugin marketplace add /absolute/path/littlepowers-v1.4.1
+  /absolute/path/littlepowers-v1.4.2
+claude plugin marketplace add /absolute/path/littlepowers-v1.4.2
 claude plugin install littlepowers@littlepowers
 ```
 
@@ -231,10 +231,10 @@ Qoder CLI and the Qoder IDE share the same plugin layout.
 For an exact release, install a tag-pinned checkout:
 
 ```bash
-git clone --depth 1 --branch v1.4.1 \
+git clone --depth 1 --branch v1.4.2 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.1
-qodercli plugins install /absolute/path/littlepowers-v1.4.1
+  /absolute/path/littlepowers-v1.4.2
+qodercli plugins install /absolute/path/littlepowers-v1.4.2
 ```
 
 For a local checkout, run `qodercli plugins install /path/to/littlepowers` instead. Restart the session or run `/skills reload`, then review the plugin hooks before trusting them. In the Qoder IDE, install through the Marketplace panel or import the local plugin folder.
@@ -259,7 +259,7 @@ Add the plugin to the `plugin` array in `opencode.json` (global or project-level
 
 ```json
 {
-  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.4.1"]
+  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.4.2"]
 }
 ```
 
@@ -364,7 +364,7 @@ from an exact tag and start a new task/session. For Codex:
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v1.4.1
+codex plugin marketplace add clsaa/littlepowers --ref v1.4.2
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -373,26 +373,26 @@ Use the desired earlier tag in the same commands to roll back.
 For Claude Code, use a separate checkout of the desired tag as the marketplace:
 
 ```bash
-git clone --depth 1 --branch v1.4.1 \
+git clone --depth 1 --branch v1.4.2 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.1
+  /absolute/path/littlepowers-v1.4.2
 claude plugin uninstall littlepowers@littlepowers
 claude plugin marketplace remove littlepowers
-claude plugin marketplace add /absolute/path/littlepowers-v1.4.1
+claude plugin marketplace add /absolute/path/littlepowers-v1.4.2
 claude plugin install littlepowers@littlepowers
 ```
 
 For Qoder CLI, install the same tagged checkout directly:
 
 ```bash
-git clone --depth 1 --branch v1.4.1 \
+git clone --depth 1 --branch v1.4.2 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.1
+  /absolute/path/littlepowers-v1.4.2
 qodercli plugins uninstall littlepowers
-qodercli plugins install /absolute/path/littlepowers-v1.4.1
+qodercli plugins install /absolute/path/littlepowers-v1.4.2
 ```
 
-For OpenCode, change the `#v1.4.1` suffix in the git plugin URL to the exact
+For OpenCode, change the `#v1.4.2` suffix in the git plugin URL to the exact
 desired tag, force-refresh its package cache if necessary, and restart OpenCode.
 After any host change, open a new task/session, confirm all eleven skills, and
 run the management skill's `doctor`; do not treat plugin reload as ledger
@@ -461,6 +461,21 @@ qodercli plugins validate .
 Release checks also run the bundled Codex skill and plugin validators. GitHub Actions exercises the state and hook suite on Linux, macOS, and Windows and runs pinned Claude Code validation on Linux.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+
+## Verification freshness in 1.4.2
+
+Verification now requires an explicit pre-check input snapshot: run
+`verification-inputs --file <path>` (repeat per relevant file; use `--absent`
+for an intended deletion), run checks, and copy the snapshot unchanged into
+the Verification Record `inputs`. Recording and completion reject stale inputs
+and changed exact approved plan bytes, including prose outside the Plan Map.
+A genuinely manual outcome may instead supply `--manual-reason` with a concrete
+justification. Existing receipts must capture inputs and rerun checks; old
+hashes are never silently adopted. See [scope, limits and migration](references/outcome-lock.md#verification-input-freshness-142).
+
+This protects declared files only and does not prove test execution, complete
+scope selection or automatic host Hook loading. Upgrade at a fresh task/session boundary; do not mix runtime versions within
+an active workflow.
 
 ## Uninstall
 

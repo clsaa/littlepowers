@@ -54,7 +54,7 @@ stream:
 2. Preserve unrelated changes and established architecture.
 3. Implement the smallest complete outcome.
 4. Add or update tests for changed behavior.
-5. Run focused checks and inspect their output.
+5. Capture explicit inputs with `verification-inputs` before focused checks; run them and inspect their output.
 6. Review the diff against the intended outcome.
 7. Checkpoint integrated results and the next action.
 
@@ -120,6 +120,12 @@ boundaries, and broad shared or release work adds the relevant broad suite once
 after integration. A full suite is not the default after every small edit.
 
 Compare fresh results with every immediate and inherited acceptance criterion and the approved baseline; inspect the full diff for regressions, debug artifacts, and unintended files. Record each command or inspection, scope rationale, exit status or equivalent result, and relevant observed signal. Worker reports are inputs; the coordinator verifies the integrated tree. The coordinator also runs affected integration or broad shared suites once after integration instead of duplicating them in every worker, checkpoints the integrated result, and remains the only completion owner. Resolve any blocking review findings and rerun evidence invalidated by repairs. Record unavailable or partial evidence honestly.
+
+Preserve the pre-check snapshot in the Verification Record `inputs` field.
+After a relevant edit, recapture and rerun affected checks before re-recording;
+a completion attempt cannot adopt current hashes. Manual justification applies
+only to outcomes with no file implementation. Exact consumed plan path, bytes
+and embedded sources must still match approval at recording and completion.
 
 Create and record the Verification Record described by
 [`../../references/outcome-lock.md`](../../references/outcome-lock.md). Only

@@ -100,6 +100,7 @@ class StateTests(unittest.TestCase):
         evidence_directory = self.root / "docs" / "evidence"
         evidence_directory.mkdir(parents=True, exist_ok=True)
         evidence = {
+            "inputs": {"mode": "manual", "files": [], "manual_reason": "Lifecycle-only fixture; no file implementation is claimed."},
             "work_unit": {
                 "status": "pass",
                 "evidence": ["test:direct-work"],

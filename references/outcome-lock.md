@@ -175,9 +175,77 @@ the delta lacks distinct approval. Successful validation consumes that exact
 Plan boundary once; execution checks the recorded consumption instead of
 reusing the authorization.
 
+## Verification input freshness (1.4.2)
+
+After the last implementation edit and BEFORE running the checks, capture the
+explicit input scope with the read-only helper. Include implementation, tests,
+configuration and local dependencies that can affect the claimed outcome:
+
+```bash
+<python> <state-cli> --root <project-root> verification-inputs \
+  --file src/module.py --file tests/test_module.py --absent removed_module.py
+```
+
+Copy the returned object unchanged into the Verification Record's `inputs`
+field. Run the declared checks after capture, then record their commands, scope,
+exit status and observed signals. Do not recapture merely to silence drift:
+recapture after repairs, rerun the affected checks, and record a new receipt.
+The runtime compares inputs both at `record-verification` and at `complete`,
+including completed-state atomic writes. A rejected write leaves status and
+revision unchanged. Recording does not silently adopt current input hashes.
+
+The object has `mode`, `files`, and `manual_reason`. In `files` mode, `files`
+is a nonempty list of `{ "path": "src/module.py", "sha256": "sha256:<64 hex>" }`
+rows and `manual_reason` is null. A null `sha256` explicitly asserts that the
+path must be absent, including after a planned deletion. A missing `--file`
+fails; it is never implicitly converted to absence. A directory, symlink,
+linked parent, hard-linked readable file, or unsafe path is rejected. Existing
+workspace-file rules apply: normalized relative paths, no hidden components,
+no traversal or escape. At most 256 paths, 16 MiB/file and 64 MiB total are read.
+Inputs unsupported by these path rules are not silently covered: state the
+limitation and do not claim full file freshness for that scope.
+
+For a genuinely manual outcome with no project-file candidate, use:
+
+```bash
+<python> <state-cli> --root <project-root> verification-inputs \
+  --manual-reason "Review external operating procedure; no project files implement this outcome"
+```
+
+This yields `mode=manual`, no files, and a required nonempty justification.
+Manual scope is a coordinator assertion, not an exemption for code changes.
+Do not include the Verification Record itself, the input snapshot output,
+ledger files or generated logs among the input files: these are written after
+capture. Store a snapshot outside the declared scope. Explicit fidelity output
+files remain separately hashed by the existing fidelity mechanism.
+
+These hashes protect only declared bytes and absence. They do not prove checks
+ran or passed, capture every dependency/environment variable, detect undeclared
+changes, cover file modes, or prevent changes after the last observation. The
+coordinator owns scope completeness, pre-check ordering and honest evidence;
+a same-account writer can fabricate claims. No automatic scan or Hook hashing
+is added.
+
+### Existing verification receipts
+
+Schema 4 and protocol 1.3 remain unchanged. Records without `inputs` still parse
+for recovery and historical inspection, but cannot be newly recorded or used
+to complete work. After upgrading at a fresh session boundary, retain the
+approved outcome/plan, capture inputs, rerun relevant checks, add the explicit
+scope, and call `record-verification` again. Never bless old evidence by adding
+current hashes after the fact. Legacy terminal ledgers remain readable; rewriting
+a completed state must meet the fresh gate. Older runtimes reject the new record
+field; do not mix runtime versions within an active workflow.
+
+A current plan/shape must also still match its consumed Review Gate's original
+path, exact approved bytes (including prose outside JSON), and current embedded
+Contract sources at execution, recording and completion. Re-approval follows
+the normal planning boundary; do not revalidate changed bytes implicitly.
+
 ## Verification Record
 
-Include exactly one block:
+Include exactly one block. Insert the pre-check helper output as `inputs` in
+this record before recording it; the remaining verdict structure is:
 
 ````markdown
 <!-- littlepowers:verification:v1 -->

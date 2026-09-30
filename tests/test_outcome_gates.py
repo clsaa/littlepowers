@@ -154,6 +154,7 @@ def verification_record(
             }
         ]
     return {
+        "inputs": {"mode": "manual", "files": [], "manual_reason": "Protocol-only fixture; no implementation files are changed."},
         "work_unit": {
             "status": work_unit,
             "evidence": ["test:focused-suite"],
@@ -193,6 +194,7 @@ class OutcomeGateTests(unittest.TestCase):
         self.contract_path = self.root / "docs/contracts/contract.md"
         self.plan_path = self.root / "docs/plans/plan.md"
         self.evidence_path = self.root / "docs/evidence/verification.md"
+        (self.root / "implementation.py").write_text("value = 1\n", encoding="utf-8")
         self.write_contract()
         self.write_plan()
         self.write_verification()
@@ -230,8 +232,12 @@ class OutcomeGateTests(unittest.TestCase):
         )
 
     def write_verification(self, **values: object) -> None:
+        record = verification_record(**values)
+        record["inputs"] = state_module.capture_verification_inputs(
+            self.root, files=["implementation.py"], absent=[]
+        )
         self.evidence_path.write_text(
-            block("verification", verification_record(**values)),
+            block("verification", record),
             encoding="utf-8",
         )
 

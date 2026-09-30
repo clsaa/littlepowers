@@ -74,6 +74,7 @@ MAX_STATE_FILE_BYTES = 64 * 1024
 MAX_ARTIFACT_FILE_BYTES = 128 * 1024
 MAX_BOUND_FILE_BYTES = 16 * 1024 * 1024
 MAX_BOUND_TOTAL_BYTES = 64 * 1024 * 1024
+MAX_VERIFICATION_INPUTS = 256
 MAX_CONTEXT_CHARS = 10_000
 LOCK_TIMEOUT_SECONDS = 5.0
 STALE_LEDGER_DAYS = 30
@@ -733,8 +734,10 @@ def _normalized_verdict(value: Any, field: str) -> dict[str, Any]:
 def parse_outcome_verification(markdown: str) -> dict[str, Any]:
     """Parse and structurally validate one Verification Record."""
 
+    record = parse_protocol_record(markdown, "verification")
+    inputs = record.pop("inputs", None)
     raw = _exact_record_keys(
-        parse_protocol_record(markdown, "verification"),
+        record,
         {
             "work_unit",
             "outcome_fidelity",
@@ -831,7 +834,7 @@ def parse_outcome_verification(markdown: str) -> dict[str, Any]:
         )
     _ensure_unique_entity_field(fidelity, "id", "verification fidelity ID")
 
-    return {
+    result = {
         "work_unit": _normalized_verdict(
             raw["work_unit"], "verification.work_unit"
         ),
@@ -847,6 +850,9 @@ def parse_outcome_verification(markdown: str) -> dict[str, Any]:
         "outcomes": sorted(outcomes, key=lambda item: item["outcome"]),
         "fidelity": sorted(fidelity, key=lambda item: item["id"]),
     }
+    if inputs is not None:
+        result["inputs"] = normalize_verification_inputs(inputs)
+    return result
 
 
 def evaluate_outcome_verification(
@@ -3431,6 +3437,10 @@ def _write_state_unlocked(
     legacy_state: MigrationSource | None = None,
 ) -> Path:
     validate_state(state, root)
+    if state["status"] == "complete":
+        failures = completion_gate_failures(root, state)
+        if failures:
+            raise StateError("completion gate failed:\n- " + "\n- ".join(failures))
     directory = (
         state_directory(root)
         if directory_fd is not None
@@ -4530,6 +4540,17 @@ def observe_current_plan(
     except StateError as exc:
         return [f"Outcome Plan Map cannot be read: {exc}"]
     failures: list[str] = []
+    try:
+        _require_review_resolution(
+            root,
+            state,
+            artifact,
+            artifact_keys={"plan", "shape"},
+            consumption_key="plan_validation_revision",
+            consumed=True,
+        )
+    except StateError as exc:
+        failures.append(str(exc))
     if protocol_digest(record) != plan["semantic_digest"]:
         failures.append("Outcome Plan Map semantic digest changed")
     result = evaluate_plan_coverage(
@@ -4582,19 +4603,6 @@ def execution_gate_failures(
                 )
             if not drift:
                 failures.extend(observe_current_plan(root, state, contract))
-                plan_artifact = lock["plan"]["artifact"]
-                if plan_artifact is not None:
-                    try:
-                        _require_review_resolution(
-                            root,
-                            state,
-                            plan_artifact,
-                            artifact_keys={"plan", "shape"},
-                            consumption_key="plan_validation_revision",
-                            consumed=True,
-                        )
-                    except StateError as exc:
-                        failures.append(str(exc))
     elif lock["mode"] != "artifact":
         failures.append("an approved contract is required")
     return failures
@@ -5137,12 +5145,125 @@ def current_gate_contract(
     return contract
 
 
+def normalize_verification_inputs(value: Any) -> dict[str, Any]:
+    """Validate a bounded, explicit pre-check snapshot, not a repository scan."""
+
+    raw = _exact_record_keys(value, {"mode", "files", "manual_reason"}, "inputs")
+    mode = _record_enum(raw["mode"], {"files", "manual"}, "inputs.mode")
+    rows: list[dict[str, Any]] = []
+    for item in _record_list(
+        raw["files"], "inputs.files", maximum=MAX_VERIFICATION_INPUTS
+    ):
+        row = _exact_record_keys(item, {"path", "sha256"}, "inputs.file")
+        path = normalize_workspace_file_path(None, row["path"], field="input path")
+        digest = row["sha256"]
+        if digest is not None and (
+            not isinstance(digest, str)
+            or re.fullmatch(r"sha256:[0-9a-f]{64}", digest) is None
+        ):
+            raise StateError(
+                "input sha256 must be a SHA-256 digest or null for explicit absence"
+            )
+        rows.append({"path": path, "sha256": digest})
+    if len({os.path.normcase(row["path"]) for row in rows}) != len(rows):
+        raise StateError("verification inputs must not contain duplicate paths")
+    reason = raw["manual_reason"]
+    if mode == "files":
+        if not rows or reason is not None:
+            raise StateError(
+                "file verification requires nonempty inputs and no manual reason"
+            )
+    else:
+        if rows:
+            raise StateError("manual verification must not declare files")
+        reason = _record_text(reason, "inputs.manual_reason", maximum=MAX_TEXT_LENGTH)
+    return {
+        "mode": mode,
+        "files": sorted(rows, key=lambda row: row["path"]),
+        "manual_reason": reason,
+    }
+
+
+def capture_verification_inputs(
+    root: Path,
+    *,
+    files: list[str],
+    absent: list[str],
+    manual_reason: str | None = None,
+) -> dict[str, Any]:
+    """Read only named files/absence, before checks. No ledger or output writes."""
+
+    if not root.is_dir():
+        raise StateError("verification workspace root must be an existing directory")
+    # Validate all paths/counts before I/O. Placeholder digests never escape.
+    scope = normalize_verification_inputs(
+        {
+            "mode": "manual" if manual_reason is not None else "files",
+            "files": [
+                {"path": path, "sha256": "sha256:" + "0" * 64} for path in files
+            ] + [{"path": path, "sha256": None} for path in absent],
+            "manual_reason": manual_reason,
+        }
+    )
+    total_bytes = 0
+    for row in scope["files"]:
+        path = row["path"]
+        if row["sha256"] is None:
+            # Only ENOENT from the safe no-follow walk means absent. Permission
+            # errors, linked parents, dangling symlinks and directories fail closed.
+            try:
+                descriptor = _open_workspace_file_descriptor(
+                    root, path, label="absent input"
+                )
+            except StateError as exc:
+                if not isinstance(exc.__cause__, FileNotFoundError):
+                    raise
+            else:
+                os.close(descriptor)
+                raise StateError(f"verification input must remain absent: {path}")
+        else:
+            payload = read_workspace_file(
+                root,
+                path,
+                maximum_bytes=MAX_BOUND_FILE_BYTES,
+                label="verification input",
+            )
+            total_bytes += len(payload)
+            if total_bytes > MAX_BOUND_TOTAL_BYTES:
+                raise StateError(
+                    f"verification inputs exceed {MAX_BOUND_TOTAL_BYTES} total bytes"
+                )
+            row["sha256"] = _sha256_digest(payload)
+    return scope
+
+
 def verification_record_digest(
     root: Path,
     verification: dict[str, Any],
+    *,
+    artifact: str | None = None,
 ) -> str:
-    """Bind verification semantics to each explicit fidelity evidence file."""
+    """Recheck declared pre-check inputs and bind explicit fidelity evidence."""
 
+    if "inputs" not in verification:
+        raise StateError(
+            "Verification Record lacks pre-check inputs; capture inputs, rerun "
+            "checks and record verification again"
+        )
+    inputs = normalize_verification_inputs(verification["inputs"])
+    if artifact is not None and any(
+        os.path.normcase(row["path"]) == os.path.normcase(artifact)
+        for row in inputs["files"]
+    ):
+        raise StateError("Verification Record cannot include itself as an input")
+    observed_inputs = capture_verification_inputs(
+        root,
+        files=[row["path"] for row in inputs["files"] if row["sha256"] is not None],
+        absent=[row["path"] for row in inputs["files"] if row["sha256"] is None],
+        manual_reason=inputs["manual_reason"],
+    )
+    if observed_inputs != inputs:
+        raise StateError("verification inputs changed; recapture and rerun checks")
     observations: dict[str, Any] = {}
     total_bytes = 0
     for row in verification["fidelity"]:
@@ -5219,7 +5340,9 @@ def command_record_verification(
                 state["outcome_lock"]["scope_delta"]["status"] == "approved"
             ),
         )
-        semantic_digest = verification_record_digest(root, verification)
+        semantic_digest = verification_record_digest(
+            root, verification, artifact=artifact
+        )
         baseline_status, passed_comparisons = _baseline_result(
             contract, verification
         )
@@ -5673,7 +5796,9 @@ def completion_gate_failures(
                 except StateError as exc:
                     add(str(exc))
             try:
-                observed_digest = verification_record_digest(root, verification)
+                observed_digest = verification_record_digest(
+                    root, verification, artifact=artifact
+                )
             except StateError as exc:
                 add(f"verification evidence cannot be read: {exc}")
             else:
@@ -6299,6 +6424,14 @@ def build_parser() -> argparse.ArgumentParser:
     _add_writer_arguments(validate_plan)
     validate_plan.add_argument("--artifact", required=True)
 
+    inputs = subparsers.add_parser(
+        "verification-inputs",
+        help="Capture explicit inputs BEFORE checks; copy JSON into Verification Record inputs",
+    )
+    inputs.add_argument("--file", action="append", default=[], dest="files")
+    inputs.add_argument("--absent", action="append", default=[])
+    inputs.add_argument("--manual-reason")
+
     record_verification = subparsers.add_parser(
         "record-verification",
         help="Record independent verification verdicts and fidelity evidence",
@@ -6403,6 +6536,11 @@ def main(argv: list[str] | None = None) -> int:
             print_review_mutation(command_cancel_review(args, root), root)
         elif args.command == "validate-plan":
             print_mutation(command_validate_plan(args, root), root)
+        elif args.command == "verification-inputs":
+            print(json.dumps(capture_verification_inputs(
+                root, files=args.files, absent=args.absent,
+                manual_reason=args.manual_reason,
+            ), indent=2, sort_keys=True))
         elif args.command == "record-verification":
             print_mutation(command_record_verification(args, root), root)
         elif args.command == "checkpoint":

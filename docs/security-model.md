@@ -2,7 +2,7 @@
 
 **Reviewed:** 2026-09-20
 
-**Release:** 1.4.1
+**Release:** 1.4.2
 
 ## Assets and trust boundary
 
@@ -197,6 +197,23 @@ still invoke the CLI or change files. Concurrent mutation requires separate
 worktrees or equivalent native isolation plus normal host sandbox controls.
 The Project Workflow Index provides visibility only; it does not grant a member
 writer, merge branches, or permit multiple top-level workflows in one checkout.
+
+## Candidate verification inputs (1.4.2)
+
+`verification-inputs` reads only explicitly named safe workspace-relative paths.
+It records bounded SHA-256 values or explicit absence before checks, or a
+justified manual scope when no file candidate exists. The Verification Record
+stores that snapshot, and its semantic digest binds the declaration. Recording,
+completion and completed-state atomic writes reobserve it and reject drift.
+The record cannot include itself; ledger/hidden paths remain prohibited.
+Exact consumed plan path, bytes and current embedded sources are also checked
+at recording/completion. No hooks, transcript access, network work, recursive
+scans or automatic tests are introduced.
+
+Hashes do not authenticate test execution, pre-check chronology, scope
+completeness, file modes or environment state. An undeclared input or
+same-account adversary remains outside this integrity boundary. Missing old
+snapshots fail closed at live gates; see [migration guidance](../references/outcome-lock.md#existing-verification-receipts).
 
 ## Residual risks
 

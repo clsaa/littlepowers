@@ -25,6 +25,23 @@ Impact is not line count. A one-line manifest or shared-contract edit may be bro
 
 When independently reversible features are combined, verify each feature at its own boundary first. Run aggregate broad checks only when their integration or release surface requires them.
 
+## Capture declared inputs before checks
+
+Read [`../../references/outcome-lock.md`](../../references/outcome-lock.md).
+After the last implementation edit, run `verification-inputs` with explicit
+`--file` paths and any intended `--absent` paths BEFORE running checks. Copy
+its output unchanged into the Verification Record `inputs` field. Include the
+code, tests, configuration and local dependencies relevant to each claim; do
+not include the record itself, ledger, snapshot output or generated check logs.
+Never recapture stale inputs without rerunning affected checks. Use a justified
+`--manual-reason` only for an outcome with no project-file implementation.
+
+Recording and completion recheck declared input hashes/absence and exact
+consumed plan approval. The scope is explicit, bounded and coordinator-owned;
+hashes do not prove tests executed, cover undeclared files or environmental
+changes, or replace inspection. Old receipts without inputs require capture,
+new checks and re-recording, not silent adoption of current hashes.
+
 ## Collect fresh evidence
 
 For each claim, record:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import subprocess
@@ -101,6 +102,9 @@ class OutcomeSelfHostTests(unittest.TestCase):
 
     def _write_verification(self) -> None:
         record = {
+            "inputs": {"mode": "files", "manual_reason": None, "files": [
+                {"path": "AGENTS.md", "sha256": "sha256:" + hashlib.sha256((self.root / "AGENTS.md").read_bytes()).hexdigest()}
+            ]},
             "work_unit": {
                 "status": "pass",
                 "evidence": ["test:self-host-cli"],

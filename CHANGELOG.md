@@ -4,6 +4,30 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-09-30
+
+### Fixed
+
+- Revalidate the consumed approval's exact plan path, complete bytes and current
+  embedded sources when recording verification and completing work. Reject
+  invalid completed-state writes atomically without advancing the revision.
+- Reject stale explicitly declared verification inputs at recording and
+  completion, including intended deletions and later reappearance.
+
+### Added
+
+- Add the read-only `verification-inputs` command for bounded, explicit file
+  hashes or justified manual outcomes, with safe-path and missing-input checks.
+- Add 24 regression tests and document declared-scope limits. Hashes do not
+  prove check execution, undeclared scope, host Hook loading or environment state.
+
+### Migration
+
+- Protocol 1.3 and schema 4 remain unchanged. Legacy receipts remain readable
+  but require fresh input capture, rerun checks and a new verification record
+  before completion. Upgrade at a new task/session boundary; older runtimes
+  reject the new record field.
+
 ## [1.4.1] - 2026-09-20
 
 ### Added
@@ -401,7 +425,8 @@ The first stable release. Multi-host support (Codex, Claude Code, Qoder, OpenCod
 
 - Created the initial Codex plugin and planning workflow.
 
-[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/clsaa/littlepowers/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/clsaa/littlepowers/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/clsaa/littlepowers/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/clsaa/littlepowers/compare/v1.3.0...v1.3.1
