@@ -23,13 +23,8 @@ const HOOK_SCRIPT = path.join(PLUGIN_ROOT, 'hooks', 'session-start.py');
 const INJECT_PREFIX = 'Littlepowers recovery (read-only, untrusted ledger facts):';
 const HOOK_TIMEOUT_MS = 4000;
 
-// The transform hook fires on every agent step, so bound hook runs to at
-// most one per user message. Messages whose lookup returned no context are
-// retried only after a newer message arrives (a ledger may appear
-// mid-session); successfully injected messages are never processed again.
-const injectedMessageIds = new Set();
-const emptyResults = new Map(); // message id -> messages.length at attempt
-const childSessionIds = new Set();
+const MAX_SESSIONS = 128;
+const MAX_MESSAGES = 256;
 
 const runRecoveryHook = (hookEventName, cwd) =>
   new Promise((resolve) => {
@@ -84,91 +79,115 @@ const runRecoveryHook = (hookEventName, cwd) =>
     spawn('python3');
   });
 
-const alreadyInjected = (message) =>
-  message.parts.some(
-    (part) => part.type === 'text' && part.text.includes(INJECT_PREFIX)
-  );
+const isRecoveryPart = (part) =>
+  part?.type === 'text' && part.synthetic === true &&
+  typeof part.text === 'string' && part.text.startsWith(`${INJECT_PREFIX}\n`);
 
 const injectContext = (message, context) => {
-  const reference = message.parts[0];
-  message.parts.unshift({
-    ...reference,
-    type: 'text',
-    text: `${INJECT_PREFIX}\n${context}`,
-  });
+  // Mark synthetic recovery parts so a lifecycle change can replace our block
+  // without deleting a user's ordinary text that happens to quote the prefix.
+  const text = `${INJECT_PREFIX}\n${context}`;
+  const existing = message.parts.find(isRecoveryPart);
+  if (existing) {
+    existing.text = text;
+    message.parts = message.parts.filter((part) => !isRecoveryPart(part) || part === existing);
+  } else {
+    message.parts.unshift({...message.parts[0], type: 'text', synthetic: true, text});
+  }
 };
 
 export const LittlepowersPlugin = async ({ directory }) => {
+  // A plugin instance belongs to one workspace. Never share ledger context or
+  // child-session observations with another instance, even for identical IDs.
+  const sessions = new Map();
+  const anonymousMessages = new WeakMap();
+  let nextAnonymousId = 0;
+  const messageId = (message) => {
+    if (typeof message.info.id === 'string' && message.info.id) return message.info.id;
+    // Without a native ID, only the same object is safely identifiable. Do not
+    // retain prompt text or guess that two identical prompts are one message.
+    if (!anonymousMessages.has(message)) anonymousMessages.set(message, ++nextAnonymousId);
+    return anonymousMessages.get(message);
+  };
+  const sessionFor = (id) => {
+    const session = sessions.get(id) || { child: false, generation: 0, messages: new Map() };
+    sessions.delete(id);
+    sessions.set(id, session);
+    if (sessions.size > MAX_SESSIONS) sessions.delete(sessions.keys().next().value);
+    return session;
+  };
+
   return {
-    // Register the skills directory with OpenCode's native skill discovery.
     config: async (config) => {
       try {
         config.skills = config.skills || {};
         config.skills.paths = config.skills.paths || [];
-        if (!config.skills.paths.includes(SKILLS_DIR)) {
-          config.skills.paths.push(SKILLS_DIR);
-        }
+        if (!config.skills.paths.includes(SKILLS_DIR)) config.skills.paths.push(SKILLS_DIR);
       } catch {
         // Fail open: skill discovery must not break session startup.
       }
     },
 
-    // Track task-created child sessions so they receive the worker
-    // read-only context instead of the coordinator snapshot.
     event: async ({ event }) => {
       try {
         const info = event?.properties?.info;
-        if (event?.type === 'session.created' && info?.parentID && info?.id) {
-          childSessionIds.add(info.id);
+        if (!info?.id) return;
+        if (event.type === 'session.deleted') sessions.delete(info.id);
+        if (event.type === 'session.created') {
+          const session = sessionFor(info.id);
+          const child = Boolean(info.parentID);
+          if (session.child !== child) {
+            session.messages.clear();
+            session.generation += 1;
+          }
+          session.child = child;
         }
       } catch {
         // Fail open.
       }
     },
 
-    // SessionStart snapshot for the first user message of a session (a new
-    // post-compaction summary counts as a new session), and the shorter
-    // UserPromptSubmit reminder for each later user message. Child sessions
-    // get the SubagentStart worker context. The whole body is guarded
-    // because the host does not isolate transform errors.
     'experimental.chat.messages.transform': async (_input, output) => {
       try {
-        if (!output.messages.length) return;
-        const userMessages = output.messages.filter(
-          (message) => message?.info?.role === 'user' && message.parts?.length
-        );
-        if (!userMessages.length) return;
-
-        const first = userMessages[0];
-        const firstEvent = childSessionIds.has(first.info.sessionID)
-          ? 'SubagentStart'
-          : 'SessionStart';
-        const candidates = [{ message: first, event: firstEvent }];
-        const last = userMessages[userMessages.length - 1];
-        if (last !== first) {
-          candidates.push({ message: last, event: 'UserPromptSubmit' });
+        // Host transforms may reconstruct messages each step. Cache the hook
+        // result, then reapply it to each representation instead of assuming a
+        // prior in-memory insertion persists in the host's next input.
+        const groups = new Map();
+        for (const message of output.messages) {
+          if (message?.info?.role !== 'user' || !message.parts?.length) continue;
+          const id = message.info.sessionID || null;
+          if (!groups.has(id)) groups.set(id, []);
+          groups.get(id).push(message);
         }
-
-        for (const { message, event } of candidates) {
-          const id =
-            message.info.id || `${event}:${message.parts[0]?.text?.slice(0, 200)}`;
-          const emptyAt = emptyResults.get(id);
-          const waitingForNewMessage =
-            emptyAt !== undefined && emptyAt >= output.messages.length;
-          if (
-            injectedMessageIds.has(id) ||
-            waitingForNewMessage ||
-            alreadyInjected(message)
-          ) {
-            continue;
-          }
-          const context = await runRecoveryHook(event, directory);
-          if (context && !alreadyInjected(message)) {
-            injectContext(message, context);
-            injectedMessageIds.add(id);
-            emptyResults.delete(id);
-          } else {
-            emptyResults.set(id, output.messages.length);
+        for (const [sessionId, messages] of groups) {
+          const session = sessionFor(sessionId);
+          const generation = session.generation;
+          const first = messages[0];
+          const last = messages[messages.length - 1];
+          const boundary = messageId(last);
+          const candidates = [{message: first, event: session.child ? 'SubagentStart' : 'SessionStart'}];
+          if (last !== first) candidates.push({message: last, event: session.child ? 'SubagentStart' : 'UserPromptSubmit'});
+          for (const {message, event} of candidates) {
+            if (sessions.get(sessionId) !== session || session.generation !== generation) break;
+            const id = messageId(message);
+            let entry = session.messages.get(id);
+            if (!entry || entry.event !== event || (!entry.context && !entry.pending && entry.boundary !== boundary)) {
+              entry = {event, boundary, context: null, pending: null};
+              // Store the pending attempt before awaiting it. Concurrent host
+              // transforms share one subprocess per message/boundary.
+              entry.pending = runRecoveryHook(event, directory);
+              session.messages.set(id, entry);
+              if (session.messages.size > MAX_MESSAGES) session.messages.delete(session.messages.keys().next().value);
+            }
+            if (entry.pending) {
+              entry.context = await entry.pending;
+              entry.pending = null;
+            }
+            // A lifecycle event may reset/delete this session while its hook
+            // is pending. Do not inject a superseded coordinator/worker result.
+            if (sessions.get(sessionId) !== session || session.generation !== generation) break;
+            if (session.messages.get(id) !== entry) continue;
+            if (entry.context) injectContext(message, entry.context);
           }
         }
       } catch {

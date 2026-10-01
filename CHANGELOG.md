@@ -4,6 +4,25 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-10-01
+
+### Fixed
+
+- Default live-eval reports retain typed event metadata instead of raw command,
+  tool and message payloads; failed-run stderr is not printed by default.
+- OpenCode empty recovery attempts retry only after a new user message, not
+  assistant/tool traffic. Reconstructed native message IDs reuse cached context
+  without another subprocess, and concurrent transforms share pending attempts.
+- Isolate recovery caches by plugin instance/session, bound their size and clear
+  observed deleted sessions. Observed child user messages receive worker markers.
+
+### Added
+
+- Explicit `--sensitive-log` writes separate unredacted observable diagnostics;
+  exclusive private report creation prevents overwrite and output-symlink reuse.
+- Offline synthetic-canary and host-lifecycle regression fixtures. These do not
+  certify live host behavior or task success. Protocol 1.3/schema 4 are unchanged.
+
 ## [1.4.2] - 2026-09-30
 
 ### Fixed
@@ -425,7 +444,8 @@ The first stable release. Multi-host support (Codex, Claude Code, Qoder, OpenCod
 
 - Created the initial Codex plugin and planning workflow.
 
-[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.4.2...HEAD
+[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.4.3...HEAD
+[1.4.3]: https://github.com/clsaa/littlepowers/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/clsaa/littlepowers/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/clsaa/littlepowers/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/clsaa/littlepowers/compare/v1.3.1...v1.4.0

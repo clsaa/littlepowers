@@ -1,5 +1,6 @@
 # Littlepowers
 
+
 [![CI](https://github.com/clsaa/littlepowers/actions/workflows/test.yml/badge.svg)](https://github.com/clsaa/littlepowers/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/clsaa/littlepowers)](https://github.com/clsaa/littlepowers/releases)
@@ -161,10 +162,10 @@ changes this setting without permission.
 
 ### Install the released plugin
 
-Install the stable 1.4.2 release by its exact tag:
+Install the stable 1.4.3 release by its exact tag:
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v1.4.2
+codex plugin marketplace add clsaa/littlepowers --ref v1.4.3
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -191,10 +192,10 @@ Codex Queue defers a follow-up; `/side` or `/btw` isolates an unrelated question
 For an exact release, use a tag-pinned local marketplace checkout:
 
 ```bash
-git clone --depth 1 --branch v1.4.2 \
+git clone --depth 1 --branch v1.4.3 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.2
-claude plugin marketplace add /absolute/path/littlepowers-v1.4.2
+  /absolute/path/littlepowers-v1.4.3
+claude plugin marketplace add /absolute/path/littlepowers-v1.4.3
 claude plugin install littlepowers@littlepowers
 ```
 
@@ -231,10 +232,10 @@ Qoder CLI and the Qoder IDE share the same plugin layout.
 For an exact release, install a tag-pinned checkout:
 
 ```bash
-git clone --depth 1 --branch v1.4.2 \
+git clone --depth 1 --branch v1.4.3 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.2
-qodercli plugins install /absolute/path/littlepowers-v1.4.2
+  /absolute/path/littlepowers-v1.4.3
+qodercli plugins install /absolute/path/littlepowers-v1.4.3
 ```
 
 For a local checkout, run `qodercli plugins install /path/to/littlepowers` instead. Restart the session or run `/skills reload`, then review the plugin hooks before trusting them. In the Qoder IDE, install through the Marketplace panel or import the local plugin folder.
@@ -259,7 +260,7 @@ Add the plugin to the `plugin` array in `opencode.json` (global or project-level
 
 ```json
 {
-  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.4.2"]
+  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.4.3"]
 }
 ```
 
@@ -364,7 +365,7 @@ from an exact tag and start a new task/session. For Codex:
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v1.4.2
+codex plugin marketplace add clsaa/littlepowers --ref v1.4.3
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -373,26 +374,26 @@ Use the desired earlier tag in the same commands to roll back.
 For Claude Code, use a separate checkout of the desired tag as the marketplace:
 
 ```bash
-git clone --depth 1 --branch v1.4.2 \
+git clone --depth 1 --branch v1.4.3 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.2
+  /absolute/path/littlepowers-v1.4.3
 claude plugin uninstall littlepowers@littlepowers
 claude plugin marketplace remove littlepowers
-claude plugin marketplace add /absolute/path/littlepowers-v1.4.2
+claude plugin marketplace add /absolute/path/littlepowers-v1.4.3
 claude plugin install littlepowers@littlepowers
 ```
 
 For Qoder CLI, install the same tagged checkout directly:
 
 ```bash
-git clone --depth 1 --branch v1.4.2 \
+git clone --depth 1 --branch v1.4.3 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.2
+  /absolute/path/littlepowers-v1.4.3
 qodercli plugins uninstall littlepowers
-qodercli plugins install /absolute/path/littlepowers-v1.4.2
+qodercli plugins install /absolute/path/littlepowers-v1.4.3
 ```
 
-For OpenCode, change the `#v1.4.2` suffix in the git plugin URL to the exact
+For OpenCode, change the `#v1.4.3` suffix in the git plugin URL to the exact
 desired tag, force-refresh its package cache if necessary, and restart OpenCode.
 After any host change, open a new task/session, confirm all eleven skills, and
 run the management skill's `doctor`; do not treat plugin reload as ledger

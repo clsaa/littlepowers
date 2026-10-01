@@ -2,7 +2,7 @@
 
 **Reviewed:** 2026-09-20
 
-**Release:** 1.4.2
+**Release:** 1.4.3
 
 Littlepowers is checkpoint-assisted recovery. The table separates host events, durable state, and model behavior.
 
@@ -156,11 +156,11 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
 
 - Install rides the `plugin` array in `opencode.json` and the repository root `package.json`; no user config file is edited by the plugin.
 - `.opencode/plugins/littlepowers.js` registers the skills directory through the `config` hook and injects the same `hooks/session-start.py` output through `experimental.chat.messages.transform`: the full snapshot on the first user message, the short reminder on later user messages.
-- OpenCode has no SubagentStart equivalent, so the worker read-only marker is not injected; coordinator-only ledger writes remain protocol-level.
+- When this plugin instance observes `session.created` with `parentID`, it translates child user-message recovery into the shared `SubagentStart` worker marker. Missing creation events, restart or cache eviction do not establish child identity; this is fixture-tested recovery metadata, not native read-only enforcement or live-host certification.
 - Littlepowers stays single-agent unless the current OpenCode runtime exposes
   and verifies an equivalent native bounded-task and isolation mechanism; this
   release does not overclaim one.
-- The plugin is read-only and fails open; missing Python or missing state injects nothing.
+- The plugin is read-only and fails open; missing Python or missing state injects nothing. Successful context is reapplied to reconstructed native message IDs, and empty results retry only at a new user-message boundary. Per-instance/session caches are bounded and cleared on observed session deletion.
 - Review Lease state is supported, but timed continuation is manual until an exact-session scheduler is verified.
 
 ## Unsupported in this release

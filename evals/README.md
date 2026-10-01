@@ -111,3 +111,24 @@ the intended environment. `--case approval` parks a planning gate; a follow-up
 uses the reported exact session ID with `--resume`, `--case followup`, and
 `--prompt`. Each invocation defaults to a 600-second bound. These are source
 skill tests, not a substitute for installed-plugin and exact-tag smoke tests.
+
+## Minimal reports and sensitive diagnostics (1.4.3)
+
+The default report (`report_version: 2`) contains explicit run metadata, a
+validated session UUID for resume, and typed event summaries: event/item kinds,
+recognized statuses, numeric exit codes and usage counters. It omits command
+text/output, MCP and collaboration payloads, agent messages, file paths from
+events and raw error text. Unknown fields are dropped. This reduces accidental
+sharing; it does not universally redact secrets in caller-supplied metadata.
+
+Use a fresh `--label` for every run (letters, digits, underscores or hyphens).
+Existing outputs are never overwritten. Only when sensitive diagnostics are
+needed, explicitly pass `--sensitive-log`; a separate `.sensitive.json` file
+retains unredacted observable events and stderr. Review it privately before
+sharing. Dedicated reasoning event types are excluded, but nested payloads
+are not scrubbed. The host's normal history is unaffected. Both report files
+are created exclusively with private POSIX permissions.
+
+Host exit 0 remains an execution result, not an outcome/safety grade. Use
+independent fixture checks and report timeouts/incomplete work honestly. This
+patch adds no paid eval runs, paired benchmark or installed-host certification.

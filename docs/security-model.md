@@ -2,7 +2,7 @@
 
 **Reviewed:** 2026-09-20
 
-**Release:** 1.4.2
+**Release:** 1.4.3
 
 ## Assets and trust boundary
 
@@ -54,7 +54,7 @@ network, or start agents. It emits nothing when no eligible unfinished
 workflow exists. Invalid state produces a fixed stderr diagnostic and exit code
 0 so the coding session can continue.
 
-The OpenCode plugin `.opencode/plugins/littlepowers.js` is read-only and fails open. It registers the plugin's skills directory through the host's config hook and injects the same `hooks/session-start.py` output into in-memory message parts through the host's experimental message-transform hook. It spawns that Python hook with a four-second timeout and a 256 KiB output bound, never writes state or files, never calls the network, and retains only message identifiers (with a bounded prompt-text fallback key) in process memory for injection deduplication. Any error — missing Python, host API drift, or invalid state — results in no injection.
+The OpenCode plugin `.opencode/plugins/littlepowers.js` is read-only and fails open. It registers the plugin's skills directory through the host's config hook and injects the same `hooks/session-start.py` output into in-memory message parts through the host's experimental message-transform hook. It spawns that Python hook with a four-second timeout and a 256 KiB output bound, never writes state or files, never calls the network, and caches bounded recovery context and native message/session identifiers in process memory for replay (at most 128 sessions and 256 message entries per session). Anonymous messages use object identity rather than retained prompt text. Caches are isolated per plugin instance and observed session deletion clears that session. Successful context is last-known metadata, not fresh authorization. Empty attempts retry only after a new user message; assistant/tool steps do not retrigger them. Any error — missing Python, host API drift, or invalid state — results in no injection.
 
 The state CLI is the only writer. Skills invoke it during tracked work. Its `read-artifact` command is the supported way for a skill to load a ledger-referenced Markdown artifact. Outcome Lock commands use the same hardened explicit-file boundary for Contract, Plan Map, bound parent/baseline sources, Verification Record, and fidelity evidence. `handoff` reads an explicitly named active target, then writes only the source ledger; it does not search for worktrees or write the target.
 
@@ -254,3 +254,21 @@ snapshots fail closed at live gates; see [migration guidance](../references/outc
 ## Reporting
 
 Follow [SECURITY.md](../SECURITY.md). Do not include real credentials, private source, or harmful proof-of-concept data in a public issue.
+
+## Opt-in live evaluation reports (1.4.3)
+
+`evals/run_codex_live.py` is development tooling, never plugin runtime. Its
+default report projects events into known event/item/status enums, bounded
+numeric exit/usage values, and a validated session UUID. Run metadata includes
+explicit model/effort/label choices, a parsed CLI version and the source-skill
+candidate digest. Commands, message text, tool arguments/results, file paths
+from host events, unknown fields and raw diagnostics are omitted. This is data
+minimization, not universal secret detection; inspect metadata before sharing.
+
+`--sensitive-log` explicitly opts into a separate unredacted observable-event
+and stderr file. Dedicated reasoning event types are excluded, but arbitrary
+nested payloads remain sensitive; this is not a complete transcript or a
+redaction guarantee. Files use exclusive creation and POSIX mode 0600; Windows
+access controls remain host-owned. Neither mode changes the host's own session
+history. The runner records process results, not independently graded task
+success, and does not certify installed-plugin behavior.
