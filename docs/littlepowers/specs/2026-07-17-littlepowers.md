@@ -134,3 +134,13 @@ The Codex manifest, Claude Code manifest, and Claude marketplace entry use the s
 - Unit tests exercise both plugin-root environment conventions and all recovery edge cases.
 - README distinguishes shared behavior from harness-specific controls and documents both installation paths.
 - GitHub Actions passes on the published commit.
+
+## 2026-10-17 execution-efficiency amendment
+
+The bounded user attachment adds on-demand evidence summaries, semantic observation
+and recoverable pending-event cursor proposals. Host tools own execution, waiting
+and cancellation; existing Outcome Lock, Review Lease and root ledger ownership
+remain unchanged. No hooks, telemetry or session scanning. The complete current
+requirements, decisions and implementation map are in
+[the execution-efficiency shape](../shapes/2026-10-17-execution-efficiency.md);
+protocol details are in [the reference](../../../references/execution-efficiency.md).

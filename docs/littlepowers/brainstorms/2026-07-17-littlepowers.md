@@ -60,3 +60,13 @@ The working name remains Littlepowers until the user explicitly chooses a rename
 - Codex can additionally use Queue, `/goal`, and `/side` or `/btw`.
 - Claude Code can use its native resume and compaction flow; the SessionStart hook refreshes the ledger context.
 - Skills must not recommend commands from the other harness.
+
+## 2026-10-17 execution-efficiency amendment
+
+The bounded user attachment adds on-demand evidence summaries, semantic observation
+and recoverable pending-event cursor proposals. Host tools own execution, waiting
+and cancellation; existing Outcome Lock, Review Lease and root ledger ownership
+remain unchanged. No hooks, telemetry or session scanning. The complete current
+requirements, decisions and implementation map are in
+[the execution-efficiency shape](../shapes/2026-10-17-execution-efficiency.md);
+protocol details are in [the reference](../../../references/execution-efficiency.md).

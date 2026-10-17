@@ -92,3 +92,7 @@ all remaining contract, coverage, baseline, evidence, verdict, and blocker
 failures without advancing a rejected revision.
 
 Report the selected scope and rationale, exact checks and observed results, diff inspection, and unresolved limitations. Use narrower language when evidence is narrower than the requested outcome.
+
+## Execution efficiency
+
+When execution efficiency was used, load [execution efficiency](../../references/execution-efficiency.md) and verify check IDs/coverage, all critical findings, full evidence and required visuals, pending-event recovery, real timeout/cancellation and the original notification agreement. Separate measured new text/images, actual model requests, wall/tool costs, setup/recovery and context/compaction evidence; unavailable host measurements stay unknown. Local fixtures do not certify every host.

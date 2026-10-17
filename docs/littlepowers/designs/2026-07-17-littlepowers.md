@@ -104,3 +104,13 @@ The workflow itself does not depend on any of these optional controls.
 4. Run `claude plugin validate --strict .`.
 5. Install from each native marketplace and inspect the six discovered skills.
 6. Run one real, read-only recovery probe in each harness from a temporary workspace.
+
+## 2026-10-17 execution-efficiency amendment
+
+The bounded user attachment adds on-demand evidence summaries, semantic observation
+and recoverable pending-event cursor proposals. Host tools own execution, waiting
+and cancellation; existing Outcome Lock, Review Lease and root ledger ownership
+remain unchanged. No hooks, telemetry or session scanning. The complete current
+requirements, decisions and implementation map are in
+[the execution-efficiency shape](../shapes/2026-10-17-execution-efficiency.md);
+protocol details are in [the reference](../../../references/execution-efficiency.md).

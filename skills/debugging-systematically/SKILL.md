@@ -50,3 +50,7 @@ Rerun the original reproducer after the edit. Add or update regression coverage 
 ## Report observable evidence
 
 Report the supported cause, the evidence that distinguishes it from alternatives, files changed or confirmation that no files changed, the original reproducer result, affected regression checks, and any remaining uncertainty. If the cause is not established, report the next discriminating check instead of claiming the issue is fixed.
+
+## Execution efficiency
+
+For repeated tool errors or active-state waiting, load [execution efficiency](../../references/execution-efficiency.md). Prefer structured errors, correct deterministic faults before minimal validation, account for host built-in retries, and keep business waits distinct from script failure. Unknown errors grant no repair authority.

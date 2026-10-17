@@ -138,3 +138,7 @@ remains:
 ```
 
 Report the outcome, changed surfaces, verification evidence, and any optional next step.
+
+## Execution efficiency
+
+For large results, independent checks answering one decision, or repeated active-state waits, load [execution efficiency](../../references/execution-efficiency.md). Save full evidence before emitting summaries; inspect every batched result, preserve screenshots, reuse existing handles, and let the host enforce deadlines/cancellation. The pure helper only proposes summaries and cursors; root alone persists at normal boundaries. No per-sample ledger writes or extra orchestration.

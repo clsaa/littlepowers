@@ -322,3 +322,7 @@ top-level workflows in one checkout.
 Answer, review, diagnose, and plan requests without implementation unless the user also asks for changes. For requested local changes, edit and validate in scope. Commit, push, open a pull request, deploy, publish, broaden access, or perform another external write only when the user authorizes that action.
 
 In Codex, Queue defers a follow-up until the current run finishes; `/side` or `/btw` isolates unrelated questions. Littlepowers cannot change those settings or prevent same-turn steering. In Claude Code, use native resume, clear, and compaction behavior. Qoder CLI and OpenCode use their native session resume and continuation behavior. Do not recommend one harness's commands in another.
+
+## Execution efficiency
+
+Before a large output, a batch of independent checks, repeated active-state observation, or efficiency-cursor recovery, load [execution efficiency](../../references/execution-efficiency.md) on demand. Tiny reads and no active state need no cursor, ledger or scan. Existing authorization and recovery gates remain authoritative.

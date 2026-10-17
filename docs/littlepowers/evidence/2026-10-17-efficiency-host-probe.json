@@ -1,0 +1,12 @@
+{
+  "created_handles": 1,
+  "reused_handles": 1,
+  "cancel_sent": true,
+  "start_wall_seconds": 0.251243172,
+  "cancel_wall_seconds": 1.001290339,
+  "completed": true,
+  "followup_wall_seconds": 0.000022207,
+  "exit_code": 1,
+  "cancellation_confirmed": false,
+  "interpretation": "Actual exposed exec_command/write_stdin created and reused one synthetic process handle. Cancel was sent but exit code 1 without causal diagnostics does not establish bounded cancellation; capability remains unverified and batching must degrade. No browser or other host certification."
+}

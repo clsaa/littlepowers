@@ -503,3 +503,11 @@ Also remove any snippet you copied into `AGENTS.md` or `CLAUDE.md`. Uninstalling
 ## License and inspiration
 
 Littlepowers is MIT-licensed. The design was informed by Superpowers v6.1.1, also MIT-licensed. Littlepowers is not a fork, is not endorsed by Superpowers or obra, and contains an independent implementation focused on proportional planning and bounded recovery. See [inspiration and provenance](docs/inspiration.md).
+
+### On-demand execution efficiency
+
+Large results and repeated observations can use the dependency-free
+[execution-efficiency protocol](references/execution-efficiency.md) to retain
+full evidence, emit bounded summaries and propose recoverable event cursors.
+The host owns tool calls, deadlines and cancellation; this adds no monitor,
+telemetry or approval authority. Local synthetic tests are not host certification.

@@ -1,0 +1,39 @@
+test_canonical_unicode_and_numeric_rules (test_efficiency.CursorTests.test_canonical_unicode_and_numeric_rules) ... ok
+test_cursor_large_sequence_and_missing_summary_fields_fail_closed (test_efficiency.CursorTests.test_cursor_large_sequence_and_missing_summary_fields_fail_closed) ... ok
+test_eff06_integrity_scope_age_and_evidence (test_efficiency.CursorTests.test_eff06_integrity_scope_age_and_evidence) ... ok
+test_eff07_saved_before_report_replays_pending_not_business_write (test_efficiency.CursorTests.test_eff07_saved_before_report_replays_pending_not_business_write) ... ok
+test_missing_pending_event_rejected_even_with_new_checksum (test_efficiency.CursorTests.test_missing_pending_event_rejected_even_with_new_checksum) ... ok
+test_eff03_baseline_reorder_clock_and_no_ledger_writes (test_efficiency.ObservationTests.test_eff03_baseline_reorder_clock_and_no_ledger_writes) ... ok
+test_eff04_swaps_versions_additions_removals (test_efficiency.ObservationTests.test_eff04_swaps_versions_additions_removals) ... ok
+test_eff05_missing_failure_empty_and_recovery (test_efficiency.ObservationTests.test_eff05_missing_failure_empty_and_recovery) ... ok
+test_eff08_periodic_report_not_suppressed (test_efficiency.ObservationTests.test_eff08_periodic_report_not_suppressed) ... ok
+test_scope_not_mutated_by_caller (test_efficiency.ObservationTests.test_scope_not_mutated_by_caller) ... ok
+test_stale_wait_and_changed_required_schema_are_not_unchanged (test_efficiency.ObservationTests.test_stale_wait_and_changed_required_schema_are_not_unchanged) ... ok
+test_unknown_source_time_is_explicit_unknown (test_efficiency.ObservationTests.test_unknown_source_time_is_explicit_unknown) ... ok
+test_cli_duplicate_keys_and_malformed_input_fail_closed (test_efficiency.PolicyTests.test_cli_duplicate_keys_and_malformed_input_fail_closed) ... ok
+test_eff08_limits_cancel_report (test_efficiency.PolicyTests.test_eff08_limits_cancel_report) ... ok
+test_eff09_no_automatic_retry_or_repair_authority (test_efficiency.PolicyTests.test_eff09_no_automatic_retry_or_repair_authority) ... ok
+test_eff10_explicit_degradation (test_efficiency.PolicyTests.test_eff10_explicit_degradation) ... ok
+test_eff11_task_isolation (test_efficiency.PolicyTests.test_eff11_task_isolation) ... ok
+test_eff12_core_import_has_no_file_tool_or_network_dependencies (test_efficiency.PolicyTests.test_eff12_core_import_has_no_file_tool_or_network_dependencies) ... ok
+test_check_details_never_silently_omitted (test_efficiency.SummaryTests.test_check_details_never_silently_omitted) ... ok
+test_eff01_coverage_and_critical_traceability (test_efficiency.SummaryTests.test_eff01_coverage_and_critical_traceability) ... ok
+test_eff02_budget_keeps_errors_visual_and_explicit_reads (test_efficiency.SummaryTests.test_eff02_budget_keeps_errors_visual_and_explicit_reads) ... ok
+test_incomplete_and_failed_save_cannot_pass (test_efficiency.SummaryTests.test_incomplete_and_failed_save_cannot_pass) ... ok
+test_malformed_structure (test_efficiency.SummaryTests.test_malformed_structure) ... ok
+test_missing_unknown_and_unplanned_checks (test_efficiency.SummaryTests.test_missing_unknown_and_unplanned_checks) ... ok
+test_eff08_batch_deadline_and_periodic_report_bound_slow_tool (test_efficiency_host.HostTests.test_eff08_batch_deadline_and_periodic_report_bound_slow_tool) ... ok
+test_eff08_external_cancellation_during_read (test_efficiency_host.HostTests.test_eff08_external_cancellation_during_read) ... ok
+test_eff08_same_state_still_reports_on_schedule_and_reuses_handle (test_efficiency_host.HostTests.test_eff08_same_state_still_reports_on_schedule_and_reuses_handle) ... ok
+test_eff08_slow_observation_really_cancelled (test_efficiency_host.HostTests.test_eff08_slow_observation_really_cancelled) ... ok
+test_eff10_missing_capability_never_calls_tool (test_efficiency_host.HostTests.test_eff10_missing_capability_never_calls_tool) ... ok
+test_error_event_returns_at_first_sample (test_efficiency_host.HostTests.test_error_event_returns_at_first_sample) ... ok
+test_independent_read_failure_does_not_skip_other_results (test_efficiency_host.HostTests.test_independent_read_failure_does_not_skip_other_results) ... ok
+test_eff01_eff02_saved_original_and_visual_remain_traceable (test_efficiency_host.PersistenceTests.test_eff01_eff02_saved_original_and_visual_remain_traceable) ... ok
+test_eff07_atomic_save_then_crash_before_report_preserves_pending (test_efficiency_host.PersistenceTests.test_eff07_atomic_save_then_crash_before_report_preserves_pending) ... ok
+test_failed_replace_keeps_previous_cursor_and_cleans_temp (test_efficiency_host.PersistenceTests.test_failed_replace_keeps_previous_cursor_and_cleans_temp) ... ok
+
+----------------------------------------------------------------------
+Ran 34 tests in 0.313s
+
+OK
