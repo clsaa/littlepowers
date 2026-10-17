@@ -48,7 +48,7 @@ The existing root ledger stays at verify; no second authority was created.
 - `python3 -m unittest discover -s tests -v`: **298 tests, 12.928 s, exit 0**.
   Full output: `2026-10-17-efficiency-tests.txt`.
 - `python3 -m unittest discover -s tests -p 'test_efficiency*.py' -v`:
-  **34 tests, 0.314 s, exit 0**, after the final documentation clarification.
+  **34 tests, 0.319 s, exit 0**, after the final documentation clarification.
   Output: `2026-10-17-efficiency-focused.txt`.
 - `python3 -m compileall -q scripts hooks tests evals`, Node syntax for
   `.opencode/plugins/littlepowers.js`, Bash syntax for `hooks/run-hook.cmd`,
@@ -144,7 +144,7 @@ plugin validation remain unverified. Actual current-host probe details are in
 `2026-10-17-efficiency-host-probe.json`; handle reuse is observed, cancellation
 semantics are not established. These limitations are neither scope removal nor
 claims of full-host acceptance. The existing ledger remains active at verify. OUT-004 is explicitly blocked for
-the unverified real-host cancellation boundary: fixture EFF-08/EFF-10 success is
+the remaining non-process real-host cancellation boundary: fixture EFF-08/EFF-10 success is
 not promoted to a real-host pass. All twelve EFF criteria remain in scope.
 
 ## Follow-up: actual host cancellation and validator availability
@@ -188,13 +188,50 @@ No official validate_plugin/validate_plugins/plugin_validator entry was found.
 No software was installed, no credentials/models were used, and no Actions were
 run. Existing Claude/skill validation is not a replacement for this absent check.
 
-Affected efficiency tests reran: **34 tests, 0.314 s, exit 0**, including the
+Affected efficiency tests reran: **34 tests, 0.319 s, exit 0**, including the
 zero-call degraded path and real local cooperative cancellation. Production
 code, test code, protocols and benchmark inputs are unchanged from the 298-test
 candidate; therefore the broad suite and measured A/B results remain applicable.
 Only evidence files changed in this follow-up. Independent review approval and
 the absent real-host cancellation/official validator capabilities remain the
 specific blockers that cannot be advanced in the current exposed environment.
+
+## Scope correction: PTY request versus explicit process termination
+
+This supersedes any reading of the earlier negative probe as a claim that the
+entire host lacks cancellation. **The earlier probe already requested tty=true**.
+A fresh instrumented run confirmed isatty=true, a character device named
+`/dev/console`, ISIG=true, ICANON=true and VINTR=U+0003. However, tcgetpgrp returned
+ENOTTY (no usable foreground process group). Ctrl-C input still produced no
+signal receipt and heartbeat continued; the synthetic process ended only at its
+own safety deadline. This proves the limitation of that console/input path,
+not of all host-executed cancellation mechanisms.
+
+A separate newly-created, three-second-self-limited synthetic process was then
+terminated explicitly through the available exec tool. The coordinator opened a
+Linux pidfd, checked that process's exact script and unique synthetic directory
+arguments, required that it had not finished, and sent SIGTERM via standard-library
+`signal.pidfd_send_signal`. No unknown PID or other task was signalled. The process
+recorded **SIGTERM** at **0.592133 s** since launch; the signal receipt was observed
+in **0.010348 s**. Heartbeat stopped, the process was absent, and the original
+host handle returned **SYNTHETIC_FINISHED SIGTERM**, exit **0**.
+
+**Closed:** a positive, auditable cancellation path now exists for this controlled
+local Linux process adapter. **Not established:** a generic host terminate API,
+PTY Ctrl-C delivery, browser cancellation, non-cooperative tools or other host
+platforms. These are separate capabilities. Set cancel=true only for a proven,
+identity-safe adapter with its own bounded signal/escalation design; the current
+helper still performs no signals itself. Generic/unknown adapters retain the
+already-tested explicit degraded path. OUT-004 remains blocked for the remaining
+non-process host verification, not because all local cancellation is impossible.
+All EFF scope and the original failed records remain intact. Independent review
+is still awaiting authorization; no reviewer was launched.
+
+Evidence and reproducible probe source are appended to
+`2026-10-17-efficiency-host-probe.json`. Only evidence files changed; affected
+34-test efficiency checks were rerun successfully. Official Codex plugin validator
+availability is unchanged from the preceding check. No install, paid call,
+credential use, Actions, push or release occurred.
 
 <!-- littlepowers:verification:v1 -->
 ```json
@@ -482,7 +519,7 @@ specific blockers that cannot be advanced in the current exposed environment.
   },
   "blocking_evidence": [
     "review:independent-boundary-unavailable",
-    "host:cancellation-unverified"
+    "host:nonprocess-cancellation-unverified"
   ],
   "outcomes": [
     {
@@ -511,7 +548,7 @@ specific blockers that cannot be advanced in the current exposed environment.
       "status": "blocked",
       "evidence": [
         "test:efficiency-4",
-        "host:cancellation-unverified"
+        "host:nonprocess-cancellation-unverified"
       ]
     },
     {

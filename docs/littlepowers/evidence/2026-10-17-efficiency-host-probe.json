@@ -56,5 +56,63 @@
       "seconds": 0.314,
       "exit_code": 0
     }
+  },
+  "pty_and_explicit_signal_followup": {
+    "pty": {
+      "terminal": {
+        "requested_tty": true,
+        "isatty": true,
+        "character_device": true,
+        "ttyname": "/dev/console",
+        "foreground_group": {
+          "errno": 25,
+          "error": "Inappropriate ioctl for device"
+        },
+        "termios": {
+          "ISIG": true,
+          "ICANON": true,
+          "VINTR": "b'\\x03'"
+        }
+      },
+      "heartbeat_continues": true,
+      "signal_receipt": null
+    },
+    "pty_final": {
+      "reason": "SAFETY_DEADLINE",
+      "elapsed": 3.0145093319999887,
+      "heartbeats": 60
+    },
+    "explicit_signal": {
+      "signal": "SIGTERM",
+      "identity_checked": true,
+      "pidfd_bound": true,
+      "receipt": {
+        "reason": "SIGTERM",
+        "elapsed": 0.5921327290000136,
+        "heartbeats": 12
+      },
+      "receipt_latency_seconds": 0.010348101000090537,
+      "heartbeat_stopped": true,
+      "process_state": "absent"
+    },
+    "explicit_signal_tool_exit_code": 0,
+    "scope": "Verified only Linux local process termination through an authorized exec tool calling stdlib signal.pidfd_send_signal on its own newly-created identity-checked synthetic process. Not a generic host cancel API, browser or arbitrary tool capability.",
+    "correction": "Earlier tty=true was already requested. The negative Ctrl-C probe does not establish that the entire host lacks reliable cancellation. The explicit pidfd SIGTERM path is positively verified.",
+    "probe_source": "import json, os, signal, sys, time, termios, stat\nfrom pathlib import Path\nroot = Path(sys.argv[1])\nstarted = time.monotonic()\ncount = 0\n\ndef finish(reason):\n    (root / 'finished.json').write_text(json.dumps(dict(reason=reason, elapsed=time.monotonic()-started, heartbeats=count)))\n    print('SYNTHETIC_FINISHED '+reason, flush=True)\n    raise SystemExit(0)\n\ndef cancelled(signum, frame):\n    finish('SIGINT' if signum == signal.SIGINT else 'SIGTERM')\n\nsignal.signal(signal.SIGINT, cancelled)\nsignal.signal(signal.SIGTERM, cancelled)\ndiagnostics = {'requested_tty': True, 'isatty': os.isatty(0), 'character_device': stat.S_ISCHR(os.fstat(0).st_mode)}\nfor label, operation in [('ttyname', lambda: os.ttyname(0)), ('foreground_group', lambda: os.tcgetpgrp(0)), ('termios', lambda: termios.tcgetattr(0))]:\n    try:\n        value = operation()\n        if label == 'termios':\n            value = {'ISIG': bool(value[3] & termios.ISIG), 'ICANON': bool(value[3] & termios.ICANON), 'VINTR': repr(value[6][termios.VINTR])}\n        diagnostics[label] = value\n    except OSError as exc:\n        diagnostics[label] = {'errno': exc.errno, 'error': exc.strerror}\n(root / 'terminal.json').write_text(json.dumps(diagnostics))\n(root / 'started.json').write_text(json.dumps(dict(pid=os.getpid(), group=os.getpgrp(), tty=os.isatty(0))))\nprint('SYNTHETIC_STARTED', flush=True)\nwhile time.monotonic()-started < 3:\n    count += 1\n    (root / 'heartbeat.json').write_text(json.dumps(dict(count=count, elapsed=time.monotonic()-started)))\n    time.sleep(.05)\nfinish('SAFETY_DEADLINE')\n",
+    "signal_procedure": [
+      "Read PID from this newly-created synthetic probe started.json.",
+      "Open os.pidfd_open(pid) to bind that process lifetime.",
+      "Read only its /proc/PID/cmdline and require exact probe script plus unique synthetic directory arguments.",
+      "Require no finished receipt yet; signal.pidfd_send_signal(fd, signal.SIGTERM).",
+      "Wait up to 0.5 seconds for its signal receipt; compare heartbeat across 0.2 seconds; inspect this PID state; close fd.",
+      "Read completion from the original host handle."
+    ],
+    "verification": {
+      "reason": "SIGTERM",
+      "exit_code": 0,
+      "heartbeat_stopped": true,
+      "process_absent": true
+    },
+    "remaining": "PTY Ctrl-C signal delivery unavailable on tested console channel. Browser, non-cooperative tool and other host cancellation remain unverified; do not generalize process success."
   }
 }
