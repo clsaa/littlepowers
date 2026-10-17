@@ -134,14 +134,18 @@ or enforced leaf-depth control. The loaded
 limitation and continue single-agent; do not silently downgrade this gate to a
 prompt rule.” No nested CLI or prompt-only substitute was launched. An upstream
 independent reviewer can inspect the local commit; until then code-quality and
-overall acceptance remain blocked. No approval was invented.
+overall acceptance remain blocked. No approval was invented. The parent is
+requesting an exception for independent-context, read-only-convention review with
+before/after hashes; no reply has been received and no exception is assumed.
 
 Real Codex/Claude/Qoder/OpenCode browser or installed-plugin flows, macOS/Windows,
 non-cooperative tool cancellation, long-running compression and official Codex
 plugin validation remain unverified. Actual current-host probe details are in
 `2026-10-17-efficiency-host-probe.json`; handle reuse is observed, cancellation
 semantics are not established. These limitations are neither scope removal nor
-claims of full-host acceptance. The existing ledger remains active at verify.
+claims of full-host acceptance. The existing ledger remains active at verify. OUT-004 is explicitly blocked for
+the unverified real-host cancellation boundary: fixture EFF-08/EFF-10 success is
+not promoted to a real-host pass. All twelve EFF criteria remain in scope.
 
 <!-- littlepowers:verification:v1 -->
 ```json
@@ -428,7 +432,8 @@ claims of full-host acceptance. The existing ledger remains active at verify.
     ]
   },
   "blocking_evidence": [
-    "review:independent-boundary-unavailable"
+    "review:independent-boundary-unavailable",
+    "host:cancellation-unverified"
   ],
   "outcomes": [
     {
@@ -454,9 +459,10 @@ claims of full-host acceptance. The existing ledger remains active at verify.
     },
     {
       "outcome": "OUT-004",
-      "status": "pass",
+      "status": "blocked",
       "evidence": [
-        "test:efficiency-4"
+        "test:efficiency-4",
+        "host:cancellation-unverified"
       ]
     },
     {
