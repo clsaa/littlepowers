@@ -48,7 +48,7 @@ The existing root ledger stays at verify; no second authority was created.
 - `python3 -m unittest discover -s tests -v`: **298 tests, 12.928 s, exit 0**.
   Full output: `2026-10-17-efficiency-tests.txt`.
 - `python3 -m unittest discover -s tests -p 'test_efficiency*.py' -v`:
-  **34 tests, 0.313 s, exit 0**, after the final documentation clarification.
+  **34 tests, 0.314 s, exit 0**, after the final documentation clarification.
   Output: `2026-10-17-efficiency-focused.txt`.
 - `python3 -m compileall -q scripts hooks tests evals`, Node syntax for
   `.opencode/plugins/littlepowers.js`, Bash syntax for `hooks/run-hook.cmd`,
@@ -146,6 +146,55 @@ semantics are not established. These limitations are neither scope removal nor
 claims of full-host acceptance. The existing ledger remains active at verify. OUT-004 is explicitly blocked for
 the unverified real-host cancellation boundary: fixture EFF-08/EFF-10 success is
 not promoted to a real-host pass. All twelve EFF criteria remain in scope.
+
+## Follow-up: actual host cancellation and validator availability
+
+No review exception was approved and no independent reviewer was launched.
+The current tool schemas were read: `write_stdin` writes bytes to an existing
+session; it has no signal/terminate parameter or guaranteed cancellation receipt.
+`exec_command.yield_time_ms` bounds response waiting, not process execution.
+`functions.wait.terminate` terminates an orchestration cell, without a documented
+nested-process termination guarantee. None can honestly be declared a generic
+bounded cancellation capability solely from its name.
+
+A fresh, harmless synthetic Python process installed SIGINT/SIGTERM handlers,
+wrote a heartbeat every 50 ms and had its own 3-second safety deadline. After
+sending U+0003 via the actual existing host handle, it was still present, its
+heartbeat continued across a 200-ms comparison and no signal receipt existed.
+It finally wrote **SAFETY_DEADLINE**, elapsed **3.013237 seconds**, with **60
+heartbeats**. Heartbeat then stopped; exact synthetic PID state was **Z** (exited
+zombie), not a running task. Tool exit code was 1 despite the program's normal
+exit; this further demonstrates why tool exit alone was insufficient. No real
+process/task was signalled. Two setup diagnostics failed with ENOTTY on
+`tcgetpgrp`; that optional diagnostic was removed before the valid probe. They
+are reported as probe setup errors, not cancellation observations or model cost.
+The full reproducible source, procedure and structured observations are retained
+in `2026-10-17-efficiency-host-probe.json`.
+
+Thus the evidence uncertainty is closed with a **negative capability result for
+this probed path**: Ctrl-C input does not provide reliable process cancellation.
+The existing fallback remains correct: capabilities.cancel=false returns degraded
+without invoking an observer. The local asyncio fixture still proves cooperative
+cancellation, deadlines and report timing only. OUT-004 stays blocked because its
+host-bounded-wait requirement has no verified positive real-host cancellation
+path here; neither a self-expiring synthetic process nor a local fixture can
+substitute for arbitrary authorized-tool cancellation. No EFF criterion was
+removed or silently reclassified as a real-host pass.
+
+Codex **0.159.0-alpha.3** help/debug/plugin surfaces and explicit installed
+skill/plugin directories (including hidden names) were checked. `codex plugin
+validate --help` exits **2**, reporting “unrecognized subcommand 'validate'”.
+No official validate_plugin/validate_plugins/plugin_validator entry was found.
+No software was installed, no credentials/models were used, and no Actions were
+run. Existing Claude/skill validation is not a replacement for this absent check.
+
+Affected efficiency tests reran: **34 tests, 0.314 s, exit 0**, including the
+zero-call degraded path and real local cooperative cancellation. Production
+code, test code, protocols and benchmark inputs are unchanged from the 298-test
+candidate; therefore the broad suite and measured A/B results remain applicable.
+Only evidence files changed in this follow-up. Independent review approval and
+the absent real-host cancellation/official validator capabilities remain the
+specific blockers that cannot be advanced in the current exposed environment.
 
 <!-- littlepowers:verification:v1 -->
 ```json

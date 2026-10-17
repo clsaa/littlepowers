@@ -5,8 +5,56 @@
   "start_wall_seconds": 0.251243172,
   "cancel_wall_seconds": 1.001290339,
   "completed": true,
-  "followup_wall_seconds": 0.000022207,
+  "followup_wall_seconds": 2.2207e-05,
   "exit_code": 1,
   "cancellation_confirmed": false,
-  "interpretation": "Actual exposed exec_command/write_stdin created and reused one synthetic process handle. Cancel was sent but exit code 1 without causal diagnostics does not establish bounded cancellation; capability remains unverified and batching must degrade. No browser or other host certification."
+  "interpretation": "Actual exposed exec_command/write_stdin created and reused one synthetic process handle. Cancel was sent but exit code 1 without causal diagnostics does not establish bounded cancellation; capability remains unverified and batching must degrade. No browser or other host certification.",
+  "followup": {
+    "tool_contract": {
+      "exec_command": "yield_time_ms bounds tool response waiting, not process lifetime; tty requests a PTY",
+      "write_stdin": "writes bytes to existing session; no signal/terminate parameter or guaranteed cancellation receipt",
+      "functions.wait": "terminate stops orchestration cell; not a documented guarantee of nested process termination"
+    },
+    "probe_scope": "one synthetic Python process, explicit signal handlers, 50-ms heartbeat, 3-second self-stop, no external work",
+    "after_ctrl_c": {
+      "process_present": true,
+      "heartbeat_stopped": false,
+      "signal_receipt": null
+    },
+    "final": {
+      "reason": "SAFETY_DEADLINE",
+      "elapsed_seconds": 3.0132365659999323,
+      "heartbeats": 60,
+      "heartbeat_stopped": true,
+      "process_state": "Z",
+      "running": false,
+      "tool_exit_code": 1
+    },
+    "verdict": "Ctrl-C bytes did not cancel this actual host process; only its own safety deadline ended it. Set cancel capability false for this path.",
+    "setup_failures": {
+      "count": 2,
+      "reason": "tcgetpgrp raised ENOTTY even though isatty was true; removed optional foreground diagnostic before valid probe. No original failing expression was retried unchanged."
+    },
+    "reproducible_probe_source": "import json, os, signal, sys, time\nfrom pathlib import Path\nroot = Path(sys.argv[1])\nstarted = time.monotonic()\ncount = 0\n\ndef finish(reason):\n    (root / 'finished.json').write_text(json.dumps(dict(reason=reason, elapsed=time.monotonic()-started, heartbeats=count)))\n    print('SYNTHETIC_FINISHED '+reason, flush=True)\n    raise SystemExit(0)\n\ndef cancelled(signum, frame):\n    finish('SIGINT' if signum == signal.SIGINT else 'SIGTERM')\n\nsignal.signal(signal.SIGINT, cancelled)\nsignal.signal(signal.SIGTERM, cancelled)\n(root / 'started.json').write_text(json.dumps(dict(pid=os.getpid(), group=os.getpgrp(), tty=os.isatty(0))))\nprint('SYNTHETIC_STARTED', flush=True)\nwhile time.monotonic()-started < 3:\n    count += 1\n    (root / 'heartbeat.json').write_text(json.dumps(dict(count=count, elapsed=time.monotonic()-started)))\n    time.sleep(.05)\nfinish('SAFETY_DEADLINE')\n",
+    "verification_method": "Create empty synthetic temp directory; write source to probe.py; exec python3 -u probe.py DIRECTORY with tty=true, login=false, yield_time_ms=250; send U+0003 through same write_stdin handle; compare heartbeat bytes 200ms apart and inspect finished.json; poll handle after safety bound; inspect only this synthetic PID state to distinguish zombie from running.",
+    "codex_validator": {
+      "version": "0.159.0-alpha.3",
+      "plugin_validate_help_exit": 2,
+      "diagnostic": "unrecognized subcommand 'validate'",
+      "local_roots_checked": [
+        "installed Codex skills",
+        "installed Codex plugins",
+        "primary-runtime plugins",
+        "workspace agent/tool definitions"
+      ],
+      "matching_official_validator_files": 0,
+      "installed_or_credentials_used": false
+    },
+    "affected_tests": {
+      "command": "python3 -m unittest discover -s tests -p 'test_efficiency*.py' -v",
+      "count": 34,
+      "seconds": 0.314,
+      "exit_code": 0
+    }
+  }
 }
