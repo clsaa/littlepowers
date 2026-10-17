@@ -1,6 +1,11 @@
 # Execution efficiency: local candidate evidence — 2026-10-17
 
-Status: local implementation and synthetic verification available; **independent
+Historical candidate record. Current final verification is in
+[the 1.5.0 release evidence](2026-10-17-v1.5.0-release.md), which records the
+authorized independent review, repaired scalar-input defect and scoped
+acceptance of capability degradation. The historical failures below are retained.
+
+Status at the original candidate boundary: local implementation and synthetic verification available; **independent
 review pending / overall acceptance blocked**. Do not report the feature fully
 accepted, certified on all hosts, or released. Baseline commit:
 `6f3d897098674cbd6d40dbe87e1d79475900659f`. One local candidate commit is intended;

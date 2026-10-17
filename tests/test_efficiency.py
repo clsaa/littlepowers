@@ -301,6 +301,17 @@ class PolicyTests(unittest.TestCase):
                 imported.add(node.module)
         self.assertLessEqual(imported, {'__future__','copy','hashlib','json','re','sys','datetime'})
 
+    def test_cli_json_scalars_return_structured_error(self):
+        for raw in ('null', 'true', 'false', '1', '"text"'):
+            with self.subTest(raw=raw):
+                result = subprocess.run([sys.executable, str(ROOT / 'scripts/littlepowers_efficiency.py')],
+                                        input=raw, text=True, capture_output=True)
+                self.assertEqual(result.returncode, 2)
+                error = json.loads(result.stdout)
+                self.assertEqual(error['result'], 'ERROR')
+                self.assertFalse(error['evidence_complete'])
+                self.assertEqual(result.stderr, '')
+
     def test_cli_duplicate_keys_and_malformed_input_fail_closed(self):
         for raw in ('{}', '{"operation":"pack","operation":"observe"}', '[]', '{"bad":NaN}'):
             result = subprocess.run([sys.executable, str(ROOT / 'scripts/littlepowers_efficiency.py')],

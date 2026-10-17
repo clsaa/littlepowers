@@ -4,6 +4,34 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-17
+
+### Added
+
+- On-demand execution-efficiency protocol and pure Python standard-library helper
+  for evidence-first summaries, planned-check coverage, critical findings,
+  explicit supplemental reads and preserved visual references.
+- Stable entity-keyed semantic differences and scope-bound candidate cursors with
+  pending-event recovery and explicit acknowledgments; saving is not delivery.
+- Host capability/deadline proposals, conservative error classification and
+  explicit degradation. No automatic retry, monitoring, telemetry or new gate.
+- Synthetic behavior tests, bounded cooperative host fixtures and an opt-in
+  local text-cost experiment. Three paired 40-observation runs reduced emitted
+  text from 807,710 to 3,759 characters while increasing local wall time; model
+  requests/context/compression were not measured.
+
+### Boundaries
+
+- Protocol 1.3 and ledger schema 4 are unchanged. The new efficiency JSON schema
+  is v1; this additive feature motivates the minor version, not a new legacy-data
+  migration or compatibility layer.
+- Local Linux pidfd process termination is verified; console Ctrl-C, browser and
+  other host cancellation are separate capabilities. Missing capabilities degrade.
+- Independent review uses the explicitly approved independent-context, read-only
+  convention and before/after hashes, not enforced isolation. The user approved
+  the no-new-Actions release path and official Codex plugin-validator exception.
+  No new cross-platform CI or universal installed-host certification is claimed.
+
 ## [1.4.3] - 2026-10-01
 
 ### Fixed

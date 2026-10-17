@@ -2,7 +2,7 @@
 
 **Reviewed:** 2026-09-20
 
-**Release:** 1.4.3
+**Release:** 1.5.0
 
 ## Assets and trust boundary
 
@@ -272,3 +272,13 @@ redaction guarantee. Files use exclusive creation and POSIX mode 0600; Windows
 access controls remain host-owned. Neither mode changes the host's own session
 history. The runner records process results, not independently graded task
 success, and does not certify installed-plugin behavior.
+
+## Execution-efficiency boundary (1.5.0)
+
+The optional helper receives explicit JSON and returns proposals. It performs no
+filesystem reads, tool/network/browser/agent calls, retries or ledger writes.
+Evidence references grant no access. Receipts and domain findings are adapter
+assertions; checksums detect corruption, not hostile authorship. Root owns
+atomic, per-scope cursor persistence and confirms delivery separately from saves.
+Pending events are read-only data and never authorize replaying business writes.
+Existing Outcome Lock, Review Lease and delegation controls remain authoritative.

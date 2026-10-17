@@ -134,10 +134,10 @@ Codex CLI 0.152.0 起默认关闭计划工具。需要原生清单时，在 Code
 其中的 `enabled = true`），随后新建会话；若桌面端仍沿用旧配置，再重启应用。
 这不会更改模型/思考强度或开启子 Agent，Littlepowers 不会未经允许自动修改配置。
 
-按精确 tag 安装稳定版 1.4.3：
+按精确 tag 安装 1.5.0：
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v1.4.3
+codex plugin marketplace add clsaa/littlepowers --ref v1.5.0
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -160,10 +160,10 @@ Codex 的 Queue 用于延迟消息，`/side` 或 `/btw` 用于无关问题。Lit
 使用 tag 固定的本地 marketplace 安装精确版本：
 
 ```bash
-git clone --depth 1 --branch v1.4.3 \
+git clone --depth 1 --branch v1.5.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.3
-claude plugin marketplace add /absolute/path/littlepowers-v1.4.3
+  /absolute/path/littlepowers-v1.5.0
+claude plugin marketplace add /absolute/path/littlepowers-v1.5.0
 claude plugin install littlepowers@littlepowers
 ```
 
@@ -196,10 +196,10 @@ Qoder CLI 与 Qoder IDE 共用同一套插件结构。
 使用 tag 固定的本地检出安装精确版本：
 
 ```bash
-git clone --depth 1 --branch v1.4.3 \
+git clone --depth 1 --branch v1.5.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.3
-qodercli plugins install /absolute/path/littlepowers-v1.4.3
+  /absolute/path/littlepowers-v1.5.0
+qodercli plugins install /absolute/path/littlepowers-v1.5.0
 ```
 
 本地检出可用 `qodercli plugins install /path/to/littlepowers` 安装。重启会话或执行 `/skills reload`，并先检查插件 Hook 再信任。Qoder IDE 通过 Marketplace 面板安装，或导入本地插件目录。
@@ -224,7 +224,7 @@ qodercli plugins install /absolute/path/littlepowers-v1.4.3
 
 ```json
 {
-  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.4.3"]
+  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.5.0"]
 }
 ```
 
@@ -322,33 +322,33 @@ schema-4 当前 ledger；若要回退到 1.2，应先取消开放的 Review Gate
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v1.4.3
+codex plugin marketplace add clsaa/littlepowers --ref v1.5.0
 codex plugin add littlepowers@littlepowers
 ```
 
 回滚时把 `--ref` 换成目标旧 tag。Claude Code 使用独立的 tag 检出作为 marketplace：
 
 ```bash
-git clone --depth 1 --branch v1.4.3 \
+git clone --depth 1 --branch v1.5.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.3
+  /absolute/path/littlepowers-v1.5.0
 claude plugin uninstall littlepowers@littlepowers
 claude plugin marketplace remove littlepowers
-claude plugin marketplace add /absolute/path/littlepowers-v1.4.3
+claude plugin marketplace add /absolute/path/littlepowers-v1.5.0
 claude plugin install littlepowers@littlepowers
 ```
 
 Qoder CLI 直接安装同一个 tag 检出：
 
 ```bash
-git clone --depth 1 --branch v1.4.3 \
+git clone --depth 1 --branch v1.5.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.4.3
+  /absolute/path/littlepowers-v1.5.0
 qodercli plugins uninstall littlepowers
-qodercli plugins install /absolute/path/littlepowers-v1.4.3
+qodercli plugins install /absolute/path/littlepowers-v1.5.0
 ```
 
-OpenCode 把 git 插件 URL 的 `#v1.4.3` 后缀换成目标 tag，必要时强制刷新包缓存并重启。任何宿主更新后都应新建任务/会话，确认 11 个技能并运行管理技能的 `doctor`；插件 reload 不等于 ledger 迁移。
+OpenCode 把 git 插件 URL 的 `#v1.5.0` 后缀换成目标 tag，必要时强制刷新包缓存并重启。任何宿主更新后都应新建任务/会话，确认 11 个技能并运行管理技能的 `doctor`；插件 reload 不等于 ledger 迁移。
 
 ## 隐私与安全
 
@@ -444,3 +444,7 @@ Verification Record 的 `inputs`。记录验证及完成时都会重新核对声
 哈希仅覆盖显式声明的文件字节和缺失状态，不证明测试执行，不自动覆盖其他文件、
 环境或宿主 Hook。隐藏路径等不受支持的输入必须另行说明限制。
 详见[范围与迁移](references/outcome-lock.md#verification-input-freshness-142)。
+
+## 按需执行效率（1.5.0）
+
+大输出、独立检查及重复状态观察可按需使用[执行效率协议](references/execution-efficiency.md)：先保存完整证据，再返回检查覆盖、关键问题、视觉引用和语义变化。辅助器只提出摘要与 cursor，宿主负责工具、时限和取消，root 在正常边界保存；不新增监控器、遥测或审批权威。能力缺失时明确降级，保存不等于报告送达。本地夹具及已验证的 Linux 进程终止不代表浏览器或所有宿主均已验证。

@@ -439,6 +439,7 @@ def main():
         require(len(raw) <= MAX_BYTES, 'input exceeds 2 MiB')
         data = json.loads(raw, object_pairs_hook=no_duplicates)
         canonical(data)
+        require(isinstance(data, dict), 'input must be an object')
         operation = data.pop('operation')
         functions = {'pack': pack, 'observe': observe, 'acknowledge': acknowledge,
                      'restore': restore, 'classify_error': classify_error, 'batch_decision': batch_decision}

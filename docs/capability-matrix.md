@@ -1,8 +1,8 @@
 # Capability matrix
 
-**Reviewed:** 2026-09-20
+**Reviewed:** 2026-10-17 (execution-efficiency additions; prior host evidence retains its original scope)
 
-**Release:** 1.4.3
+**Release:** 1.5.0
 
 Littlepowers is checkpoint-assisted recovery. The table separates host events, durable state, and model behavior.
 
@@ -176,3 +176,21 @@ Littlepowers is checkpoint-assisted recovery. The table separates host events, d
   prose.
 - A background-continuation guarantee when the host lacks the exact one-shot
   capability or the sleeper/callback is lost.
+
+## Execution efficiency in 1.5.0
+
+| Surface | Verified behavior | Limit |
+| --- | --- | --- |
+| Pure standard-library helper | Evidence-first summary validation, coverage, critical findings/visual refs, stable semantic differences and recoverable pending events | Adapter supplies domain meaning and truthful evidence receipts; core never calls tools or reads files |
+| Host-owned batching | Independent reads retain each result; local asyncio fixture enforces deadlines, cancellation and periodic reporting | Fixture evidence is not installed-host or browser certification |
+| Current Linux process probe | Identity-checked pidfd SIGTERM delivered, receipt recorded, heartbeat stopped and process disappeared | Only a controlled local process; console Ctrl-C input was ineffective despite tty=true |
+| Missing host timeout/cancel/handle capability | Explicit degraded proposal; test verifies zero observer calls | No zero-model monitoring or universal cancellation claim |
+| Cursor and recovery | Scope/integrity/age/evidence checks; pending report survives save-before-return; explicit receipt acknowledgment | Root-only normal-boundary persistence; at-least-once read-only reporting, not exactly-once or business-action replay |
+
+All twelve EFF criteria remain in the implementation acceptance scope. Independent
+review uses the user-approved independent-context/read-only/hash procedure, not
+forced isolation. No-new-Actions publication and the unavailable official Codex
+validator exception were explicitly approved for this release. These exceptions
+are not passing platform or validator results.
+See [protocol](../references/execution-efficiency.md) and
+[measured evidence](littlepowers/evidence/2026-10-17-execution-efficiency.md).
