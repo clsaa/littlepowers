@@ -4,6 +4,24 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+### Fixed
+
+- Let failed/blocked fidelity comparisons enter lawful repair-plan review;
+  missing or drifted approved sources, incomplete coverage, scope changes and
+  required approvals still block. Failure is not baseline unavailability.
+- Invalidate current verification when returning to execution and preserve the
+  last evidence artifact for recovery across plan validation and contract rebind.
+  Historical evidence is not completion authority and must not be overwritten.
+
+### Changed
+
+- Add on-demand user-task acceptance guidance for the original journey,
+  historical data, applicable terminals, actual tool capabilities and scoped
+  approved exemptions; avoid repeated browser foreground requests.
+- Define per-check evidence reuse/invalidation and existing-host log/operation
+  receipt reuse. No schema change, automatic full-suite run, new dependency,
+  background scan, extra model call or automatic subagent.
+
 ## [1.5.0] - 2026-10-17
 
 ### Added

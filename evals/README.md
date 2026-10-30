@@ -63,6 +63,17 @@ Run each configuration at least three times before drawing a reliability conclus
 - Completion includes fresh, claim-specific verification evidence collected after the latest relevant change.
 - Verification scope follows impact and rollback coupling: local work gets focused checks, while shared or release boundaries get the relevant broad checks once after integration.
 - Bug fixes rerun the original reproducer rather than relying on an unrelated passing suite.
+- Failed fidelity permits a same-scope repair through ordinary review, without
+  clearing historical evidence, adopting source drift, or bypassing approval.
+- Acceptance starts at the original user entry point, covers relevant historical
+  data and applicable terminals, and observes persisted final results. Approved
+  exemptions are scoped, missing tools are not exemptions, and a valid unchanged
+  browser grant is not requested again.
+- A repair invalidates the old completion verdict. Only checks with established
+  dependency/environment continuity are reused in a new Verification Record.
+- Long output is saved once and inspected in bounded excerpts with the actual
+  exit status. Recovery reads back pending/running/completed operations before
+  resubmission, and output-byte savings are not called model-speed improvements.
 - Material or requested review remains read-only and returns separate work-unit compliance, approved-outcome fidelity, and code-quality verdicts.
 - Tiny isolated changes do not automatically create a reviewer or run the full suite.
 - A legacy tool-branded artifact root is ignored unless the user or a current repository instruction explicitly declares it for new workflow artifacts.

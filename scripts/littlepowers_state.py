@@ -4295,7 +4295,8 @@ def command_bind_contract(
         baseline_requirement = contract["baseline"]["requirement"]
         code_quality_required = contract["review"]["code_quality_required"]
         state["artifacts"]["contract"] = artifact
-        state["artifacts"]["evidence"] = None
+        # Keep the last report discoverable for recovery, not completion authority.
+        # The new lock below independently invalidates current verification.
         state["outcome_lock"] = {
             "mode": "artifact",
             "status": "bound",
@@ -4619,6 +4620,21 @@ def _require_execution_ready(
         raise StateError("execution gate failed: " + "; ".join(failures))
 
 
+def _invalidate_current_verification(state: dict[str, Any]) -> None:
+    """Invalidate eligibility while retaining the last evidence artifact for recovery."""
+
+    lock = state["outcome_lock"]
+    lock["verification"] = _pending_verification_summary(
+        code_quality_required=lock["contract"]["code_quality_required"]
+    )
+    lock["baseline"]["passed_comparisons"] = 0
+    lock["baseline"]["status"] = (
+        "bound"
+        if lock["baseline"]["requirement"] == "required"
+        else "not_applicable"
+    )
+
+
 def command_validate_plan(
     args: argparse.Namespace, root: Path
 ) -> dict[str, Any]:
@@ -4669,18 +4685,8 @@ def command_validate_plan(
             "semantic_digest": protocol_digest(plan_map),
             "coverage": _coverage_state(result),
         }
-        code_quality_required = lock["contract"]["code_quality_required"]
-        lock["verification"] = _pending_verification_summary(
-            code_quality_required=code_quality_required
-        )
-        lock["baseline"]["passed_comparisons"] = 0
-        lock["baseline"]["status"] = (
-            "bound"
-            if lock["baseline"]["requirement"] == "required"
-            else "not_applicable"
-        )
+        _invalidate_current_verification(state)
         lock["last_checked_at"] = utc_now()
-        state["artifacts"]["evidence"] = None
         if contract["route"] == "compact":
             state["artifacts"]["shape"] = artifact
         else:
@@ -4781,8 +4787,11 @@ def _review_gate_fresh_failures(
 
     if lock["baseline"]["requirement"] == "required" and lock["baseline"][
         "status"
-    ] not in {"bound", "pending", "pass"}:
+    ] not in {"bound", "pending", "pass", "fail", "blocked"}:
         failures.append("approved_baseline_unavailable")
+    # fail/blocked describe the previous comparison, not source availability.
+    # observe_bound_contract above still rejects missing or drifted baselines;
+    # approval, coverage, and completion checks remain independent.
 
     if gate["artifact_key"] in {"plan", "shape"}:
         try:
@@ -5450,6 +5459,13 @@ def command_checkpoint(args: argparse.Namespace, root: Path) -> dict[str, Any]:
             _require_execution_ready(root, state, fresh=False)
             if target_phase != current_phase:
                 state["outcome_lock"]["last_checked_at"] = utc_now()
+        if (
+            target_phase == "execute"
+            and state["outcome_lock"]["verification"]["artifact"] is not None
+        ):
+            # A repair/re-execution cannot finish using an earlier passing run.
+            # Retain artifacts.evidence so the previous failure/pass is readable.
+            _invalidate_current_verification(state)
         _advance_revision(state)
         _write_state_unlocked(
             root, state, directory_fd, legacy_state=legacy
@@ -5767,6 +5783,19 @@ def completion_gate_failures(
     if contract is not None:
         for failure in observe_current_plan(root, state, contract):
             add(failure)
+    plan_artifact = lock["plan"]["artifact"]
+    if plan_artifact is not None:
+        try:
+            _require_review_resolution(
+                root,
+                state,
+                plan_artifact,
+                artifact_keys={"plan", "shape"},
+                consumption_key="plan_validation_revision",
+                consumed=True,
+            )
+        except StateError as exc:
+            add(str(exc))
 
     verification_state = lock["verification"]
     artifact = verification_state["artifact"]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+import re
 from pathlib import Path
 
 
@@ -12,6 +13,16 @@ def read_skill(name: str) -> str:
 
 
 class EngineeringDisciplineTests(unittest.TestCase):
+    def test_acceptance_reference_is_reachable_from_applicable_routes(self) -> None:
+        for name in ("writing-plans", "compact-shaping", "executing-plans", "verifying-work"):
+            with self.subTest(skill=name):
+                path = ROOT / "skills" / name / "SKILL.md"
+                links = re.findall(r"\]\(([^)]+)\)", path.read_text(encoding="utf-8"))
+                targets = [(path.parent / link).resolve() for link in links if not "://" in link]
+                reference = ROOT / "references/acceptance-and-evidence.md"
+                self.assertIn(reference, targets)
+                self.assertTrue(reference.is_file())
+
     def test_debugging_contract(self) -> None:
         skill = read_skill("debugging-systematically").lower()
 

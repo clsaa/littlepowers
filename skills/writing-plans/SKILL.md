@@ -38,6 +38,12 @@ Order tasks as one continuous implementation stream. Mark the root coordinator a
 
 Map every parent and immediate requirement to a task and include final integration verification and diff review against the approved outcome. Before checkpointing, verify that every task names an observable outcome, interface, rollback unit, and executable check with no placeholder decisions. Include commits only when the user requested them.
 
+For user-facing acceptance or a repair plan, use
+[acceptance-and-evidence](../../references/acceptance-and-evidence.md) to name
+the original journey, relevant historical data, applicable terminals, available
+tools and approved exemptions. A failed comparison is a repair input, not a
+reason to shrink scope or demand a passing result before reviewing the repair.
+
 ## Mirror the host plan surface
 
 The Markdown plan file is the durable source of truth. For a meaningful

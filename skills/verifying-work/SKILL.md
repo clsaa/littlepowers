@@ -11,6 +11,12 @@ Match every success claim to fresh observable evidence. Test count alone is not 
 
 List the immediate and inherited acceptance claims that the final report must support. Include the approved outcome, original symptom for a bug, affected contracts for connected work, approved baseline for fidelity work, and package or platform claims for a release. Do not claim more than the available environment can verify.
 
+For user-facing acceptance, repair after failed acceptance, or reuse of earlier
+evidence, read [acceptance-and-evidence](../../references/acceptance-and-evidence.md).
+Fix the applicable terminals, tools, historical-data coverage and approved
+exemptions before the run. Follow the original user's journey through its final
+observable result; an implementation demo or passing unit suite is not enough.
+
 Inspect the changes since the last evidence was collected. A check becomes stale after any relevant code, configuration, dependency, generated artifact, or environment change. Rerun it when ordering is uncertain.
 
 ## Classify impact and rollback scope
@@ -77,7 +83,9 @@ For a tracked workflow, read
 active `OUT-###`, every required `FID-###`, explicit fidelity evidence paths,
 blocking evidence, and independent work-unit compliance, approved-outcome
 fidelity, and code-quality verdicts. A valid `fail` or `blocked` record is
-useful recovery evidence; do not rewrite it as pass.
+useful recovery evidence; do not rewrite it as pass. Preserve distinct attempt
+files. A lawful repair may return to execution or normal plan review without
+first passing acceptance; it cannot bypass approval or completion gates.
 
 Record it before completion:
 

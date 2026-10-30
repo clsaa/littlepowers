@@ -73,6 +73,12 @@ Status is `no_gate`, `waiting`, `eligible`, or `blocked`. It freshly checks the
 artifact and applicable Contract, Plan Map, scope, and baseline boundaries.
 Hooks never run this check.
 
+An earlier fidelity `fail`/`blocked` is a comparison result, not proof that its
+approved baseline is unavailable. A scope-preserving repair plan can be reviewed
+under the existing policy. Source availability/drift, coverage and scope checks
+remain fresh, and a blocking policy still needs explicit approval. Completion
+is a separate gate; never erase a failed report to make repair review eligible.
+
 Resolve only with the kind required by the stored policy:
 
 ```bash

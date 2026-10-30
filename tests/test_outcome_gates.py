@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -536,6 +537,218 @@ class OutcomeGateTests(unittest.TestCase):
         assert persisted is not None
         self.assertEqual(persisted["revision"], verifying["revision"])
         self.assertIsNone(persisted["outcome_lock"]["verification"]["artifact"])
+
+    def failed_fidelity(self, result: str, *, route: str = "lean") -> dict[str, object]:
+        """Persist real historical failure state before attempting a repair."""
+        (self.root / "docs/product/approved-output.txt").write_text(
+            "approved output\n", encoding="utf-8"
+        )
+        (self.root / "artifacts/evidence/output.txt").write_text(
+            "observed mismatch or unavailable surface\n", encoding="utf-8"
+        )
+        contract = contract_record(fidelity=True)
+        contract["route"] = route
+        self.contract_path.write_text(block("contract", contract), encoding="utf-8")
+        if route == "compact":
+            self.plan_path.write_text(
+                block("contract", contract) + block("plan-map", plan_map()),
+                encoding="utf-8",
+            )
+            approved = self.approve_artifact(
+                self.state, key="shape", relative="docs/plans/plan.md"
+            )
+            bound = state_module.command_bind_contract(
+                self.writer(approved, artifact="docs/plans/plan.md", approval_kind="review-gate"),
+                self.root,
+            )
+            planned = self.validate_plan(bound, approve=False)
+            verifying = self.checkpoint(planned, phase="verify")
+        else:
+            verifying = self.ready_for_verify()
+        record = verification_record(fidelity=True, outcome_fidelity=result)
+        record["fidelity"][0]["result"] = result
+        self.evidence_path.write_text(block("verification", record), encoding="utf-8")
+        return self.record_verification(verifying)
+
+    def park_repair(self, recorded: dict[str, object], *, compact: bool = False) -> dict[str, object]:
+        key = "shape" if compact else "plan"
+        planning = self.checkpoint(recorded, phase=key, next_action="Review same-scope repair")
+        content = self.plan_path.read_text(encoding="utf-8")
+        self.plan_path.write_text(content + "\nRepair the mismatch; retain every outcome.\n", encoding="utf-8")
+        return state_module.command_park_review(
+            self.writer(planning, artifact_key=key, scope_delta="none", unresolved_questions=0),
+            self.root,
+        )
+
+    def assert_repair_cycle(self, *, route: str, result: str, mode: str) -> None:
+        recorded = self.failed_fidelity(result, route=route)
+        historical = self.evidence_path.read_bytes()
+        recorded = state_module.command_set_review_policy(
+            self.writer(recorded, mode=mode), self.root
+        )
+        parked = self.park_repair(recorded, compact=route == "compact")
+        status = state_module.review_gate_status(
+            self.root, parked, gate_revision=parked["revision"]
+        )
+        self.assertEqual(status["status"], "waiting" if mode == "blocking" else "eligible")
+        with self.assertRaisesRegex(state_module.StateError, "[Rr]eview"):
+            self.validate_plan(parked, approve=False)
+        with self.assertRaises(state_module.StateError):
+            state_module.command_finish(self.writer(parked), self.root, "complete")
+        resolved = state_module.command_resolve_review(
+            self.writer(parked, kind="explicit_approval" if mode == "blocking" else mode), self.root
+        )
+        repaired_plan = self.validate_plan(resolved, approve=False)
+        self.assertEqual(repaired_plan["artifacts"]["evidence"], "docs/evidence/verification.md")
+        self.assertIsNone(repaired_plan["outcome_lock"]["verification"]["artifact"])
+        executing = self.checkpoint(repaired_plan, phase="execute")
+        verifying = self.checkpoint(executing, phase="verify")
+        with self.assertRaisesRegex(state_module.StateError, "Verification Record"):
+            state_module.command_finish(self.writer(verifying), self.root, "complete")
+        fresh_path = self.root / "docs/evidence/repaired.md"
+        fresh_record = verification_record(fidelity=True)
+        fresh_record["fidelity"][0]["evidence_path"] = "artifacts/evidence/repaired-output.txt"
+        (self.root / "artifacts/evidence/repaired-output.txt").write_text(
+            "approved output\n", encoding="utf-8"
+        )
+        self.assertEqual(
+            (self.root / "artifacts/evidence/repaired-output.txt").read_bytes(),
+            (self.root / "docs/product/approved-output.txt").read_bytes(),
+        )
+        fresh_path.write_text(
+            "Supersedes verification.md; prior failure retained.\n" +
+            block("verification", fresh_record), encoding="utf-8"
+        )
+        verified = state_module.command_record_verification(
+            self.writer(verifying, artifact="docs/evidence/repaired.md"), self.root
+        )
+        finished = state_module.command_finish(self.writer(verified), self.root, "complete")
+        self.assertEqual(finished["status"], "complete")
+        self.assertEqual(finished["workflow_id"], recorded["workflow_id"])
+        self.assertEqual(self.evidence_path.read_bytes(), historical)
+
+    def test_failed_fidelity_allows_approved_lean_repair_without_erasing_history(self) -> None:
+        self.assert_repair_cycle(route="lean", result="fail", mode="blocking")
+
+    def test_blocked_fidelity_allows_compact_repair_under_existing_mandate(self) -> None:
+        self.assert_repair_cycle(route="compact", result="blocked", mode="implementation_mandate")
+
+    def test_failed_fidelity_allows_full_repair_under_explicit_approval(self) -> None:
+        self.assert_repair_cycle(route="full", result="fail", mode="blocking")
+
+    def test_failed_fidelity_does_not_bypass_missing_baseline_or_source_drift(self) -> None:
+        recorded = self.failed_fidelity("fail")
+        parked = self.park_repair(recorded)
+        source = self.root / "docs/product/approved-output.txt"
+        for missing in (False, True):
+            with self.subTest(missing=missing):
+                if missing:
+                    source.unlink()
+                else:
+                    source.write_text("unapproved replacement", encoding="utf-8")
+                status = state_module.review_gate_status(self.root, parked, gate_revision=parked["revision"])
+                self.assertEqual(status["status"], "blocked")
+                self.assertIn("contract_drift", status["reasons"])
+                with self.assertRaises(state_module.StateError):
+                    state_module.command_resolve_review(self.writer(parked, kind="explicit_approval"), self.root)
+                self.assertEqual(state_module.load_state(self.root)["revision"], parked["revision"])
+
+    def test_failed_fidelity_does_not_approve_narrow_repair_or_wrong_policy(self) -> None:
+        recorded = self.failed_fidelity("blocked", route="full")
+        recorded = state_module.command_set_review_policy(self.writer(recorded, mode="implementation_mandate"), self.root)
+        self.write_plan(include_second=False)
+        parked = self.park_repair(recorded)
+        status = state_module.review_gate_status(self.root, parked, gate_revision=parked["revision"])
+        self.assertEqual(status["status"], "blocked")
+        self.assertIn("plan_coverage_incomplete", status["reasons"])
+        self.assertIn("implementation_mandate_requires_lean_or_compact", status["reasons"])
+        with self.assertRaises(state_module.StateError):
+            state_module.command_resolve_review(self.writer(parked, kind="implementation_mandate"), self.root)
+
+    def test_repair_execution_invalidates_old_pass_but_keeps_recovery_reference(self) -> None:
+        verified = self.record_verification(self.ready_for_verify())
+        # Status-only progress must not discard usable evidence.
+        unchanged = self.checkpoint(verified, next_action="Inspect result")
+        self.assertEqual(unchanged["outcome_lock"]["verification"], verified["outcome_lock"]["verification"])
+        historical = self.evidence_path.read_bytes()
+        executing = self.checkpoint(unchanged, phase="execute", next_action="Repair an observed issue")
+        self.assertEqual(executing["artifacts"]["evidence"], "docs/evidence/verification.md")
+        self.assertEqual(executing["outcome_lock"]["verification"]["work_unit"], "pending")
+        verifying = self.checkpoint(executing, phase="verify")
+        with self.assertRaisesRegex(state_module.StateError, "Verification Record"):
+            state_module.command_finish(self.writer(verifying), self.root, "complete")
+        self.assertEqual(self.evidence_path.read_bytes(), historical)
+
+    def test_contract_rebind_preserves_historical_evidence_without_eligibility(self) -> None:
+        verified = self.record_verification(self.ready_for_verify())
+        historical = self.evidence_path.read_bytes()
+        planning = self.checkpoint(verified, phase="spec")
+        rebound = self.bind(planning)
+        self.assertEqual(rebound["artifacts"]["evidence"], "docs/evidence/verification.md")
+        self.assertIsNone(rebound["outcome_lock"]["verification"]["artifact"])
+        self.assertEqual(self.evidence_path.read_bytes(), historical)
+
+    def test_cli_recovers_existing_failure_and_completes_repair_without_reset(self) -> None:
+        recorded = self.failed_fidelity("fail")
+        historical_report = self.evidence_path.read_bytes()
+        historical_output = (self.root / "artifacts/evidence/output.txt").read_bytes()
+        mutation = {"workflow": recorded["workflow_id"], "revision": recorded["revision"]}
+
+        def cli(command: str, *arguments: str, expected: int = 0) -> dict[str, object] | None:
+            completed = subprocess.run(
+                [sys.executable, str(ROOT / "scripts/littlepowers_state.py"),
+                 "--root", str(self.root), command,
+                 "--workflow", mutation["workflow"],
+                 "--expect-revision", str(mutation["revision"]), *arguments],
+                capture_output=True, text=True, encoding="utf-8", timeout=30,
+            )
+            self.assertEqual(completed.returncode, expected, completed.stderr)
+            if expected:
+                return None
+            result = json.loads(completed.stdout)
+            mutation["revision"] = result["revision"]
+            return result
+
+        cli("checkpoint", "--phase", "plan", "--next-action", "Review repair")
+        self.plan_path.write_text(
+            self.plan_path.read_text(encoding="utf-8") + "\nRepair output, preserve old evidence.\n",
+            encoding="utf-8",
+        )
+        cli("park-review", "--artifact-key", "plan", "--scope-delta", "none", "--unresolved-questions", "0")
+        cli("checkpoint", "--phase", "execute", expected=2)
+        cli("resolve-review", "--kind", "explicit_approval")
+        cli("validate-plan", "--artifact", "docs/plans/plan.md")
+        recovered = cli("read-artifact", "--key", "evidence")
+        self.assertEqual(recovered["content"].encode("utf-8"), historical_report)
+        cli("checkpoint", "--phase", "execute", "--next-action", "Repair and recheck")
+        cli("checkpoint", "--phase", "verify")
+        cli("complete", expected=2)
+        # Observe the actual fixture output, not just a synthetic passing verdict.
+        actual = self.root / "artifacts/evidence/repaired-output.txt"
+        expected = self.root / "docs/product/approved-output.txt"
+        actual.write_text("approved output\n", encoding="utf-8")
+        self.assertEqual(actual.read_bytes(), expected.read_bytes())
+        fresh = verification_record(fidelity=True)
+        fresh["fidelity"][0]["evidence_path"] = "artifacts/evidence/repaired-output.txt"
+        (self.root / "docs/evidence/repaired.md").write_text(
+            "Supersedes verification.md.\n" + block("verification", fresh), encoding="utf-8"
+        )
+        cli("record-verification", "--artifact", "docs/evidence/repaired.md")
+        finished = cli("complete")
+        self.assertEqual(finished["status"], "complete")
+        self.assertEqual(finished["workflow_id"], recorded["workflow_id"])
+        self.assertEqual(self.evidence_path.read_bytes(), historical_report)
+        self.assertEqual((self.root / "artifacts/evidence/output.txt").read_bytes(), historical_output)
+
+    def test_completion_rechecks_approved_plan_bytes_not_only_mapping(self) -> None:
+        verified = self.record_verification(self.ready_for_verify())
+        self.plan_path.write_text(
+            self.plan_path.read_text(encoding="utf-8") + "\nUnapproved repair approach.\n",
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(state_module.StateError, "[Rr]eview|approved"):
+            state_module.command_finish(self.writer(verified), self.root, "complete")
+        self.assertEqual(state_module.load_state(self.root)["revision"], verified["revision"])
 
     def test_fidelity_evidence_is_hashed_and_rechecked_at_completion(self) -> None:
         (self.root / "docs/product/approved-output.txt").write_text(

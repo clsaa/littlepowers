@@ -93,6 +93,12 @@ For an actual workspace transfer, first create and inspect an active target work
 
 If a check exposes unexpected behavior, use `debugging-systematically` before attempting speculative repairs. Preserve diagnosis-only authority when the latest request does not authorize a fix.
 
+For failed acceptance, reuse of earlier evidence, noisy output, or recovery of
+an in-flight operation, read
+[acceptance-and-evidence](../../references/acceptance-and-evidence.md). Preserve
+failed attempts, distinguish historical evidence from current eligibility, and
+read back the existing operation before resubmitting after an interruption.
+
 Use `reviewing-changes` when the user requests review, after integrating delegated output, at a shared-behavior milestone, or when impact and rollback cost are material. The review remains read-only and returns independent work-unit compliance, approved-outcome fidelity, and code-quality verdicts. Tiny isolated changes may use focused self-review and verification without a separate reviewer pass; Littlepowers does not create a reviewer or select a model.
 
 Every mutation uses the current ID and revision:

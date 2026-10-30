@@ -117,7 +117,9 @@ state comparison:
 
 On rebind, retain every old Outcome ID. Mark a removed ID `removed`, a new ID
 `added`, and a changed normalized record `changed`. Rebinding invalidates the
-stored Plan Map and Verification Record.
+stored Plan Map and current Verification Record eligibility. The last
+`artifacts.evidence` path stays available as historical recovery evidence;
+it is not completion authority.
 
 Bind an approved artifact:
 
@@ -305,6 +307,16 @@ A valid failing or blocked record is durable recovery evidence; it does not
 complete the outcome. A passing comparison requires readable explicit evidence.
 An unavailable file may support a `blocked` comparison, never a pass.
 
+Keep attempts under distinct paths, including their raw evidence. On a failed
+acceptance or when reusing checks, follow
+[acceptance-and-evidence](acceptance-and-evidence.md). Planning approval checks
+baseline source availability and drift, not whether the last comparison passed:
+`fail`/`blocked` can enter lawful repair review but cannot complete the workflow.
+Plan validation, Contract rebind and return to execution invalidate current
+verification eligibility while retaining the last report reference. A new
+Verification Record is required; unchanged individual checks may be reused
+only with supported dependency and environment continuity.
+
 Record verification only in active `phase=verify`:
 
 ```bash
@@ -339,7 +351,8 @@ explicit fidelity evidence, and aggregate verdict consistency.
 - Pause and cancel remain available when a gate fails. A planning retreat is
   allowed for reconciliation.
 - `complete` freshly rechecks contract, plan, verification, baseline,
-  evidence, three verdicts, and blockers. It reports all failures and leaves
+  the exact consumed plan approval, evidence, three verdicts, and blockers.
+  It reports all failures and leaves
   the revision unchanged unless every condition passes.
 
 Use:

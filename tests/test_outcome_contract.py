@@ -397,7 +397,10 @@ class OutcomeContractTests(unittest.TestCase):
             rebound["outcome_lock"]["plan"]["coverage"]["status"], "pending"
         )
         self.assertIsNone(rebound["outcome_lock"]["verification"]["artifact"])
-        self.assertIsNone(rebound["artifacts"]["evidence"])
+        self.assertEqual(rebound["artifacts"]["evidence"], "docs/contracts/evidence.md")
+        historical = state_module.read_artifact(self.root, rebound, "evidence")
+        self.assertEqual(historical["content"], "evidence\n")
+        self.assertEqual(rebound["outcome_lock"]["verification"]["work_unit"], "pending")
 
     def test_check_detects_source_drift_without_adopting_new_digest(self) -> None:
         bound = self.bind()

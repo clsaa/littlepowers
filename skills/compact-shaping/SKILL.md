@@ -18,6 +18,11 @@ For an existing workflow, keep the artifact root already resolved by `using-litt
 - affected files or components;
 - ordered execution steps and validation commands.
 
+When acceptance involves user journeys, historical data, terminal/tool scope or
+repairing a failed acceptance, apply
+[acceptance-and-evidence](../../references/acceptance-and-evidence.md) within
+this brief; do not create another ceremony or document just for that checklist.
+
 Include the inherited complete outcome and `Added / Changed / Deferred / Removed`, or `No scope delta`. Do not create product or technical slices; ordered steps are implementation order only. Highlight and obtain explicit approval for any non-empty scope delta.
 
 Read
