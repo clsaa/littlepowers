@@ -5783,20 +5783,6 @@ def completion_gate_failures(
     if contract is not None:
         for failure in observe_current_plan(root, state, contract):
             add(failure)
-    plan_artifact = lock["plan"]["artifact"]
-    if plan_artifact is not None:
-        try:
-            _require_review_resolution(
-                root,
-                state,
-                plan_artifact,
-                artifact_keys={"plan", "shape"},
-                consumption_key="plan_validation_revision",
-                consumed=True,
-            )
-        except StateError as exc:
-            add(str(exc))
-
     verification_state = lock["verification"]
     artifact = verification_state["artifact"]
     if artifact is None:

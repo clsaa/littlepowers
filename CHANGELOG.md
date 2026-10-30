@@ -4,6 +4,8 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-10-30
+
 ### Fixed
 
 - Let failed/blocked fidelity comparisons enter lawful repair-plan review;
@@ -19,7 +21,8 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
   historical data, applicable terminals, actual tool capabilities and scoped
   approved exemptions; avoid repeated browser foreground requests.
 - Define per-check evidence reuse/invalidation and existing-host log/operation
-  receipt reuse. No schema change, automatic full-suite run, new dependency,
+  receipt reuse, using the existing verification-input and execution-efficiency
+  helpers instead of a second implementation. No schema change, automatic full-suite run, new dependency,
   background scan, extra model call or automatic subagent.
 
 ## [1.5.0] - 2026-10-17
@@ -490,7 +493,9 @@ The first stable release. Multi-host support (Codex, Claude Code, Qoder, OpenCod
 
 - Created the initial Codex plugin and planning workflow.
 
-[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.4.3...HEAD
+[Unreleased]: https://github.com/clsaa/littlepowers/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/clsaa/littlepowers/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/clsaa/littlepowers/compare/v1.4.3...v1.5.0
 [1.4.3]: https://github.com/clsaa/littlepowers/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/clsaa/littlepowers/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/clsaa/littlepowers/compare/v1.4.0...v1.4.1

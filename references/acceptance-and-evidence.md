@@ -71,6 +71,12 @@ evidence path, relevant code/config/data/dependency identity, environment and
 permission scope, and observed user result. Use existing commit/snapshot/hash
 facts only when available and relevant; do not scan the repository on every turn.
 
+Use the existing `verification-inputs` command before checks to bind explicit
+implementation/test/config bytes (and intended absence), then preserve that
+snapshot in the new Verification Record. Reusing a check needs evidence that
+its dependencies remain unchanged; capturing today's hashes is not permission
+to relabel an old result. Current input and exact approval gates remain active.
+
 | Change since evidence | Decision |
 | --- | --- |
 | No relevant dependency, environment, data or acceptance change | Retain the check with its original receipt and an explicit reuse reason |
@@ -89,6 +95,13 @@ it cannot infer arbitrary test dependencies, external state, or genuine user
 success from evidence tokens. The coordinator must establish those facts.
 
 ## Reuse available efficiency facilities
+
+For structured check collections, repeated observations or pending report
+recovery, load [execution-efficiency](execution-efficiency.md) and use the
+existing `scripts/littlepowers_efficiency.py` pack/observe proposals. Preserve
+required check IDs, critical failures and evidence digests; a report cursor
+acknowledges read-only delivery, never a business write. Simple logs can use
+the native bounded-output path below without a cursor or structured wrapper.
 
 - For long non-sensitive command output, capture it once in a task-scoped log
   with the original exit status and command identity, then inspect a bounded

@@ -2,7 +2,7 @@
 
 **Reviewed:** 2026-10-17 (execution-efficiency additions; prior host evidence retains its original scope)
 
-**Release:** 1.5.0
+**Release:** 1.5.1
 
 Littlepowers is checkpoint-assisted recovery. The table separates host events, durable state, and model behavior.
 

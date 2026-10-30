@@ -2,7 +2,7 @@
 
 **Reviewed:** 2026-09-20
 
-**Release:** 1.5.0
+**Release:** 1.5.1
 
 **Refresh trigger:** Recheck before release when any supported host version,
 model alias, worker schema, or Hook contract changes; otherwise recheck after
