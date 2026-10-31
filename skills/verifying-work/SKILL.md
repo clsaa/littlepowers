@@ -31,6 +31,13 @@ Impact is not line count. A one-line manifest or shared-contract edit may be bro
 
 When independently reversible features are combined, verify each feature at its own boundary first. Run aggregate broad checks only when their integration or release surface requires them.
 
+For a meaningful check catalog, expensive repeated checks or a project profile,
+use [project-adaptive delivery](../../references/project-adaptive-delivery.md).
+Select by current claims, impact, environment and verified per-check history;
+cost only orders work. Reuse original snapshots only after eligibility checks,
+rerun affected/unknown checks, and preserve mandatory integrated acceptance.
+Measure preparation/recovery overhead too; no reduced coverage to report speed.
+
 ## Capture declared inputs before checks
 
 Read [`../../references/outcome-lock.md`](../../references/outcome-lock.md).

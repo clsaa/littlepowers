@@ -4,6 +4,39 @@ All notable changes are recorded here. The project follows [Semantic Versioning]
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-10-31
+
+### Added
+
+- Optional project-adaptive delivery profiles and a pure, bounded Python helper
+  for impact-based check selection and per-check evidence reuse. Unknown impact,
+  changed context, missing evidence and failed/incomplete runs cannot qualify.
+- Evidence-backed project learning across planning, design, implementation,
+  testing, acceptance and recovery: candidate, trial, active and retired states,
+  predeclared metrics/invariants, version checks and persisted promotion history.
+- Behavioral, unchanged-gate integration and paired defect-injection evaluation,
+  plus a real local environment-preflight trial. Learning never grants new
+  scope, permissions, agents, model changes or publication authority.
+
+### Changed
+
+- Group tasks by complete observable outcomes, keeping edits, commands, focused
+  checks and reversible steps internal instead of creating tiny task slices.
+- Walk the complete user journey and connected boundaries before planning;
+  verify costly assumptions using current project evidence. Detailed guidance
+  is loaded on demand, without extra artifacts or ceremony for tiny work.
+
+### Validation and boundaries
+
+- Protocol 1.3 and ledger schema 4 are unchanged; no new runtime dependency,
+  background scanner, telemetry, model call or default subagent is introduced.
+- Existing approval, fidelity and completion gates remain authoritative.
+  Costs can order checks but never remove mandatory coverage.
+- This release uses the user's explicit local-only validation authorization:
+  official Codex CLI isolated installation, manifest parsing and file comparison
+  substitute for the unavailable standalone validator; CI remains disabled.
+  No new authenticated four-host/model matrix or model-speed claim is made.
+
 ## [1.5.1] - 2026-10-30
 
 ### Fixed

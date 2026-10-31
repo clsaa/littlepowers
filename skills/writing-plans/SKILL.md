@@ -29,12 +29,19 @@ For an existing workflow, keep the artifact root already resolved by `using-litt
 - one testable outcome;
 - exact files to create, modify, or inspect;
 - dependencies, named interfaces, contracts, and consumers;
-- an independently reversible unit plus any rollback coupling;
-- ordered checkbox steps;
+- internal independently reversible units plus any rollback coupling;
+- ordered implementation steps within the outcome, not one task per operation;
 - exact validation commands, expected evidence, and a local, connected, or broad scope rationale that covers the rollback boundary;
 - any genuine user or external blocker.
 
-Order tasks as one continuous implementation stream. Mark the root coordinator as the only ledger writer; workers return evidence and do not checkpoint. Task boundaries are for dependency order, focused checks, and bounded rollback, not staged delivery, product slicing, or permission to defer scope. Keep all inherited requirements in one workflow and one definition of done. Use focused checks for independently reversible tasks; reserve a broad suite for shared boundaries or the aggregate release/integration gate. Do not add tiny ceremonial steps, speculative full-file code, or placeholders.
+Order tasks as one continuous implementation stream. Mark the root coordinator as the only ledger writer; workers return evidence and do not checkpoint. Task boundaries represent coherent observable outcomes and real dependencies, not each edit, command, test or checkpoint. Keep internal rollback units small without turning them into product slices or staged delivery. Keep all inherited requirements in one workflow and one definition of done. Use focused checks for affected rollback units; reserve a broad suite for shared boundaries or the aggregate release/integration gate. Do not add tiny ceremonial steps, speculative full-file code, or placeholders.
+
+Use [project-adaptive delivery](../../references/project-adaptive-delivery.md)
+to consolidate adjacent tasks that cannot be accepted meaningfully alone, check
+the whole journey and costly assumptions, and select checks from current impact,
+environment and valid history. No fixed task quota or imposed batches; task size
+does not prescribe commit size. Preserve bounded rollback inside outcome tasks.
+Cost estimates never remove required acceptance.
 
 Map every parent and immediate requirement to a task and include final integration verification and diff review against the approved outcome. Before checkpointing, verify that every task names an observable outcome, interface, rollback unit, and executable check with no placeholder decisions. Include commits only when the user requested them.
 

@@ -1,0 +1,11 @@
+brainstorming 0 Skill is valid!
+compact-shaping 0 Skill is valid!
+debugging-systematically 0 Skill is valid!
+designing-solutions 0 Skill is valid!
+executing-plans 0 Skill is valid!
+managing-littlepowers 0 Skill is valid!
+reviewing-changes 0 Skill is valid!
+using-littlepowers 0 Skill is valid!
+verifying-work 0 Skill is valid!
+writing-plans 0 Skill is valid!
+writing-specs 0 Skill is valid!

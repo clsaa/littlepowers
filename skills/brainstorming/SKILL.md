@@ -17,6 +17,11 @@ Ask for user input when a choice changes product behavior, scope, cost, security
 
 Every option must preserve the approved outcome. Do not turn an implementation option into a smaller product or technical slice. Record tasks, checkpoints, and rollback units only as continuous implementation order, never as deferred scope or staged delivery.
 
+Before choosing, walk the complete user outcome and its connected boundaries;
+check costly assumptions against available repository/tool evidence. Use
+[project-adaptive delivery](../../references/project-adaptive-delivery.md) for
+this proportional preflight and applicable project learning, not another artifact.
+
 For an existing workflow, keep the artifact root already resolved by `using-littlepowers`. When resolving a new workflow, use a non-default root only when the latest user request or a current repository instruction explicitly names it for new workflow artifacts. Existing directories, backlinks, and historical or tool-branded paths do not qualify by themselves. Otherwise use `docs/littlepowers/brainstorms/YYYY-MM-DD-<slug>.md`. Include the problem, constraints, options, selected direction, decision rationale, assumptions, and open questions.
 
 Include a scope anchor with:

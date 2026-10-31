@@ -18,13 +18,22 @@ def read_json(path: Path) -> dict[str, object]:
 
 
 class ManifestTests(unittest.TestCase):
+    def test_delivery_helper_is_optional_and_not_loaded_by_hooks(self) -> None:
+        helper = ROOT / 'scripts/littlepowers_delivery.py'
+        self.assertTrue(helper.is_file())
+        self.assertTrue((ROOT / 'references/project-adaptive-delivery.md').is_file())
+        for path in list((ROOT / 'hooks').rglob('*')) + list((ROOT / '.opencode').rglob('*.js')):
+            if path.is_file() and path.suffix in {'.json', '.py', '.sh', '.js', '.mjs'}:
+                with self.subTest(path=path.name):
+                    self.assertNotIn('littlepowers_delivery', path.read_text(encoding='utf-8'))
+
     def test_native_plugin_manifests_share_name_version_and_repository(self) -> None:
         codex = read_json(ROOT / ".codex-plugin" / "plugin.json")
         claude = read_json(ROOT / ".claude-plugin" / "plugin.json")
 
         self.assertEqual(codex["name"], "littlepowers")
         self.assertEqual(claude["name"], "littlepowers")
-        self.assertEqual(codex["version"], "1.5.1")
+        self.assertEqual(codex["version"], "1.6.0")
         self.assertEqual(claude["version"], codex["version"])
         self.assertEqual(claude["repository"], codex["repository"])
         self.assertIn("Claude Code", codex["description"])
@@ -104,7 +113,7 @@ class ManifestTests(unittest.TestCase):
     def test_opencode_plugin_registers_skills_and_injects_read_only(self) -> None:
         package = read_json(ROOT / "package.json")
         self.assertEqual(package["name"], "littlepowers")
-        self.assertEqual(package["version"], "1.5.1")
+        self.assertEqual(package["version"], "1.6.0")
         self.assertEqual(package["main"], ".opencode/plugins/littlepowers.js")
         self.assertEqual(package["type"], "module")
         self.assertNotIn("dependencies", package)
@@ -736,7 +745,7 @@ class ManifestTests(unittest.TestCase):
         self.assertIn("cannot force a model", readme)
         self.assertIn("UserPromptSubmit", readme)
         self.assertIn("coordinator is the only ledger writer", readme)
-        self.assertIn("v1.5.1", readme)
+        self.assertIn("v1.6.0", readme)
         self.assertIn("Outcome Lock protocol 1.3", readme)
         self.assertIn("Review Lease", readme)
         self.assertIn("one continuous stream", readme)

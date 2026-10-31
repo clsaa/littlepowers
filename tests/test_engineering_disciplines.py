@@ -13,6 +13,19 @@ def read_skill(name: str) -> str:
 
 
 class EngineeringDisciplineTests(unittest.TestCase):
+    def test_delivery_reference_is_progressively_reachable(self) -> None:
+        reference = ROOT / 'references/project-adaptive-delivery.md'
+        for name in ('using-littlepowers', 'brainstorming', 'compact-shaping',
+                     'designing-solutions', 'writing-plans', 'executing-plans',
+                     'verifying-work', 'reviewing-changes'):
+            path = ROOT / 'skills' / name / 'SKILL.md'
+            links = re.findall(r'\]\(([^)]+)\)', path.read_text(encoding='utf-8'))
+            with self.subTest(skill=name):
+                self.assertIn(reference, [(path.parent / link).resolve()
+                                         for link in links if '://' not in link])
+        # Structural routing only; helper behavior is tested in test_delivery*.
+        self.assertTrue(reference.is_file())
+
     def test_acceptance_reference_is_reachable_from_applicable_routes(self) -> None:
         for name in ("writing-plans", "compact-shaping", "executing-plans", "verifying-work"):
             with self.subTest(skill=name):

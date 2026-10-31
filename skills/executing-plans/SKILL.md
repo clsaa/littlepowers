@@ -47,16 +47,22 @@ Concurrent mutation requires separate worktrees or equivalent native
 isolation; otherwise delegate only read-only investigation/review or continue
 single-agent.
 
-For each task or meaningful rollback boundary in the continuous implementation
-stream:
+Across each coherent outcome in the continuous implementation stream (not after
+every operation or tiny rollback step):
 
-1. Checkpoint the current task, observable progress, and next observable action.
+1. Checkpoint the current task when its status, meaningful milestone or recovery boundary changes.
 2. Preserve unrelated changes and established architecture.
 3. Implement the smallest complete outcome.
 4. Add or update tests for changed behavior.
 5. Capture explicit inputs with `verification-inputs` before focused checks; run them and inspect their output.
 6. Review the diff against the intended outcome.
-7. Checkpoint integrated results and the next action.
+7. Checkpoint integrated results and the next action at the meaningful boundary.
+
+For recurring rework/check cost or an explicit project profile, use
+[project-adaptive delivery](../../references/project-adaptive-delivery.md).
+Root may apply evidenced equivalent reversible strategies within current
+authority, preserving per-check receipts and mandatory checks. Do not add
+per-operation retrospectives, profile writes, full suites or extra agents.
 
 Every task remains subordinate to the approved outcome. A passed rollback unit
 is incomplete progress, not a product slice or staged delivery, and cannot

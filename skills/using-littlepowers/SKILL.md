@@ -131,6 +131,13 @@ Resolve this before creating the first durable artifact and keep that root consi
 
 ## Select planning depth
 
+For connected/uncertain work, use the whole-outcome preflight in
+[project-adaptive delivery](../../references/project-adaptive-delivery.md)
+inside the existing planning artifact. At a natural boundary, consult an
+explicit project profile when reusable evidence or recurring friction warrants
+it; apply only currently valid strategies. Tiny understood work needs no profile,
+helper or extra ceremony. Profile history never overrides current authority.
+
 Choose by unresolved decisions and risk, not file count, model effort, or the model's ability to produce a longer plan.
 
 Independently select one Review Lease policy from the latest request:

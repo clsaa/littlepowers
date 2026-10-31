@@ -18,6 +18,12 @@ For an existing workflow, keep the artifact root already resolved by `using-litt
 - affected files or components;
 - ordered execution steps and validation commands.
 
+Use [project-adaptive delivery](../../references/project-adaptive-delivery.md)
+to walk the complete journey, connected interfaces, historical data and recovery
+before ordering work. Support costly assumptions with evidence. Group tasks by
+coherent outcomes, with edits/checks/rollback steps inside them; no fixed task
+quota, imposed batches or extra preflight document.
+
 When acceptance involves user journeys, historical data, terminal/tool scope or
 repairing a failed acceptance, apply
 [acceptance-and-evidence](../../references/acceptance-and-evidence.md) within

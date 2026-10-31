@@ -1,5 +1,22 @@
 # Model evaluation scenarios
 
+## Project-adaptive delivery evaluation
+
+Run `python3 evals/delivery_benchmark.py --output <new-result-path> --runs 3`
+for alternating paired baseline/candidate runs over identical requirements,
+historical data, edits and injected defects. The fixture executes actual checks;
+it does not sleep or assume a speedup. It separates cold/reuse phases and reports
+check executions, supported coverage, detected defects, preparation, helper,
+check, evidence, recovery and total elapsed costs. Negative timing is a result,
+not a reason to remove acceptance. Model tokens and long-term rework stay unknown.
+
+The same fixture demonstrates planning/design preflight and test/acceptance
+learning through evidenced trial, active use and retirement. `test_delivery*`
+adds adversarial protocol and unchanged-ledger-gate integration tests. These
+fixtures do not certify model obedience or authenticated host compatibility.
+Report self-hosted evidence from the current actual session separately; do not
+launch another paid model, change installations or enable agents to run them.
+
 These scenarios test behavior, not hidden reasoning. Run each in a disposable repository with the candidate plugin installed.
 
 ## Evidence levels

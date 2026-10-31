@@ -77,6 +77,24 @@ Lean、Compact 与 Full 的规划产物可以形成确定性的 Review Gate。�
 
 过大的重要评审可以按信任边界、状态所有权或回滚边界分区，再由一个验收负责人统一汇总共享接口证据一次。评审技能本身不创建 reviewer、不选择模型；只有独立的 Delegation Gate 获得授权后，才可通过宿主原生 worker 接口执行。普通路径没有交接、快照或额外模型调用成本。
 
+## 项目自适应交付
+
+有依赖或不确定性的工作，先推演用户完整路径、共享接口、历史数据和失败恢复，
+用项目证据验证高返工风险的假设，再排列实施顺序。任务按完整可验收结果归组，
+编辑、命令、检查和回滚步骤放在任务内部；不强制固定任务数、wave 或额外规划文档。
+
+当存在可复用经验或反复出现的成本时，可维护一份项目交付档案，记录影响边界、
+检查目录、实际成本和改进记录。按需调用的纯建议器根据当前影响与逐检查证据提出
+运行/复用建议；未知影响、环境变化或证据失效不能跳过验证。仓库必需检查、审批、
+验收和完成门禁不变。明确的小改动不强制创建档案或调用辅助器。
+
+自迭代覆盖规划、设计、实现、测试、验收和恢复，采用“候选 → 试用 → 生效 → 停用”
+闭环：先声明收益指标和不变的质量条件，实际证据满足后才在匹配条件下自动采用；
+负收益或失效时退回仍有效的策略或保守默认，不回滚业务数据。不会因此开启子 Agent、
+改变模型、扩大权限或自动发布，也没有后台循环和额外模型调用。详见
+[协议与边界](references/project-adaptive-delivery.md)和
+[评测方式](evals/README.md#project-adaptive-delivery-evaluation)。
+
 ## 能力边界
 
 Outcome Lock 与 Review Lease 能确定性拒绝来源漂移、已声明 ID 缺失、无效范围状态、不完整 fidelity、过期门禁重放和虚假完成转换；但它们不能强迫模型从自由文本中提取全部语义、阻止同一轮 steering、覆盖最新用户请求、在不检查最新可见对话时推断“无人介入”，也不能让运行中的任务热加载替换后的插件。非 Git ledger 根目录不会自动获得 Hook 恢复，应显式调用 state CLI。Codex 中，如果消息必须等当前运行结束再处理，请使用 Queue。
@@ -134,10 +152,10 @@ Codex CLI 0.152.0 起默认关闭计划工具。需要原生清单时，在 Code
 其中的 `enabled = true`），随后新建会话；若桌面端仍沿用旧配置，再重启应用。
 这不会更改模型/思考强度或开启子 Agent，Littlepowers 不会未经允许自动修改配置。
 
-按精确 tag 安装 1.5.1：
+按精确 tag 安装 1.6.0：
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v1.5.1
+codex plugin marketplace add clsaa/littlepowers --ref v1.6.0
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -160,10 +178,10 @@ Codex 的 Queue 用于延迟消息，`/side` 或 `/btw` 用于无关问题。Lit
 使用 tag 固定的本地 marketplace 安装精确版本：
 
 ```bash
-git clone --depth 1 --branch v1.5.1 \
+git clone --depth 1 --branch v1.6.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.5.1
-claude plugin marketplace add /absolute/path/littlepowers-v1.5.1
+  /absolute/path/littlepowers-v1.6.0
+claude plugin marketplace add /absolute/path/littlepowers-v1.6.0
 claude plugin install littlepowers@littlepowers
 ```
 
@@ -196,10 +214,10 @@ Qoder CLI 与 Qoder IDE 共用同一套插件结构。
 使用 tag 固定的本地检出安装精确版本：
 
 ```bash
-git clone --depth 1 --branch v1.5.1 \
+git clone --depth 1 --branch v1.6.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.5.1
-qodercli plugins install /absolute/path/littlepowers-v1.5.1
+  /absolute/path/littlepowers-v1.6.0
+qodercli plugins install /absolute/path/littlepowers-v1.6.0
 ```
 
 本地检出可用 `qodercli plugins install /path/to/littlepowers` 安装。重启会话或执行 `/skills reload`，并先检查插件 Hook 再信任。Qoder IDE 通过 Marketplace 面板安装，或导入本地插件目录。
@@ -224,7 +242,7 @@ qodercli plugins install /absolute/path/littlepowers-v1.5.1
 
 ```json
 {
-  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.5.1"]
+  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.6.0"]
 }
 ```
 
@@ -322,33 +340,33 @@ schema-4 当前 ledger；若要回退到 1.2，应先取消开放的 Review Gate
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v1.5.1
+codex plugin marketplace add clsaa/littlepowers --ref v1.6.0
 codex plugin add littlepowers@littlepowers
 ```
 
 回滚时把 `--ref` 换成目标旧 tag。Claude Code 使用独立的 tag 检出作为 marketplace：
 
 ```bash
-git clone --depth 1 --branch v1.5.1 \
+git clone --depth 1 --branch v1.6.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.5.1
+  /absolute/path/littlepowers-v1.6.0
 claude plugin uninstall littlepowers@littlepowers
 claude plugin marketplace remove littlepowers
-claude plugin marketplace add /absolute/path/littlepowers-v1.5.1
+claude plugin marketplace add /absolute/path/littlepowers-v1.6.0
 claude plugin install littlepowers@littlepowers
 ```
 
 Qoder CLI 直接安装同一个 tag 检出：
 
 ```bash
-git clone --depth 1 --branch v1.5.1 \
+git clone --depth 1 --branch v1.6.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.5.1
+  /absolute/path/littlepowers-v1.6.0
 qodercli plugins uninstall littlepowers
-qodercli plugins install /absolute/path/littlepowers-v1.5.1
+qodercli plugins install /absolute/path/littlepowers-v1.6.0
 ```
 
-OpenCode 把 git 插件 URL 的 `#v1.5.1` 后缀换成目标 tag，必要时强制刷新包缓存并重启。任何宿主更新后都应新建任务/会话，确认 11 个技能并运行管理技能的 `doctor`；插件 reload 不等于 ledger 迁移。
+OpenCode 把 git 插件 URL 的 `#v1.6.0` 后缀换成目标 tag，必要时强制刷新包缓存并重启。任何宿主更新后都应新建任务/会话，确认 11 个技能并运行管理技能的 `doctor`；插件 reload 不等于 ledger 迁移。
 
 ## 隐私与安全
 

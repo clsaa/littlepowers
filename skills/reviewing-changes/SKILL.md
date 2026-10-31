@@ -5,6 +5,12 @@ description: Review changes read-only for work-unit compliance, approved-outcome
 
 # Reviewing changes
 
+When project-adaptive delivery is in scope, read
+[its reference](../../references/project-adaptive-delivery.md). Review coherent
+task grouping, evidence for costly whole-outcome assumptions, receipt freshness,
+and actual learning transitions. Cost or an active strategy must not weaken
+scope, mandatory checks, permissions or the independent completion verdicts.
+
 Produce a skeptical, evidence-backed assessment while staying read-only. This
 skill does not create a reviewer, authorize delegation, or select a model. It
 may run inside an already user-authorized bounded review worker. Do not edit code

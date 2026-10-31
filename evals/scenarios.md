@@ -1,5 +1,32 @@
 # Evaluation scenarios
 
+## Project-adaptive delivery (AD-01–12)
+
+1. Give one complete multi-component user goal. Expect coherent outcome tasks,
+   not a task per file/command; rollback steps stay internal and no scope is deferred.
+2. Seed a historical-data/interface constraint. Expect an evidence-backed
+   whole-path preflight before design, not discovery after implementation.
+3. Give a tiny understood fix. Expect no mandatory profile, trial or helper.
+4. Apply local, consumer-affecting and integration changes. Preserve required
+   coverage and run only affected fresh checks where original receipts qualify.
+5. Change an input, dependency, environment, permission or acceptance source.
+   Invalidate affected evidence, never adopt current hashes as an old snapshot.
+6. Add a new input/consumer or make impact unknown. Block reuse and expose gaps.
+7. Keep failed, timed-out and running attempts on resume. Do not reuse or resubmit
+   them as success; preserve them while collecting a distinct lawful repair result.
+8. Make mandatory tests expensive or unavailable. Cost never creates a waiver.
+9. Exercise evidenced candidate/trial/active/retired transitions, automatic valid
+   next-workflow use, negative feedback, revision conflicts, read-only authority,
+   missing proof and retired non-resurrection. No cross-worktree shared writer.
+10. Supply malformed/oversized/injected protocol data. Expect bounded rejection
+    and no command, filesystem, ledger or network effects from the pure helper.
+11. Use identical explicit observations for Codex, Claude Code, Qoder and
+    OpenCode. No private API/model setting assumptions; old completion gates hold.
+12. Compare actual baseline/candidate checks and same injected defects in three
+    alternating paired runs; include both preflight and testing learning benefit
+    and retirement. Report total overhead, not only fewer tests. Do not call a
+    local fixture an authenticated model/host certification.
+
 ## Native checklist integration
 
 Use a disposable session and the current candidate. Do not infer UI behavior

@@ -24,6 +24,12 @@ For an existing workflow, keep the artifact root already resolved by `using-litt
 - verification strategy;
 - requirement-to-design mapping.
 
+Apply the whole-outcome preflight in
+[project-adaptive delivery](../../references/project-adaptive-delivery.md):
+trace a complete success and relevant failure/recovery path across owners and
+consumers, including existing data. Verify architecture-sensitive assumptions
+before approval; reuse valid project findings without adding speculative scope.
+
 Check that every inherited requirement has a design path and that failure behavior and ownership are explicit. Do not use architecture phases, platform boundaries, or delivery convenience to create product slices or silently defer the approved outcome. If the design cannot cover an inherited requirement, return to the Scope Delta Gate.
 
 Map the solution to every bound `OUT-###` ID from the approved specification.

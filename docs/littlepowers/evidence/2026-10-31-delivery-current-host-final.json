@@ -1,0 +1,133 @@
+{
+  "host": "current Codex desktop session",
+  "level": "self-hosted helper and actual local test execution; not a fresh installed-plugin certification",
+  "profile_revision": 3,
+  "active_application": {
+    "proposal_only": true,
+    "status": "noop",
+    "apply": true,
+    "expected_profile_digest": "sha256:b8b6f427c7c8ecf2fd0fc60ef2e5ae7c2b2938efc420c113ae19b6ae6837b9cf",
+    "expected_revision": 3,
+    "record": null,
+    "reason": "applicable active strategy",
+    "fallback": null
+  },
+  "mismatched_environment": {
+    "proposal_only": true,
+    "status": "noop",
+    "apply": false,
+    "expected_profile_digest": "sha256:b8b6f427c7c8ecf2fd0fc60ef2e5ae7c2b2938efc420c113ae19b6ae6837b9cf",
+    "expected_revision": 3,
+    "record": null,
+    "reason": "outside declared conditions",
+    "fallback": null
+  },
+  "invalidated_retirement": {
+    "proposal_only": true,
+    "status": "proposed",
+    "apply": false,
+    "expected_profile_digest": "sha256:b8b6f427c7c8ecf2fd0fc60ef2e5ae7c2b2938efc420c113ae19b6ae6837b9cf",
+    "expected_revision": 3,
+    "record": {
+      "id": "local-python-preflight",
+      "revision": 4,
+      "state": "retired",
+      "category": "testing",
+      "problem": "The full run had 11 failures and 1 error because hook/adapter child processes resolved python3 to an Xcode-license-blocked interpreter.",
+      "hypothesis": "Validate the child interpreter before expensive host-adapter checks and select an existing working Python in the test process only.",
+      "change": {
+        "kind": "add_preflight",
+        "description": "Probe child python3 once; if blocked, select the already available Python through process-local PATH. Do not alter global settings, accept licenses or change test scope."
+      },
+      "fallback": "Keep the same tests required; report an environment blocker if no permitted interpreter works.",
+      "conditions": {
+        "environment": "macOS-local-child-python",
+        "scope": "hook-and-opencode-checks"
+      },
+      "policy_digest": "sha256:6242e161fe9318a30d6b658b4b4d202a30b0696a160fb2952a98214ddd32df6d",
+      "evidence": [
+        {
+          "ref": "docs/littlepowers/evidence/2026-10-31-delivery-tests.txt",
+          "sha256": "sha256:8262897a88ac7b0ebdb7d95c1e53e22cdc9f7fbb283be21418701b35d0dadafb",
+          "saved": true,
+          "upstream_complete": true
+        },
+        {
+          "ref": "docs/littlepowers/evidence/2026-10-31-delivery-python-before.txt",
+          "sha256": "sha256:411522ec89779639df259fa9f595942811c505c31bc2eb85696023376304b203",
+          "saved": true,
+          "upstream_complete": true
+        },
+        {
+          "ref": "docs/littlepowers/evidence/2026-10-31-delivery-adapter-trial.txt",
+          "sha256": "sha256:e7980549e7940ae1de61e59ed2c4a6640400abfb3f85eb928d4ea2d6bf70dd5f",
+          "saved": true,
+          "upstream_complete": true
+        },
+        {
+          "ref": "docs/littlepowers/evidence/2026-10-31-delivery-python-after.txt",
+          "sha256": "sha256:4c3569f5da09975434dd9fd9a91fadbc4367a91d8f3c3fab59e9241ab9ee4bd8",
+          "saved": true,
+          "upstream_complete": true
+        }
+      ],
+      "trial": {
+        "metric": "failed_host_adapter_cases",
+        "direction": "decrease",
+        "baseline": 12,
+        "minimum_gain": 1,
+        "invariants": [
+          "same_tests",
+          "no_product_edits",
+          "no_global_environment_change"
+        ],
+        "stop_condition": "Any previously passing affected check fails, test scope changes or global configuration is required.",
+        "workflow_id": "36ea758f-4b58-40f6-909e-53ce2f91bc86",
+        "started_at": "2026-10-31T00:59:30Z",
+        "token": "sha256:054b257865d623922a93f5cf22ec95017d4c8ccef98fcf7f3444932202c82daa"
+      },
+      "history": [
+        {
+          "from": "candidate",
+          "to": "trial",
+          "reason": "bounded trial started with predeclared criteria",
+          "at": "2026-10-31T00:59:30Z",
+          "evidence": []
+        },
+        {
+          "from": "trial",
+          "to": "active",
+          "reason": "observed benefit and invariants supported",
+          "at": "2026-10-31T01:00:40Z",
+          "evidence": [
+            {
+              "ref": "docs/littlepowers/evidence/2026-10-31-delivery-adapter-trial.txt",
+              "sha256": "sha256:e7980549e7940ae1de61e59ed2c4a6640400abfb3f85eb928d4ea2d6bf70dd5f",
+              "saved": true,
+              "upstream_complete": true
+            },
+            {
+              "ref": "docs/littlepowers/evidence/2026-10-31-delivery-python-after.txt",
+              "sha256": "sha256:4c3569f5da09975434dd9fd9a91fadbc4367a91d8f3c3fab59e9241ab9ee4bd8",
+              "saved": true,
+              "upstream_complete": true
+            }
+          ]
+        },
+        {
+          "from": "active",
+          "to": "retired",
+          "reason": "evidence_or_policy_invalidated",
+          "at": "2026-10-31T06:59:56.788571Z",
+          "evidence": []
+        }
+      ]
+    },
+    "reason": "evidence_or_policy_invalidated",
+    "fallback": "last_still_valid_strategy_or_conservative_default"
+  },
+  "retirement_persisted": false,
+  "ledger_unchanged": true,
+  "extra_agents": 0,
+  "model_settings_changed": false
+}

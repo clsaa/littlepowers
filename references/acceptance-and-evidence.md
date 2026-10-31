@@ -1,5 +1,10 @@
 # User-task acceptance and evidence reuse
 
+For project-specific check selection, per-check input reuse and evidence-backed
+process learning, use [project-adaptive delivery](project-adaptive-delivery.md).
+It proposes equivalent strategies; all acceptance and repair rules here remain
+authoritative.
+
 Load for user-facing acceptance, a failed acceptance repair, reuse of prior
 evidence, or long-running/noisy execution. Tiny, fully specified edits need only
 their focused check, not a separate acceptance document or tool probe.

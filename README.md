@@ -102,6 +102,29 @@ Three boundary tools stay dormant until explicitly needed:
 
 If a material review is too large for one reliable pass, split it by trust, state ownership, or rollback boundary and use one acceptance owner to aggregate shared-interface coverage once. The review skill does not create reviewers or select models. Only the separate authorized Delegation Gate may do so through the host's native worker interface. The ordinary route therefore pays no handoff/snapshot or extra-model cost.
 
+## Project-adaptive delivery
+
+Connected work walks the complete user outcome and tests costly assumptions
+before ordering implementation. Tasks group coherent observable results; file
+edits, commands, checks and rollback steps stay inside those groups. There is
+no fixed task quota, mandatory wave or additional planning artifact.
+
+When recurring friction warrants it, an optional project profile records
+boundaries, checks, observed costs and evidence-backed improvements. A pure
+on-demand helper proposes impact-based checks and per-check evidence reuse;
+unknown impact or stale evidence requires fresh verification. Required checks,
+approval and completion gates remain authoritative. Small understood work
+does not pay profile/helper overhead.
+
+Project learning spans planning, design, implementation, testing, acceptance and
+recovery: `candidate → trial → active → retired`. A predeclared trial must show
+benefit without lowering coverage or quality before automatic use in matching
+conditions. Invalid/negative strategies fall back safely, without rolling back
+business data or granting agents, model changes, publication or new permissions.
+No background loop or extra model call is introduced. See the
+[protocol and limits](references/project-adaptive-delivery.md) and
+[evaluation method](evals/README.md#project-adaptive-delivery-evaluation).
+
 ## What it cannot guarantee
 
 Outcome Lock and Review Lease deterministically reject drift, missing declared IDs, invalid scope state, incomplete declared fidelity, stale gate replay, and false completion transitions. They cannot force a model to extract every meaning from free-form prose, prevent same-turn steering, override the latest user request, infer silence without inspecting the latest visible conversation, or make an active task hot-load a replacement plugin. Automatic Hook recovery is intentionally unavailable for a non-Git ledger root; use the state CLI explicitly there. In Codex, use Queue when a follow-up must wait for the current run to finish.
@@ -162,10 +185,10 @@ changes this setting without permission.
 
 ### Install the released plugin
 
-Install the 1.5.1 release by its exact tag:
+Install the 1.6.0 release by its exact tag:
 
 ```bash
-codex plugin marketplace add clsaa/littlepowers --ref v1.5.1
+codex plugin marketplace add clsaa/littlepowers --ref v1.6.0
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -192,10 +215,10 @@ Codex Queue defers a follow-up; `/side` or `/btw` isolates an unrelated question
 For an exact release, use a tag-pinned local marketplace checkout:
 
 ```bash
-git clone --depth 1 --branch v1.5.1 \
+git clone --depth 1 --branch v1.6.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.5.1
-claude plugin marketplace add /absolute/path/littlepowers-v1.5.1
+  /absolute/path/littlepowers-v1.6.0
+claude plugin marketplace add /absolute/path/littlepowers-v1.6.0
 claude plugin install littlepowers@littlepowers
 ```
 
@@ -232,10 +255,10 @@ Qoder CLI and the Qoder IDE share the same plugin layout.
 For an exact release, install a tag-pinned checkout:
 
 ```bash
-git clone --depth 1 --branch v1.5.1 \
+git clone --depth 1 --branch v1.6.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.5.1
-qodercli plugins install /absolute/path/littlepowers-v1.5.1
+  /absolute/path/littlepowers-v1.6.0
+qodercli plugins install /absolute/path/littlepowers-v1.6.0
 ```
 
 For a local checkout, run `qodercli plugins install /path/to/littlepowers` instead. Restart the session or run `/skills reload`, then review the plugin hooks before trusting them. In the Qoder IDE, install through the Marketplace panel or import the local plugin folder.
@@ -260,7 +283,7 @@ Add the plugin to the `plugin` array in `opencode.json` (global or project-level
 
 ```json
 {
-  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.5.1"]
+  "plugin": ["littlepowers@git+https://github.com/clsaa/littlepowers.git#v1.6.0"]
 }
 ```
 
@@ -365,7 +388,7 @@ from an exact tag and start a new task/session. For Codex:
 ```bash
 codex plugin remove littlepowers@littlepowers
 codex plugin marketplace remove littlepowers
-codex plugin marketplace add clsaa/littlepowers --ref v1.5.1
+codex plugin marketplace add clsaa/littlepowers --ref v1.6.0
 codex plugin add littlepowers@littlepowers
 ```
 
@@ -374,26 +397,26 @@ Use the desired earlier tag in the same commands to roll back.
 For Claude Code, use a separate checkout of the desired tag as the marketplace:
 
 ```bash
-git clone --depth 1 --branch v1.5.1 \
+git clone --depth 1 --branch v1.6.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.5.1
+  /absolute/path/littlepowers-v1.6.0
 claude plugin uninstall littlepowers@littlepowers
 claude plugin marketplace remove littlepowers
-claude plugin marketplace add /absolute/path/littlepowers-v1.5.1
+claude plugin marketplace add /absolute/path/littlepowers-v1.6.0
 claude plugin install littlepowers@littlepowers
 ```
 
 For Qoder CLI, install the same tagged checkout directly:
 
 ```bash
-git clone --depth 1 --branch v1.5.1 \
+git clone --depth 1 --branch v1.6.0 \
   https://github.com/clsaa/littlepowers.git \
-  /absolute/path/littlepowers-v1.5.1
+  /absolute/path/littlepowers-v1.6.0
 qodercli plugins uninstall littlepowers
-qodercli plugins install /absolute/path/littlepowers-v1.5.1
+qodercli plugins install /absolute/path/littlepowers-v1.6.0
 ```
 
-For OpenCode, change the `#v1.5.1` suffix in the git plugin URL to the exact
+For OpenCode, change the `#v1.6.0` suffix in the git plugin URL to the exact
 desired tag, force-refresh its package cache if necessary, and restart OpenCode.
 After any host change, open a new task/session, confirm all eleven skills, and
 run the management skill's `doctor`; do not treat plugin reload as ledger
